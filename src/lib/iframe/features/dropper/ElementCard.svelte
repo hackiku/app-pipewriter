@@ -90,7 +90,7 @@
     if (!mounted) return props.element.src;
     
     // Ensure path starts with '/' for absolute path from root
-    const path = props.element.src.startsWith('/') ? props.element.src : `/${props.element.src}`;
+    const path = props.element.src.startsWith('/elements/') ? props.element.src : `/${props.element.src}`;
     return path;
   });
   

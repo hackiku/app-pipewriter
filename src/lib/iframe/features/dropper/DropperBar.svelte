@@ -48,8 +48,6 @@
     return gridSizes[(currentIndex + 1) % gridSizes.length];
   });
   
- 
-  
   // Methods
   function cycleGridColumns() {
     const nextColumns = {
@@ -78,7 +76,7 @@
 
         <!-- Theme Toggle Button -->
         <button
-          class="h-6 w-6 rounded-full border-[0.15em] border-gray-300 dark:border-gray-500
+          class="h-6 w-6 rounded-full border-[0.15em] border-gray-300 dark:border-neutral-500/50
                  transition-all duration-150
                  hover:border-primary/60 dark:hover:border-primary/80 hover:shadow-sm active:scale-95"
           style={`background-color: ${currentTheme.color}`}
@@ -91,7 +89,7 @@
 
         <!-- Grid Size Button -->
         <button
-          class="h-6.5 w-6 aspect-square rounded-full text-xs font-medium border-[0.15em] border-gray-200 dark:border-gray-500
+          class="h-6.5 w-6 aspect-square rounded-full text-xs font-medium border-[0.15em] border-neutral-200 dark:border-neutral-500/50
                  hover:bg-gray-100 dark:hover:bg-gray-100 dark:hover:bg-gray-700
                  hover:border-primary/60 dark:hover:border-primary/80 hover:shadow-sm active:scale-95
                  text-muted-foreground hover:text-foreground
