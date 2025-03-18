@@ -1,110 +1,98 @@
-// $lib/iframe/elements.ts
+// src/lib/data/addon/elements.ts
 
-// TODO fetch damn svgs
-const baseUrlSvg = 'elements';
+// Define element types
+export type ElementTheme = 'light' | 'dark';
 
-// Define the type for element properties
-export interface ElementProps {
+export interface ElementDefinition {
 	category: string;
-	theme?: string;
-	description?: string;
+	description: string;
+	hasDarkVariant: boolean;
 }
 
-// Define the type for an element object
-export interface ElementObject {
+export interface Element {
 	id: string;
+	baseId: string;
 	category: string;
-	theme: string;
+	theme: ElementTheme;
 	src: string;
 	alt: string;
 	description: string;
 }
 
-function createElementObject(id: string, { category, theme = '', description = '' }: ElementProps): ElementObject {
-	return {
-		id,
-		category,
-		theme,
-		src: `${baseUrlSvg}/${id}${theme === '' ? '-dark' : ''}.svg`,
-		alt: id.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase()), // Capitalize the first letter
-		description,
-	};
-}
-
-const elementsDb: Record<string, ElementProps> = {
-	'container-center': { category: 'containers', theme: 'light', description: 'Empty centered container in light theme' },
-	'background-empty': { category: 'containers', theme: 'light', description: 'Empty fullwidth background in light theme' },
-	// 'background-light': { category: 'containers', theme: 'light', description: 'Light gray fullwidth background' },
-	// 'container-center-gray': { category: 'containers', theme: 'gray', description: 'Empty centered container in gray theme' },
-	// 'container-center-dark': { category: 'containers', theme: 'dark', description: 'Empty centered container in dark theme' },
-	// 'background-empty-gray': { category: 'containers', theme: 'gray', description: 'Empty fullwidth background in gray theme' },
-	// 'background-empty-dark': { category: 'containers', theme: 'dark', description: 'Empty fullwidth background in dark theme' },
-	// 'background-light-gray': { category: 'containers', theme: 'gray', description: 'Light gray background in gray theme' },
-	'background-light-dark': { category: 'containers', theme: 'dark', description: 'Dark background in dark theme' },
-	'hero': { category: 'content', theme: 'light', description: 'Hero in light theme' },
-	'hero-dark': { category: 'content', theme: 'dark', description: 'Hero in dark theme' },
-	'zz-left': { category: 'content', theme: 'light', description: 'Zigzag text left in light theme' },
-	'zz-right': { category: 'content', theme: 'light', description: 'Zigzag text right in light theme' },
-	'zz-left-dark': { category: 'content', theme: 'dark', description: 'Zigzag text left in dark theme' },
-	'zz-right-dark': { category: 'content', theme: 'dark', description: 'Zigzag text right in dark theme' },
-	'blurbs-3': { category: 'blurbs', theme: 'light', description: '3 horizontal blurbs in light theme' },
-	'blurbs-4': { category: 'blurbs', theme: 'light', description: '4 horizontal blurbs in light theme' },
-	'blurbs-vert-3': { category: 'blurbs', theme: 'light', description: '3 vertical blurbs in light theme' },
-	'blurbs-3-dark': { category: 'blurbs', theme: 'dark', description: '3 horizontal blurbs in dark theme' },
-	'blurbs-vert-3-dark': { category: 'blurbs', theme: 'dark', description: '3 vertical blurbs in dark theme' },
-	'list-1': { category: 'lists', theme: 'light', description: 'List single in light theme' },
-	'list-2': { category: 'lists', theme: 'light', description: 'List 2 in light theme' },
-	'list-3': { category: 'lists', theme: 'light', description: 'List 2x2 in light theme' },
-	'list-1-dark': { category: 'lists', theme: 'dark', description: 'List single in dark theme' },
-	'list-2-dark': { category: 'lists', theme: 'dark', description: 'List 2 in dark theme' },
-	'list-3-dark': { category: 'lists', theme: 'dark', description: 'List 2x2 in dark theme' },
-	'button-left': { category: 'buttons', theme: 'light', description: 'Button left in light theme' },
-	'button-center': { category: 'buttons', theme: 'light', description: 'Button center in light theme' },
-	'button-right': { category: 'buttons', theme: 'light', description: 'Button right in light theme' },
-	'button-2-left': { category: 'buttons', theme: 'light', description: 'Button 2 left in light theme' },
-	'button-2-center': { category: 'buttons', theme: 'light', description: 'Button 2 center in light theme' },
-	'button-2-right': { category: 'buttons', theme: 'light', description: 'Button 2 right in light theme' },
-	'button-left-dark': { category: 'buttons', theme: 'dark', description: 'Button left in dark theme' },
-	'button-center-dark': { category: 'buttons', theme: 'dark', description: 'Button center in dark theme' },
-	'button-right-dark': { category: 'buttons', theme: 'dark', description: 'Button right in dark theme' },
-	'button-2-left-dark': { category: 'buttons', theme: 'dark', description: 'Button 2 left in dark theme' },
-	'button-2-center-dark': { category: 'buttons', theme: 'dark', description: 'Button 2 center in dark theme' },
-	'button-2-right-dark': { category: 'buttons', theme: 'dark', description: 'Button 2 right in dark theme' },
-	// cards
-	'cards-2-left': { category: 'cards', theme: 'light', description: 'Cards 2 left in light theme' },
-	'cards-2-center': { category: 'cards', theme: 'light', description: 'Cards 2 center in light theme' },
-	'cards-3': { category: 'cards', theme: 'light', description: 'Cards 3 in light theme' },
-	'cards-2x2': { category: 'cards', theme: 'light', description: 'Cards 2x2 in light theme' },
-	'pricing-cards': { category: 'cards', theme: 'light', description: 'Pricing cards in light theme' },
-	'cards-6': { category: 'cards', theme: 'light', description: 'Cards 6 in light theme' },
-	'cards-2-left-dark': { category: 'cards', theme: 'dark', description: 'Cards 2 left in dark theme' },
-	'cards-2-center-dark': { category: 'cards', theme: 'dark', description: 'Cards 2 center in dark theme' },
-	'cards-3-dark': { category: 'cards', theme: 'dark', description: 'Cards 3 in dark theme' },
-	'cards-2x2-dark': { category: 'cards', theme: 'dark', description: 'Cards 2x2 in dark theme' },
-	'pricing-cards-dark': { category: 'cards', theme: 'dark', description: 'Pricing cards in dark theme' },
-	'cards-6-dark': { category: 'cards', theme: 'dark', description: 'Cards 6 in dark theme' },
-	// styleguide
-	'styleguide': { category: 'cards', theme: 'light', description: 'Editable heading styles' },
+// Define elements database
+const elementsDb: Record<string, ElementDefinition> = {
+	'container-center': {
+		category: 'containers',
+		description: 'Centered container for content',
+		hasDarkVariant: true
+	},
+	// Add all other elements here...
 };
 
-export const elements: Record<string, ElementObject> = Object.entries(elementsDb).reduce((acc, [id, props]) => {
-	acc[id] = createElementObject(id, props);
-	return acc;
-}, {} as Record<string, ElementObject>);
+// Element Manager class with Singleton pattern
+class ElementManager {
+	private static instance: ElementManager;
+	private elementsCache = new Map<string, Element>();
 
-export function groupElementsByCategory(): Record<string, ElementObject[]> {
-	return Object.values(elements).reduce((acc, element) => {
-		const { category } = element;
-		if (!acc[category]) acc[category] = [];
-		acc[category].push(element);
-		return acc;
-	}, {} as Record<string, ElementObject[]>);
+	private constructor() {
+		this.initializeCache();
+	}
+
+	static getInstance() {
+		if (!this.instance) {
+			this.instance = new ElementManager();
+		}
+		return this.instance;
+	}
+
+	private initializeCache() {
+		// Populate cache with all elements including dark variants
+		Object.entries(elementsDb).forEach(([id, props]) => {
+			this.elementsCache.set(id, this.createElement(id, props, 'light'));
+
+			if (props.hasDarkVariant) {
+				const darkId = `${id}-dark`;
+				this.elementsCache.set(darkId, this.createElement(id, props, 'dark'));
+			}
+		});
+	}
+
+	private createElement(id: string, definition: ElementDefinition, theme: ElementTheme): Element {
+		const baseId = id.replace(/-dark$/, '');
+		const elementId = theme === 'dark' ? `${baseId}-dark` : baseId;
+
+		return {
+			id: elementId,
+			baseId,
+			category: definition.category,
+			theme,
+			src: `elements/${elementId}.svg`,
+			alt: baseId.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase()),
+			description: definition.description
+		};
+	}
+
+	// Public methods
+	getElement(id: string) {
+		return this.elementsCache.get(id) || null;
+	}
+
+	getElementsByTheme(theme: ElementTheme) {
+		return Array.from(this.elementsCache.values())
+			.filter(element => element.theme === theme);
+	}
+
+	getElementsByCategory(theme: ElementTheme) {
+		const elements = this.getElementsByTheme(theme);
+		return elements.reduce((grouped, element) => {
+			if (!grouped[element.category]) {
+				grouped[element.category] = [];
+			}
+			grouped[element.category].push(element);
+			return grouped;
+		}, {} as Record<string, Element[]>);
+	}
 }
 
-export function getElement(id: string): ElementObject | null {
-	return elements[id] || null;
-}
-
-// Export types and functions
-export type { ElementProps, ElementObject };
-export { createElementObject };
+// Create and export the element manager instance and convenience methods
+export const elementManager = ElementManager.getInstance();
