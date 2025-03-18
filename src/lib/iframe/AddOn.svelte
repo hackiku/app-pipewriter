@@ -1,6 +1,7 @@
 <!-- $lib/iframe/AddOn.svelte -->
 <script lang="ts">
 	import { fade, slide } from "svelte/transition";
+	import { getContext } from "svelte";
 	import * as Resizable from "$lib/components/ui/resizable";
 	import { browser } from "$app/environment";
 
