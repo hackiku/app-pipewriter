@@ -16,7 +16,7 @@ export class ElementClient {
 		this.messageHandler = this.handleMessage.bind(this);
 		this.initialize();
 	}
-```
+
 	static getInstance(): ElementClient {
 		if (!ElementClient.instance) {
 			ElementClient.instance = new ElementClient();

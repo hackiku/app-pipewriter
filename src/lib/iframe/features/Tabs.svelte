@@ -203,10 +203,5 @@
       {/if}
     </div>
 
-    {#if showInfo && !activeTab}
-      <h2 class="text-xs uppercase tracking-wide text-muted-foreground/60">
-        Styles
-      </h2>
-    {/if}
   </div>
 </div>
