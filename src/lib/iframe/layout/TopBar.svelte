@@ -1,53 +1,77 @@
 <!-- $lib/iframe/layout/TopBar.svelte -->
 <script lang="ts">
   import { toggleMode } from "mode-watcher";
-  import { showInfo, zenMode } from '$lib/iframe/stores';
-  import { Info, Sun, Moon, Minimize2, MaximizeIcon } from 'lucide-svelte';
-  import IconButton from '../components/IconButton.svelte';
+  import { Info, Sun, Moon, Minimize2 } from 'lucide-svelte';
   import { fade } from 'svelte/transition';
 
+  // Replace stores with state variables
+  let showInfo = $state(false);
+  let zenMode = $state(false);
+  let isDarkMode = $state(false);
+
   function toggleShowInfo() {
-    showInfo.update(n => !n);
+    showInfo = !showInfo;
   }
 
   function toggleZenMode() {
-    zenMode.update(n => !n);
+    zenMode = !zenMode;
   }
-
-  let isDarkMode = false;
 
   function handleToggleMode() {
     isDarkMode = !isDarkMode;
     toggleMode();
   }
 
-  // Tooltip contents
-  $: zenModeTooltip = $zenMode ? 'Exit Zen Mode' : 'Enter Zen Mode';
-  $: infoTooltip = $showInfo ? 'Hide Labels' : 'Show Labels';
+  // Create simple button component to replace IconButton
+  const Button = (props) => {
+    const { icon, selected, size, className } = props;
+    
+    return {
+      tag: 'button',
+      props: {
+        class: `rounded-full transition-all duration-200 
+                ${size === 'sm' ? 'h-7 w-7 p-1.5' : 'h-8 w-8 p-2'} 
+                ${selected ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'text-muted-foreground hover:text-foreground'} 
+                ${className || ''}`,
+        onclick: props.onclick
+      },
+      slots: {
+        default: {
+          render: (slotProps) => {
+            return {
+              tag: props.icon,
+              props: {
+                class: 'w-full h-full'
+              }
+            };
+          }
+        }
+      }
+    };
+  };
 </script>
 
 <div class="flex items-center justify-between py-2">
-  <IconButton
-    icon={Minimize2}
-    selected={$zenMode}
-    size="sm"
-    tooltipContent={zenModeTooltip}
-    className="hover:rotate-90 transition-transform duration-200"
-    on:click={toggleZenMode}
-  />
+  <!-- Zen Mode Button -->
+  <button 
+    class="rounded-full h-7 w-7 p-1.5 transition-all duration-200 hover:rotate-90
+           {zenMode ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'text-muted-foreground hover:text-foreground'}"
+    onclick={toggleZenMode}
+  >
+    <Minimize2 class="w-full h-full" />
+  </button>
   
   <div class="flex items-center justify-middle gap-2">
+    <!-- Info Button -->
+    <button
+      class="rounded-full h-7 w-7 p-1.5 transition-all duration-200 hover:rotate-12
+             {showInfo ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'text-muted-foreground hover:text-foreground'}"
+      onclick={toggleShowInfo}
+    >
+      <Info class="w-full h-full" />
+    </button>
     
-		<!-- show info -->
-		<IconButton
-      icon={Info}
-      selected={$showInfo}
-      size="sm"
-      tooltipContent={infoTooltip}
-      className="hover:rotate-12 transition-transform duration-200"
-      on:click={toggleShowInfo}
-    />
-    
+    <!-- Theme Toggle Button -->
     <div class="relative w-7 h-7 mr-1">
       {#key isDarkMode}
         <div
@@ -55,16 +79,18 @@
           out:fade={{ duration: 200 }}
           class="absolute inset-0"
         >
-          <IconButton
-            icon={isDarkMode ? Moon : Sun}
-            size="sm"
-            tooltipContent="Toggle theme"
-            className={isDarkMode 
-              ? "hover:rotate-12 transition-transform duration-200" 
-              : "hover:rotate-90 transition-transform duration-200"
-            }
-            on:click={handleToggleMode}
-          />
+          <button
+            class="rounded-full h-7 w-7 p-1.5 transition-all duration-200
+                  {isDarkMode ? 'hover:rotate-12' : 'hover:rotate-90'}
+                  text-muted-foreground hover:text-foreground"
+            onclick={handleToggleMode}
+          >
+            {#if isDarkMode}
+              <Moon class="w-full h-full" />
+            {:else}
+              <Sun class="w-full h-full" />
+            {/if}
+          </button>
         </div>
       {/key}
     </div>

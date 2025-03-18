@@ -18,7 +18,7 @@
 <main class="flex flex-col h-[100vh] overflow-hidden">
 
 	<section class="flex-none px-2">
-    <!-- <TopBar /> -->
+    <TopBar />
   </section>
   <hr />
 
