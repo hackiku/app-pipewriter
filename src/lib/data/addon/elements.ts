@@ -66,7 +66,7 @@ const elementsDb: Record<string, ElementDefinition> = {
 		description: '4 horizontal blurbs',
 		hasDarkVariant: true
 	},
-	'blurbs-vert-3': {
+	'blurbs-vertical-3': { // Changed from 'blurbs-vert-3' to match SVG files
 		category: 'blurbs',
 		description: '3 vertical blurbs',
 		hasDarkVariant: true
@@ -89,7 +89,7 @@ const elementsDb: Record<string, ElementDefinition> = {
 		hasDarkVariant: true
 	},
 
-	// Buttons
+	// Buttons - updated to match SVG files
 	'button-primary-left': {
 		category: 'buttons',
 		description: 'Left-aligned full color button',
@@ -184,24 +184,49 @@ class ElementManager {
 
 			if (props.hasDarkVariant) {
 				const darkId = `${id}-dark`;
-				this.elementsCache.set(darkId, this.createElement(id, props, 'dark'));
+				this.elementsCache.set(darkId, this.createElement(darkId, props, 'dark'));
 			}
 		});
+
+		// Log summary for debugging
+		console.debug(`Element cache initialized with ${this.elementsCache.size} elements`);
 	}
 
 	private createElement(id: string, definition: ElementDefinition, theme: ElementTheme): Element {
-		const baseId = id.replace(/-dark$/, '');
-		const elementId = theme === 'dark' ? `${baseId}-dark` : baseId;
+		// Handle cases where id already includes -dark suffix
+		const isDarkVariant = id.endsWith('-dark');
+		const baseId = isDarkVariant ? id.replace(/-dark$/, '') : id;
+		const elementId = isDarkVariant ? id : (theme === 'dark' ? `${baseId}-dark` : baseId);
+
+		// Get SVG path, ensuring it starts with /
+		const svgPath = `/elements/${elementId}.svg`;
 
 		return {
 			id: elementId,
 			baseId,
 			category: definition.category,
 			theme,
-			src: `elements/${elementId}.svg`,
+			src: svgPath,
 			alt: baseId.replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase()),
 			description: definition.description
 		};
+	}
+
+	// Debug method to help find issues
+	debug() {
+		const summary = {
+			totalElements: this.elementsCache.size,
+			byTheme: {
+				light: this.getElementsByTheme('light').length,
+				dark: this.getElementsByTheme('dark').length
+			},
+			categories: this.getAllCategories(),
+			elementIds: Array.from(this.elementsCache.keys()),
+			svgPaths: Array.from(this.elementsCache.values()).map(e => e.src)
+		};
+
+		console.log('Element Manager Debug:', summary);
+		return summary;
 	}
 
 	// Public methods
@@ -216,13 +241,16 @@ class ElementManager {
 
 	getElementsByCategory(theme: ElementTheme) {
 		const elements = this.getElementsByTheme(theme);
-		return elements.reduce((grouped, element) => {
+		const result = elements.reduce((grouped, element) => {
 			if (!grouped[element.category]) {
 				grouped[element.category] = [];
 			}
 			grouped[element.category].push(element);
 			return grouped;
 		}, {} as Record<string, Element[]>);
+
+		console.log(`Found ${elements.length} elements in ${Object.keys(result).length} categories for theme '${theme}'`);
+		return result;
 	}
 
 	getAllCategories() {
@@ -247,3 +275,6 @@ export const getElementsByTheme = elementManager.getElementsByTheme.bind(element
 export const getElementsByCategory = elementManager.getElementsByCategory.bind(elementManager);
 export const getAllCategories = elementManager.getAllCategories.bind(elementManager);
 export const isValidElement = elementManager.isValidElement.bind(elementManager);
+
+// Debug output to help troubleshooting
+console.log(`Elements module loaded with ${getAllCategories().length} categories`);

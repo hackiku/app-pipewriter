@@ -86,13 +86,10 @@
   );
   
   // Get SVG URL based on theme and dark mode
-  let imgSrc = $derived(() => {
-    if (!mounted) return props.element.src;
-    
-    // Ensure path starts with '/' for absolute path from root
-    const path = props.element.src.startsWith('/elements/') ? props.element.src : `/${props.element.src}`;
-    return path;
-  });
+	let imgSrc = $derived(() => {
+		if (!mounted) return props.element.src;
+		return props.element.src; // No need for path manipulation if already fixed
+	});
   
   function handleImageError() {
     console.error(`Failed to load image: ${imgSrc}`);

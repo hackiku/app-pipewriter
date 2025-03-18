@@ -1,7 +1,7 @@
 <!-- $lib/iframe/features/dropper/DropperGrid.svelte -->
 <script lang="ts">
   import ElementCard from "./ElementCard.svelte";
-  import { getElementsByCategory } from '$lib/data/addon/elements';
+  import { elementManager, getElementsByCategory, getElementsByTheme } from '$lib/data/addon/elements';
   import type { ElementTheme } from '$lib/data/addon/elements';
   
   // Props
@@ -25,14 +25,29 @@
   
   // Get elements by category from the elementManager
   let categories = $derived(() => {
+    // Debug the theme value to make sure it's correct
+    console.log(`Current theme is: "${props.theme}"`);
+    
+    // Get all elements first to check if there are any
+    const allElements = getElementsByTheme(props.theme);
+    console.log(`All elements for theme ${props.theme}:`, allElements.length);
+    
+    // Get elements by category
     const result = getElementsByCategory(props.theme);
     console.log(`Got ${Object.keys(result).length} categories for theme: ${props.theme}`);
+    
+    // Debug element manager if no categories found
+    if (Object.keys(result).length === 0) {
+      console.log('Debug ElementManager:', elementManager.debug());
+    }
+    
     return result;
   });
 
   // Handle element selection
-  function handleElementSelect(elementId) {
+  function handleElementSelect(elementId: string) {
     if (!props.isProcessing) {
+      console.log(`Selected element: ${elementId}`);
       props.onElementSelect(new CustomEvent('elementSelect', { 
         detail: { elementId } 
       }));

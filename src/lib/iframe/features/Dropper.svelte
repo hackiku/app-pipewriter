@@ -3,7 +3,8 @@
   import { fade, slide, fly } from "svelte/transition";
   import type { StatusUpdate } from "$lib/data/addon/status";
   import { insertElement } from "$lib/services/google/docs";
-	// import type { ElementTheme } from '$lib/data/addon/elements';
+  import { elementManager } from "$lib/data/addon/elements";
+  import type { ElementTheme } from '$lib/data/addon/elements';
   
   import StatusBar from "../components/StatusBar.svelte";
   import DropperGrid from "./dropper/DropperGrid.svelte";
@@ -17,9 +18,16 @@
   let status = $state<StatusUpdate | null>(null);
   let statusTimeout = $state<number | null>(null);
 
-	let elementsTheme = $state<'light' | 'dark'>('light');
-  // let elementsTheme = $state<ElementTheme>('light');
+  // Initialize with light theme
+  let elementsTheme = $state<ElementTheme>('light');
   let selectedElements = $state<string[]>([]);
+  
+  // Debug on component mount
+  $effect(() => {
+    console.log("Dropper component mounted");
+    console.log("Initial theme:", elementsTheme);
+    console.log("Elements available:", elementManager.debug());
+  });
   
   // Clear status timeout on component destroy
   $effect(() => {
@@ -46,6 +54,7 @@
   // Element selection handler
   async function handleElementSelect(event: CustomEvent<{ elementId: string }>) {
     const { elementId } = event.detail;
+    console.log(`Element selection handler received: ${elementId} with theme ${elementsTheme}`);
 
     isProcessing = true;
     status = {
@@ -95,6 +104,7 @@
   
   // Toggle theme function
   function toggleTheme() {
+    console.log(`Toggling theme from ${elementsTheme} to ${elementsTheme === 'light' ? 'dark' : 'light'}`);
     elementsTheme = elementsTheme === 'light' ? 'dark' : 'light';
   }
 </script>
@@ -105,6 +115,13 @@
     <StatusBar status={status} />
   {/if}
   
+  <!-- Debug info -->
+  {#if import.meta.env.DEV}
+    <div class="absolute top-0 right-0 p-1 text-xs bg-black/50 text-white z-50">
+      Theme: {elementsTheme}
+    </div>
+  {/if}
+    
   <!-- Main Scrollable Container -->
   <div class="custom-scrollbar overflow-y-scroll h-full pb-8 pt-2">
     <DropperGrid 
