@@ -38,7 +38,7 @@
 </script>
 
 <button
-  on:click={handleClick}
+  onclick={handleClick}
   class={getButtonClass()}
   title={props.title}
   style={getButtonStyle()}

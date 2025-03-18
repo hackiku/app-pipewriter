@@ -34,7 +34,8 @@
     return (props.status?.details || (props.status?.error && props.status.type === 'error'));
   }
   
-  function toggleDetails() {
+  function toggleDetails(e: MouseEvent) {
+    e.stopPropagation();
     showDetails = !showDetails;
   }
   
@@ -73,7 +74,7 @@
           <button 
             class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full 
                    transition-colors {getStatusColor()}"
-            onclick={(e) => { e.stopPropagation(); toggleDetails(); }}
+            onclick={toggleDetails}
           >
             {#if showDetails}
               <ChevronUp class="h-4 w-4" />

@@ -119,7 +119,10 @@
       class="relative rounded-xl z-10 w-full p-2 mb-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm"
       transition:slide={{ duration: 150, axis: "y" }}
     >
-      <ColorPicker initialColor={currentColor} onColorUpdate={handleColorUpdate} />
+      <ColorPicker 
+        initialColor={currentColor} 
+        onColorUpdate={(color) => handleColorUpdate(color)} 
+      />
     </div>
   {/if}
 
@@ -151,7 +154,7 @@
   </div>
   
   <!-- Preset colors grid -->
-  <div class="px-9">
+  <div class="px-6">
     <!-- Row 1 -->
     <div class="grid grid-cols-5 gap-2 mb-2">
       {#each presetColors.slice(0, 5) as preset}
