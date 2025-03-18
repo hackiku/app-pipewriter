@@ -8,23 +8,24 @@
     theme: string;
     selectedElements: string[];
     onToggleTheme: () => void;
+    onGridChange: (cols: number) => void;
   }>();
   
-  // Grid size options
-  const gridSizes = $state([
+  // Grid size options (constant, won't change)
+  const gridSizes = [
     { value: 3, label: '3×' },
     { value: 2, label: '2×' },
     { value: 1, label: '1×' }
-  ]);
+  ];
   
-  // Current grid size
+  // Current grid size (read-only in this component, set only on cycleGridColumns)
   let gridColumns = $state(3);
   
-  // Themes configuration
-  const themes = $state([
+  // Themes configuration (these won't change)
+  const themes = [
     { id: 'light', color: '#FFFFFF', label: 'Light' },
     { id: 'dark', color: '#171717', label: 'Dark' }
-  ]);
+  ];
   
   // Current theme
   let currentTheme = $derived(() => {
@@ -54,8 +55,12 @@
       3: 2,
       2: 1,
       1: 3
-    };
+    } as Record<number, number>;
+    
     gridColumns = nextColumns[gridColumns];
+    props.onGridChange(gridColumns);
+    
+    console.log(`Grid columns updated to: ${gridColumns}`);
   }
 </script>
 

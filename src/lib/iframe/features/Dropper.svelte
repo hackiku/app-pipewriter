@@ -13,99 +13,112 @@
   // Props
   const { context } = $props();
   
-  // Local state variables using Runes
+  // Local state variables - using plain variables where possible to reduce reactivity
   let isProcessing = $state(false);
   let status = $state<StatusUpdate | null>(null);
-  let statusTimeout = $state<number | null>(null);
-
-  // Initialize with light theme
   let elementsTheme = $state<ElementTheme>('light');
-  let selectedElements = $state<string[]>([]);
+  let gridColumns = $state(3); // Default to 3 columns
+  let selectedElements: string[] = []; // No need for reactivity here
   
-  // Debug on component mount
-  $effect(() => {
-    console.log("Dropper component mounted");
-    console.log("Initial theme:", elementsTheme);
-    console.log("Elements available:", elementManager.debug());
-  });
+  // Initialize once on component mount
+  console.log("Dropper component mounted, initial theme:", elementsTheme);
   
-  // Clear status timeout on component destroy
-  $effect(() => {
-    // Cleanup effect
-    return () => {
-      if (statusTimeout) {
-        clearTimeout(statusTimeout);
-      }
-    };
-  });
-
-  // Status effect - clear timeout after delay
-  $effect(() => {
-    if (status && status.type !== "processing") {
-      if (statusTimeout) {
-        clearTimeout(statusTimeout);
-      }
-      statusTimeout = window.setTimeout(() => {
-        status = null;
-      }, 2000) as unknown as number;
+  // Only use one status timeout to prevent multiple timers
+  let statusTimeoutId: number | null = null;
+  
+  function clearStatusTimeout() {
+    if (statusTimeoutId !== null) {
+      window.clearTimeout(statusTimeoutId);
+      statusTimeoutId = null;
     }
-  });
+  }
+  
+  function setStatusWithTimeout(newStatus: StatusUpdate | null, timeoutMs = 2000) {
+    // Clear any existing timeout
+    clearStatusTimeout();
+    
+    // Set the new status
+    status = newStatus;
+    
+    // Set a timeout to clear the status if it's not a processing status
+    if (newStatus && newStatus.type !== 'processing') {
+      statusTimeoutId = window.setTimeout(() => {
+        status = null;
+        statusTimeoutId = null;
+      }, timeoutMs);
+    }
+  }
 
-  // Element selection handler
+  // Element selection handler - avoid using reactive values inside
   async function handleElementSelect(event: CustomEvent<{ elementId: string }>) {
     const { elementId } = event.detail;
-    console.log(`Element selection handler received: ${elementId} with theme ${elementsTheme}`);
+    const currentTheme = elementsTheme; // Capture current theme to prevent reactivity issues
+    
+    console.log(`Element selection handler received: ${elementId} with theme ${currentTheme}`);
 
+    // Set processing state
     isProcessing = true;
-    status = {
+    setStatusWithTimeout({
       type: "processing",
       message: `Inserting ${elementId}...`,
-      details: `Theme: ${elementsTheme}\nAttempting to fetch and insert element...`
-    };
+      details: `Theme: ${currentTheme}\nAttempting to fetch and insert element...`
+    });
 
     try {
-      console.log(`Attempting to insert element: ${elementId} (${elementsTheme})`);
+      console.log(`Attempting to insert element: ${elementId} (${currentTheme})`);
       
       const response = await insertElement(
         elementId, 
-        elementsTheme,
+        currentTheme,
         (update) => {
-          status = update;
+          setStatusWithTimeout(update);
         }
       );
 
       if (response.success) {
-        status = {
+        setStatusWithTimeout({
           type: "success",
           message: "Element inserted",
-          details: `Successfully inserted ${elementId} (${elementsTheme})`,
+          details: `Successfully inserted ${elementId} (${currentTheme})`,
           executionTime: response.executionTime
-        };
+        });
       } else {
         throw new Error(response.error || "Failed to insert element");
       }
     } catch (error) {
       console.error("Failed to insert element:", error);
-      status = {
+      setStatusWithTimeout({
         type: "error",
         message: "Failed to insert element",
-        details: `Failed to insert ${elementId} (${elementsTheme})`,
+        details: `Failed to insert ${elementId} (${currentTheme})`,
         error: {
           message: error instanceof Error ? error.message : "Unknown error",
           elementId,
-          theme: elementsTheme,
+          theme: currentTheme,
           timestamp: new Date().toISOString()
         }
-      };
+      });
     } finally {
       isProcessing = false;
     }
   }
   
-  // Toggle theme function
+  // Toggle theme function - keep this simple
   function toggleTheme() {
-    console.log(`Toggling theme from ${elementsTheme} to ${elementsTheme === 'light' ? 'dark' : 'light'}`);
-    elementsTheme = elementsTheme === 'light' ? 'dark' : 'light';
+    const newTheme = elementsTheme === 'light' ? 'dark' : 'light';
+    console.log(`Toggling theme from ${elementsTheme} to ${newTheme}`);
+    elementsTheme = newTheme;
+  }
+  
+  // Update grid columns - keep this simple
+  function updateGridColumns(cols: number) {
+    console.log(`Updating grid columns to: ${cols}`);
+    gridColumns = cols;
+  }
+  
+  // Clean up on destroy
+  function cleanup() {
+    clearStatusTimeout();
   }
 </script>
 
@@ -115,64 +128,47 @@
     <StatusBar status={status} />
   {/if}
   
-  <!-- Debug info -->
+  <!-- Debug info in dev mode -->
   {#if import.meta.env.DEV}
     <div class="absolute top-0 right-0 p-1 text-xs bg-black/50 text-white z-50">
-      Theme: {elementsTheme}
+      Theme: {elementsTheme} | Grid: {gridColumns}
     </div>
   {/if}
   
-  <!-- Test SVG (hidden, just to verify SVG loading works) -->
-  <img src="/elements/blurbs-3.svg" alt="Test SVG" class="w-1 h-1 opacity-5 absolute top-0 left-0" />
+  <!-- Test SVG for verifying SVG loading works -->
+  <img src="/elements/blurbs-4.svg" alt="Test SVG" class="w-1 h-1 opacity-5 absolute top-0 left-0" />
   
-  <!-- Main Scrollable Container -->
-  <div class="custom-scrollbar overflow-y-scroll h-full pb-8 pt-2">
+  <!-- Main Container - No scrollbar visible but still scrollable -->
+  <div class="h-full pb-8 pt-2 overflow-y-auto scrollbar-none">
     <DropperGrid 
       isProcessing={isProcessing}
       context={context}
       theme={elementsTheme}
+      gridColumns={gridColumns}
       onElementSelect={handleElementSelect}
     />
   </div>
 
   <!-- Bottom Control Bar -->
-  <div 
-    class="w-full transition-all duration-200"
-    in:slide={{ duration: 200, axis: "y" }}
-    out:fly={{ duration: 200 }}
-  >
+  <div class="w-full transition-all duration-200">
     <DropperBar 
       isProcessing={isProcessing}
       theme={elementsTheme}
       selectedElements={selectedElements}
       onToggleTheme={toggleTheme}
+      onGridChange={updateGridColumns}
     />
   </div>
 </div>
 
 <style>
-  .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+  /* Remove scrollbar completely */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
-
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-    margin: 4rem 0;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: rgba(155, 155, 155, 0.5);
-    border-radius: 4px;
-    min-height: 40px;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(155, 155, 155, 0.7);
+  
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 </style>

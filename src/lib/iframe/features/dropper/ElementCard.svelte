@@ -20,20 +20,31 @@
   let isDarkMode = $state(false);
   let imageError = $state(false);
 
+  // Use a simple flag to prevent multiple runs
+  let hasRun = $state(false);
+  
   // Set mounted state and check theme when component is active
   $effect(() => {
+    if (hasRun) return;
+    hasRun = true;
+    
     mounted = true;
-    console.log(`ElementCard mounted for ${props.element.id}`);
+    console.log(`ElementCard mounted for ${props.element.id} (theme: ${props.theme})`);
     
     // Check for dark mode
     if (typeof document !== 'undefined') {
+      // Initial check
       isDarkMode = document.documentElement.classList.contains('dark');
       
       // Watch for theme changes
       const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
           if (mutation.attributeName === 'class') {
-            isDarkMode = document.documentElement.classList.contains('dark');
+            // Update isDarkMode without triggering cascading effects
+            const newDarkMode = document.documentElement.classList.contains('dark');
+            if (isDarkMode !== newDarkMode) {
+              isDarkMode = newDarkMode;
+            }
           }
         });
       });
@@ -48,6 +59,7 @@
     }
   });
 
+  // Handle click on the element card
   async function handleClick() {
     if (props.disabled || isProcessing) return;
     
@@ -75,23 +87,30 @@
     "active:translate-y-0 active:translate-x-0 active:shadow-none"
   );
 
-	let cardBackground = $derived(
-		mounted ? cardStyles[props.theme] : cardStyles[props.theme]
-	);
-  // Computed properties using $derived
-  let buttonClass = $derived(cn(
-    baseButtonClasses,
-    cardBackground,
-    props.isSelected && "ring-2 ring-primary ring-offset-2",
-    (props.disabled || isProcessing) && "opacity-90 cursor-not-allowed pointer-events-none",
-  ));
-
+  // Simplified computed properties to avoid circular dependencies
+  function getCardBackground() {
+    return cardStyles[props.theme];
+  }
   
-  // Fix: Define the image source as a regular string, not a derived value
+  function getButtonClass() {
+    return cn(
+      baseButtonClasses,
+      getCardBackground(),
+      props.isSelected && "ring-2 ring-primary ring-offset-2",
+      (props.disabled || isProcessing) && "opacity-90 cursor-not-allowed pointer-events-none",
+    );
+  }
+  
+  // Get image source from the element
   function getImageSrc() {
+    // Log for debugging
+    if (imageError) {
+      console.log(`Using element src: ${props.element.src} (had error previously)`);
+    }
     return props.element.src;
   }
   
+  // Handle image loading errors
   function handleImageError() {
     console.error(`Failed to load image: ${props.element.src}`);
     console.error(`Element details: ${JSON.stringify(props.element)}`);
@@ -102,7 +121,7 @@
 <div class="relative">
   <Button
     variant="ghost"
-    class={buttonClass}
+    class={getButtonClass()}
     onclick={handleClick}
     disabled={props.disabled}
     title={props.element.description}
