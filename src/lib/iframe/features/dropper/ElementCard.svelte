@@ -23,6 +23,8 @@
   // Set mounted state and check theme when component is active
   $effect(() => {
     mounted = true;
+    console.log(`ElementCard mounted for ${props.element.id}`);
+    
     // Check for dark mode
     if (typeof document !== 'undefined') {
       isDarkMode = document.documentElement.classList.contains('dark');
@@ -60,8 +62,8 @@
 
   // Card styling based on theme
   const cardStyles = {
-    light: "bg-white dark:bg-black border border-neutral-300 dark:border-neutral-700/80 hover:bg-slate-400/30 dark:hover:bg-slate-900/80",
-    dark: "bg-slate-950 dark:bg-white hover:bg-slate-900/80 dark:hover:bg-slate-400/30 border border-neutral-300",
+    light: "bg-white dark:bg-black border border-neutral-300 dark:border-neutral-700/80 hover:bg-neutral-400/30 dark:hover:bg-neutral-900/80",
+    dark: "bg-neutral-950 dark:bg-white hover:bg-neutral-900/80 dark:hover:bg-neutral-400/30 border border-neutral-300",
   };
 
   const baseButtonClasses = cn(
@@ -73,6 +75,9 @@
     "active:translate-y-0 active:translate-x-0 active:shadow-none"
   );
 
+	let cardBackground = $derived(
+		mounted ? cardStyles[props.theme] : cardStyles[props.theme]
+	);
   // Computed properties using $derived
   let buttonClass = $derived(cn(
     baseButtonClasses,
@@ -81,22 +86,17 @@
     (props.disabled || isProcessing) && "opacity-90 cursor-not-allowed pointer-events-none",
   ));
 
-  let cardBackground = $derived(
-    mounted ? cardStyles[props.theme] : cardStyles[props.theme]
-  );
   
-  // Get SVG URL based on theme and dark mode
-	let imgSrc = $derived(() => {
-		if (!mounted) return props.element.src;
-		return props.element.src; // No need for path manipulation if already fixed
-	});
+  // Fix: Define the image source as a regular string, not a derived value
+  function getImageSrc() {
+    return props.element.src;
+  }
   
   function handleImageError() {
-    console.error(`Failed to load image: ${imgSrc}`);
-    console.error(`Full element data:`, props.element);
+    console.error(`Failed to load image: ${props.element.src}`);
+    console.error(`Element details: ${JSON.stringify(props.element)}`);
     imageError = true;
   }
-
 </script>
 
 <div class="relative">
@@ -114,12 +114,12 @@
           <span class="text-xs text-neutral-500">{props.element.id}</span>
         </div>
       {:else}
-				<img
-					src={imgSrc}
-					alt={props.element.alt}
-					class="w-full h-full object-cover group-hover:opacity-40"
-					onerror={handleImageError}
-				/>
+        <img
+          src={getImageSrc()}
+          alt={props.element.alt}
+          class="w-full h-full object-cover group-hover:opacity-40"
+          onerror={handleImageError}
+        />
       {/if}
       
       <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
