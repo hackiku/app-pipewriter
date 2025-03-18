@@ -2,21 +2,14 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
   import { cn } from "$lib/utils";
-  import { Plus, X } from 'lucide-svelte';
+  import { Plus, X, AlertCircle } from 'lucide-svelte';
+  import type { Element, ElementTheme } from '$lib/data/addon/elements';
 
   // Props
   const props = $props<{
-    element: {
-      id: string;
-      baseId: string;
-      category: string;
-      theme: string;
-      src: string;
-      alt: string;
-      description: string;
-    };
+    element: Element;
     onSelect: (id: string) => void;
-    theme: string;
+    theme: ElementTheme;
     disabled?: boolean;
     isSelected?: boolean;
   }>();
@@ -25,6 +18,7 @@
   let mounted = $state(false);
   let isProcessing = $state(false);
   let isDarkMode = $state(false);
+  let imageError = $state(false);
 
   // Set mounted state and check theme when component is active
   $effect(() => {
@@ -66,8 +60,8 @@
 
   // Card styling based on theme
   const cardStyles = {
-    light: "bg-white dark:bg-black border border-gray-300 dark:border-gray-700/80 hover:bg-slate-400/30 dark:hover:bg-slate-900/80",
-    dark: "bg-slate-950 dark:bg-white hover:bg-slate-900/80 dark:hover:bg-slate-400/30 border border-gray-300",
+    light: "bg-white dark:bg-black border border-neutral-300 dark:border-neutral-700/80 hover:bg-slate-400/30 dark:hover:bg-slate-900/80",
+    dark: "bg-slate-950 dark:bg-white hover:bg-slate-900/80 dark:hover:bg-slate-400/30 border border-neutral-300",
   };
 
   const baseButtonClasses = cn(
@@ -95,11 +89,15 @@
   let imgSrc = $derived(() => {
     if (!mounted) return props.element.src;
     
-    // In dark mode, we invert the theme logic
-    const shouldUseDarkVariant = isDarkMode ? props.theme === 'light' : props.theme === 'dark';
-    const svgId = shouldUseDarkVariant ? `${props.element.baseId}-dark` : props.element.baseId;
-    return `elements/${svgId}.svg`;
+    // Ensure path starts with '/' for absolute path from root
+    const path = props.element.src.startsWith('/') ? props.element.src : `/${props.element.src}`;
+    return path;
   });
+  
+  function handleImageError() {
+    console.error(`Failed to load image: ${imgSrc}`);
+    imageError = true;
+  }
 </script>
 
 <div class="relative">
@@ -110,15 +108,23 @@
     disabled={props.disabled}
     title={props.element.description}
   >
-    <div class="relative w-full h-full">
-      <img
-        src={imgSrc}
-        alt={props.element.alt}
-        class="w-full h-full object-cover group-hover:opacity-40"
-      />
+    <div class="relative w-full h-full aspect-square">
+      {#if imageError}
+        <div class="flex flex-col items-center justify-center h-full p-2 text-center">
+          <AlertCircle class="w-6 h-6 text-neutral-400 mb-1" />
+          <span class="text-xs text-neutral-500">{props.element.id}</span>
+        </div>
+      {:else}
+        <img
+          src={imgSrc}
+          alt={props.element.alt}
+          class="w-full h-full object-cover group-hover:opacity-40"
+          onerror={handleImageError}
+        />
+      {/if}
       
       <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-        <Plus class="text-gray-500 dark:text-black" size={30} />
+        <Plus class="text-neutral-500 dark:text-black" size={30} />
       </div>
 
       {#if isProcessing}

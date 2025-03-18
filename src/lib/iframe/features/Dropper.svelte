@@ -1,7 +1,9 @@
 <!-- $lib/iframe/features/Dropper.svelte -->
 <script lang="ts">
   import { fade, slide, fly } from "svelte/transition";
-  import type { StatusUpdate } from "../types/status";
+  import type { StatusUpdate } from "$lib/data/addon/status";
+  import { insertElement } from "$lib/services/google/docs";
+	// import type { ElementTheme } from '$lib/data/addon/elements';
   
   import StatusBar from "../components/StatusBar.svelte";
   import DropperGrid from "./dropper/DropperGrid.svelte";
@@ -14,32 +16,11 @@
   let isProcessing = $state(false);
   let status = $state<StatusUpdate | null>(null);
   let statusTimeout = $state<number | null>(null);
-  
-  // Theme state - will be shared with child components
-  let elementsTheme = $state('light');
-  let chainMode = $state(false);
+
+	let elementsTheme = $state<'light' | 'dark'>('light');
+  // let elementsTheme = $state<ElementTheme>('light');
   let selectedElements = $state<string[]>([]);
   
-  // Dropper API functions to pass to children
-  const dropperAPI = $derived({
-    addElement: (elementId: string) => {
-      selectedElements = [...selectedElements, elementId];
-    },
-    setProcessing: (state: boolean) => {
-      isProcessing = state;
-    },
-    clearElements: () => {
-      selectedElements = [];
-    },
-    toggleChainMode: () => {
-      chainMode = !chainMode;
-      if (!chainMode) selectedElements = [];
-    },
-    toggleTheme: () => {
-      elementsTheme = elementsTheme === 'light' ? 'dark' : 'light';
-    }
-  });
-
   // Clear status timeout on component destroy
   $effect(() => {
     // Cleanup effect
@@ -66,11 +47,6 @@
   async function handleElementSelect(event: CustomEvent<{ elementId: string }>) {
     const { elementId } = event.detail;
 
-    if (chainMode) {
-      dropperAPI.addElement(elementId);
-      return;
-    }
-
     isProcessing = true;
     status = {
       type: "processing",
@@ -81,17 +57,13 @@
     try {
       console.log(`Attempting to insert element: ${elementId} (${elementsTheme})`);
       
-      // Get AppsScript client from context
-      const appsScript = context?.appsScript;
-      
-      if (!appsScript) {
-        throw new Error("AppsScript client not available");
-      }
-      
-      const response = await appsScript.sendMessage("getElement", {
-        elementId,
-        theme: elementsTheme
-      });
+      const response = await insertElement(
+        elementId, 
+        elementsTheme,
+        (update) => {
+          status = update;
+        }
+      );
 
       if (response.success) {
         status = {
@@ -120,9 +92,14 @@
       isProcessing = false;
     }
   }
+  
+  // Toggle theme function
+  function toggleTheme() {
+    elementsTheme = elementsTheme === 'light' ? 'dark' : 'light';
+  }
 </script>
 
-<div class="relative h-full z-0 bg-neutral-100/30 dark:bg-neutral-900">
+<div class="relative h-full z-0 bg-neutral-100/50 dark:bg-neutral-800/50">
   <!-- Status Bar -->
   {#if status}
     <StatusBar status={status} />
@@ -148,8 +125,7 @@
       isProcessing={isProcessing}
       theme={elementsTheme}
       selectedElements={selectedElements}
-      onToggleChainMode={dropperAPI.toggleChainMode}
-      onToggleTheme={dropperAPI.toggleTheme}
+      onToggleTheme={toggleTheme}
     />
   </div>
 </div>

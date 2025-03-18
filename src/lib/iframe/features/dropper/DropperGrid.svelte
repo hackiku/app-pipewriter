@@ -1,17 +1,19 @@
 <!-- $lib/iframe/features/dropper/DropperGrid.svelte -->
 <script lang="ts">
   import ElementCard from "./ElementCard.svelte";
+  import { getElementsByCategory } from '$lib/data/addon/elements';
+  import type { ElementTheme } from '$lib/data/addon/elements';
   
   // Props
   const props = $props<{
     isProcessing: boolean;
     context: any;
-    theme: string;
+    theme: ElementTheme;
     onElementSelect: (event: CustomEvent<{ elementId: string }>) => void;
   }>();
   
   // Local state
-  let showInfo = $state(false);
+  let showInfo = $state(true);
   let gridColumns = $state(3);
   
   // Computed grid classes
@@ -21,48 +23,11 @@
     padding: gridColumns === 1 ? 'px-8' : 'px-2'
   });
   
-  // Create mock element data for initial testing
-  // This would normally come from a store or API
-  const elements = $state([
-    {
-      id: 'container-center',
-      baseId: 'container-center',
-      category: 'containers',
-      theme: 'light',
-      src: 'elements/container-center.svg',
-      alt: 'Centered container',
-      description: 'Centered container for content'
-    },
-    {
-      id: 'hero',
-      baseId: 'hero',
-      category: 'content',
-      theme: 'light',
-      src: 'elements/hero.svg',
-      alt: 'Hero section',
-      description: 'Hero layout with heading and subtext'
-    },
-    {
-      id: 'button-center',
-      baseId: 'button-center',
-      category: 'buttons',
-      theme: 'light',
-      src: 'elements/button-center.svg',
-      alt: 'Center button',
-      description: 'Button centered on page'
-    }
-  ]);
-  
-  // Group elements by category
+  // Get elements by category from the elementManager
   let categories = $derived(() => {
-    const grouped = {};
-    elements.forEach(element => {
-      if (!grouped[element.category]) {
-        grouped[element.category] = [];
-      }
-      grouped[element.category].push(element);
-    });
-    return grouped;
+    const result = getElementsByCategory(props.theme);
+    console.log(`Got ${Object.keys(result).length} categories for theme: ${props.theme}`);
+    return result;
   });
 
   // Handle element selection
@@ -76,25 +41,32 @@
 </script>
 
 <div class="space-y-2 pb-10 -pr-2">
-  {#each Object.entries(categories) as [category, categoryElements]}
-    <section>
-      {#if showInfo}
-        <h3 class="text-xs font-normal text-gray-400 mb-2 ml-2 capitalize">
-          {category.replace("-", " ")}
-        </h3>
-      {/if}
-      
-      <div class="grid {gridClass.grid} {gridClass.gap} {gridClass.padding}">
-        {#each categoryElements as element (element.id)}
-          <ElementCard
-            element={element}
-            onSelect={() => handleElementSelect(element.id)}
-            theme={props.theme}
-            disabled={props.isProcessing}
-            isSelected={false}
-          />
-        {/each}
-      </div>
-    </section>
-  {/each}
+  {#if Object.keys(categories).length === 0}
+    <div class="p-4 text-center">
+      <p class="text-neutral-500 dark:text-neutral-400">No elements found for theme: {props.theme}</p>
+      <p class="text-sm text-neutral-400 dark:text-neutral-500 mt-1">Check console for debugging info</p>
+    </div>
+  {:else}
+    {#each Object.entries(categories) as [category, categoryElements]}
+      <section>
+        {#if showInfo}
+          <h3 class="text-xs font-normal text-neutral-400 mb-2 ml-2 capitalize">
+            {category.replace("-", " ")} ({categoryElements.length})
+          </h3>
+        {/if}
+        
+        <div class="grid {gridClass.grid} {gridClass.gap} {gridClass.padding}">
+          {#each categoryElements as element (element.id)}
+            <ElementCard
+              element={element}
+              onSelect={() => handleElementSelect(element.id)}
+              theme={props.theme}
+              disabled={props.isProcessing}
+              isSelected={false}
+            />
+          {/each}
+        </div>
+      </section>
+    {/each}
+  {/if}
 </div>
