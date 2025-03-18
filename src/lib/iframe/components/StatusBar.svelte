@@ -2,30 +2,34 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
   import { Loader2, ThumbsUp, AlertCircle, ChevronDown, ChevronUp } from "lucide-svelte";
-  // import { clickOutside } from "../directives/clickOutside";
-
-  export let status: {
-    type: "processing" | "success" | "error";
-    message: string;
-    details?: string;
-    error?: any;
-    executionTime?: number;
-  } | null = null;
-
-  let showDetails = false;
-
-  $: statusColor = status && {
-    'processing': 'text-blue-600 dark:text-blue-400',
-    'success': 'text-green-600 dark:text-green-400',
-    'error': 'text-red-600 dark:text-red-400'
-  }[status.type];
-
-  $: hasDetails = status?.details || (status?.error && status.type === 'error');
-
+  
+  // Props
+  const { status } = $props();
+  
+  // State
+  let showDetails = $state(false);
+  
+  // Derived values
+  let statusColor = $derived(() => {
+    if (!status) return '';
+    
+    const colors = {
+      'processing': 'text-blue-600 dark:text-blue-400',
+      'success': 'text-green-600 dark:text-green-400',
+      'error': 'text-red-600 dark:text-red-400'
+    };
+    
+    return colors[status.type] || '';
+  });
+  
+  let hasDetails = $derived(() => {
+    return status?.details || (status?.error && status.type === 'error');
+  });
+  
   function toggleDetails() {
     showDetails = !showDetails;
   }
-
+  
   function handleClickOutside() {
     showDetails = false;
   }
@@ -35,7 +39,7 @@
   <div 
     class="absolute top-0 left-0 right-0 z-50"
     transition:fade={{ duration: 150 }}
-    on:clickoutside={handleClickOutside}
+    onclick={handleClickOutside}
   >
     <!-- Main Status Bar -->
     <div 
@@ -61,12 +65,13 @@
           <button 
             class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full 
                    transition-colors {statusColor}"
-            on:click={toggleDetails}
+            onclick={(e) => { e.stopPropagation(); toggleDetails(); }}
           >
-            <svelte:component 
-              this={showDetails ? ChevronUp : ChevronDown} 
-              class="h-4 w-4"
-            />
+            {#if showDetails}
+              <ChevronUp class="h-4 w-4" />
+            {:else}
+              <ChevronDown class="h-4 w-4" />
+            {/if}
           </button>
         {/if}
       </div>
@@ -75,7 +80,7 @@
       {#if showDetails && hasDetails}
         <div 
           class="px-4 py-2 border-t border-gray-200 dark:border-gray-700
-                 text-xs  whitespace-pre-wrap bg-gray-50 
+                 text-xs whitespace-pre-wrap bg-gray-50 
                  dark:bg-gray-900/50"
           transition:fade={{ duration: 150 }}
         >

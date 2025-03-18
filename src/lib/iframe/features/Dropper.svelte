@@ -139,16 +139,16 @@
   <!-- Main Scrollable Container -->
   <div class="custom-scrollbar overflow-y-scroll h-full pb-8 pt-2">
     <!-- Comment out DropperGrid for now to isolate issues -->
-    <!-- 
+    
     <DropperGrid 
       isProcessing={isProcessing}
       context={context}
       on:elementSelect={handleElementSelect}
     />
-    -->
-    <div class="flex items-center justify-center h-full text-gray-400">
+   
+    <!-- <div class="flex items-center justify-center h-full text-gray-400">
       <p>Content area (Elements will display here)</p>
-    </div>
+    </div> -->
   </div>
 
   <!-- Bottom Control Bar -->
