@@ -1,10 +1,10 @@
 <!-- $lib/iframe/features/Tabs.svelte -->
 <script lang="ts">
   import { fade } from "svelte/transition";
+  // Import components
   import { Button } from "$lib/components/ui/button";
-  import { Palette, Type, Code, X } from "lucide-svelte";
-  import type { StatusUpdate } from "../types/status";
-  import StatusBar from "../components/StatusBar.svelte";
+  import { Palette, Type, Code, X, Loader2, ThumbsUp, AlertCircle } from "lucide-svelte";
+  import { cn } from "$lib/utils";
   
   // Import tab components
   import ColorTab from "./colors/ColorTab.svelte";
@@ -12,13 +12,19 @@
   import AiTab from "./ai/AiTab.svelte";
   
   // Props
-  const { context } = $props();
+  const { context } = $props<{ context: any }>();
   
   // State
   let activeTab = $state<string | null>(null);
   let showInfo = $state(true);
   let isProcessing = $state(false);
-  let status = $state<StatusUpdate | null>(null);
+  let status = $state<{
+    type: 'processing' | 'success' | 'error';
+    message: string;
+    details?: string;
+    executionTime?: number;
+    error?: any;
+  } | null>(null);
   let statusTimeout = $state<number | null>(null);
   
   const BG_STYLE = 'bg-gray-50 dark:bg-slate-950';
@@ -45,13 +51,13 @@
     }
   };
 
-  // Handle status updates from tab components
-  function handleStatus(event: CustomEvent<StatusUpdate>) {
-    status = event.detail;
+  // Handle status updates
+  function handleStatus(newStatus: typeof status) {
+    status = newStatus;
     
-    if (status.type !== "processing") {
+    if (status && status.type !== "processing") {
       clearStatusTimeout();
-      statusTimeout = setTimeout(() => {
+      statusTimeout = window.setTimeout(() => {
         status = null;
       }, 3000) as unknown as number;
     }
@@ -70,30 +76,59 @@
     }
   }
 
-  // Computed values
-  let getButtonClass = $derived((tab: string) => `
-    transition-all duration-200 relative z-10
-    ${activeTab === tab 
-      ? `w-10 h-[calc(3rem+1px)] rounded-b-full ${BG_STYLE}
+  // Use $effect for cleanup instead of onDestroy
+  $effect(() => {
+    // Cleanup when component is destroyed
+    return () => {
+      clearStatusTimeout();
+    };
+  });
+
+  // Function to generate button class based on active state
+  function getButtonClass(tab: string) {
+    return activeTab === tab 
+      ? `transition-all duration-200 relative z-10 w-10 h-[calc(3rem+1px)] rounded-b-full ${BG_STYLE}
          border-b border-l border-r border-gray-300 dark:border-gray-600
          after:content-[''] after:absolute after:top-[-1px] 
          after:left-0 after:right-0 after:h-[1px] after:bg-inherit`
-      : "w-10 h-10 rounded-full mt-1 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600"
-    }
-  `);
+      : "transition-all duration-200 relative z-10 w-10 h-10 rounded-full mt-1 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600";
+  }
   
-  let activeTabData = $derived(() => activeTab ? tabs[activeTab] : null);
+  let activeTabData = $derived(
+    activeTab ? tabs[activeTab] : null
+  );
 
-  // Cleanup on destroy
-  // onDestroy(() => {
-  //   clearStatusTimeout();
-  // });
+  function handleProcessingStart() {
+    isProcessing = true;
+  }
+
+  function handleProcessingEnd() {
+    isProcessing = false;
+  }
 </script>
 
 <div class="flex flex-col w-full relative">
   <!-- Status Bar -->
   {#if status}
-    <StatusBar {status} />
+    <div class="absolute top-0 left-0 right-0 z-50" transition:fade={{ duration: 150 }}>
+      <div class="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        <div class="h-8 px-4 flex items-center justify-between">
+          <div class="flex items-center gap-2 {status.type === 'processing' ? 'text-blue-600 dark:text-blue-400' : status.type === 'success' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
+            {#if status.type === 'processing'}
+              <Loader2 class="h-4 w-4 animate-spin" />
+            {:else if status.type === 'success'}
+              <ThumbsUp class="h-4 w-4" />
+            {:else if status.type === 'error'}
+              <AlertCircle class="h-4 w-4" />
+            {/if}
+            <span class="text-sm">{status.message}</span>
+            {#if status.executionTime}
+              <span class="text-xs opacity-60">({status.executionTime}ms)</span>
+            {/if}
+          </div>
+        </div>
+      </div>
+    </div>
   {/if}
 
   <!-- Active Tab Content -->
@@ -114,13 +149,28 @@
 
       <!-- Tab Content -->
       <div class="relative px-4 py-4">
-        <svelte:component
-          this={activeTabData.component}
-          {context}
-          onstatus={handleStatus}
-          onprocessingStart={() => isProcessing = true}
-          onprocessingEnd={() => isProcessing = false}
-        />
+        {#if activeTab === 'color'}
+          <ColorTab 
+            context={context} 
+            onStatusUpdate={handleStatus}
+            onProcessingStart={handleProcessingStart}
+            onProcessingEnd={handleProcessingEnd}
+          />
+        {:else if activeTab === 'ai'}
+          <AiTab 
+            context={context}
+            onStatusUpdate={handleStatus}
+            onProcessingStart={handleProcessingStart}
+            onProcessingEnd={handleProcessingEnd}
+          />
+        {:else if activeTab === 'text'}
+          <TextTab 
+            context={context}
+            onStatusUpdate={handleStatus}
+            onProcessingStart={handleProcessingStart}
+            onProcessingEnd={handleProcessingEnd}
+          />
+        {/if}
       </div>
     </div>
   {/if}

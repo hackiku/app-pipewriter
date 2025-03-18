@@ -3,15 +3,23 @@
   import { fade } from "svelte/transition";
   import { Loader2, ThumbsUp, AlertCircle, ChevronDown, ChevronUp } from "lucide-svelte";
   
-  // Props
-  const { status } = $props();
+  // Props with proper typing
+  const props = $props<{
+    status: {
+      type: 'processing' | 'success' | 'error';
+      message: string;
+      details?: string;
+      executionTime?: number;
+      error?: any;
+    } | null;
+  }>();
   
-  // State
+  // Local state
   let showDetails = $state(false);
   
-  // Derived values
-  let statusColor = $derived(() => {
-    if (!status) return '';
+  // Helper functions for computed values
+  function getStatusColor() {
+    if (!props.status) return '';
     
     const colors = {
       'processing': 'text-blue-600 dark:text-blue-400',
@@ -19,12 +27,12 @@
       'error': 'text-red-600 dark:text-red-400'
     };
     
-    return colors[status.type] || '';
-  });
+    return colors[props.status.type] || '';
+  }
   
-  let hasDetails = $derived(() => {
-    return status?.details || (status?.error && status.type === 'error');
-  });
+  function hasDetails() {
+    return (props.status?.details || (props.status?.error && props.status.type === 'error'));
+  }
   
   function toggleDetails() {
     showDetails = !showDetails;
@@ -35,7 +43,7 @@
   }
 </script>
 
-{#if status}
+{#if props.status}
   <div 
     class="absolute top-0 left-0 right-0 z-50"
     transition:fade={{ duration: 150 }}
@@ -47,24 +55,24 @@
              border-gray-200 dark:border-gray-700 shadow-sm"
     >
       <div class="h-8 px-4 flex items-center justify-between">
-        <div class="flex items-center gap-2 {statusColor}">
-          {#if status.type === 'processing'}
+        <div class="flex items-center gap-2 {getStatusColor()}">
+          {#if props.status.type === 'processing'}
             <Loader2 class="h-4 w-4 animate-spin" />
-          {:else if status.type === 'success'}
+          {:else if props.status.type === 'success'}
             <ThumbsUp class="h-4 w-4" />
-          {:else if status.type === 'error'}
+          {:else if props.status.type === 'error'}
             <AlertCircle class="h-4 w-4" />
           {/if}
-          <span class="text-sm">{status.message}</span>
-          {#if status.executionTime}
-            <span class="text-xs opacity-60">({status.executionTime}ms)</span>
+          <span class="text-sm">{props.status.message}</span>
+          {#if props.status.executionTime}
+            <span class="text-xs opacity-60">({props.status.executionTime}ms)</span>
           {/if}
         </div>
 
-        {#if hasDetails}
+        {#if hasDetails()}
           <button 
             class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full 
-                   transition-colors {statusColor}"
+                   transition-colors {getStatusColor()}"
             onclick={(e) => { e.stopPropagation(); toggleDetails(); }}
           >
             {#if showDetails}
@@ -77,19 +85,19 @@
       </div>
 
       <!-- Details Panel -->
-      {#if showDetails && hasDetails}
+      {#if showDetails && hasDetails()}
         <div 
           class="px-4 py-2 border-t border-gray-200 dark:border-gray-700
                  text-xs whitespace-pre-wrap bg-gray-50 
                  dark:bg-gray-900/50"
           transition:fade={{ duration: 150 }}
         >
-          {#if status.details}
-            <div class="text-muted-foreground">{status.details}</div>
+          {#if props.status.details}
+            <div class="text-muted-foreground">{props.status.details}</div>
           {/if}
-          {#if status.error && status.type === 'error'}
+          {#if props.status.error && props.status.type === 'error'}
             <div class="text-red-600 dark:text-red-400 text-xs mt-1">
-              {JSON.stringify(status.error, null, 2)}
+              {JSON.stringify(props.status.error, null, 2)}
             </div>
           {/if}
         </div>

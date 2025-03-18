@@ -6,14 +6,24 @@
   import ColorPicker from "./ColorPicker.svelte";
   import ColorButton from "./ColorButton.svelte";
   
-  // Props
-  const { context } = $props();
+  // Props using SvelteKit 5 syntax
+  const props = $props<{
+    context: any;
+    onStatusUpdate: (status: {
+      type: 'processing' | 'success' | 'error';
+      message: string;
+      details?: string;
+      executionTime?: number;
+      error?: any;
+    }) => void;
+    onProcessingStart: () => void;
+    onProcessingEnd: () => void;
+  }>();
   
   // State
   let currentColor = $state("#FFFFFF");
   let showColorPicker = $state(false);
   let isProcessing = $state(false);
-  
   
   // Preset colors
   const presetColors = [
@@ -42,10 +52,16 @@
     if (isProcessing) return;
 
     isProcessing = true;
+    props.onProcessingStart();
+    props.onStatusUpdate({
+      type: 'processing',
+      message: 'Applying color...',
+      details: `Changing background to ${color}`
+    });
 
     try {
       const cleanColor = stripAlpha(color);
-      const appsScript = context?.appsScript;
+      const appsScript = props.context?.appsScript;
       
       if (!appsScript) {
         throw new Error("AppsScript client not available");
@@ -57,22 +73,43 @@
 
       if (response.success) {
         currentColor = cleanColor;
+        props.onStatusUpdate({
+          type: 'success',
+          message: 'Color applied',
+          executionTime: response.executionTime
+        });
       } else {
         throw new Error(response.error || "Failed to change color");
       }
     } catch (error) {
       console.error("Failed to change background:", error);
+      props.onStatusUpdate({
+        type: 'error',
+        message: error instanceof Error ? error.message : "Failed to change color",
+        error
+      });
     } finally {
       isProcessing = false;
+      props.onProcessingEnd();
     }
   }
 
-  function handleColorUpdate(event: CustomEvent<{ color: string }>) {
-    currentColor = stripAlpha(event.detail.color);
+  function handleColorUpdate(color: string) {
+    // Process color from picker
+    currentColor = stripAlpha(color);
   }
 
   function handleSubmit() {
+    // Submit current color
     handleColorChange(currentColor);
+  }
+  
+  function handlePresetColorClick(preset: { color: string, title: string, isGradient?: boolean }) {
+    if (preset.isGradient) {
+      showColorPicker = !showColorPicker;
+    } else {
+      handleColorChange(preset.color);
+    }
   }
 </script>
 
@@ -82,7 +119,7 @@
       class="relative rounded-xl z-10 w-full p-2 mb-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm"
       transition:slide={{ duration: 150, axis: "y" }}
     >
-      <ColorPicker initialColor={currentColor} oncolorUpdate={handleColorUpdate} />
+      <ColorPicker initialColor={currentColor} onColorUpdate={handleColorUpdate} />
     </div>
   {/if}
 
@@ -117,33 +154,29 @@
   <div class="px-9">
     <!-- Row 1 -->
     <div class="grid grid-cols-5 gap-2 mb-2">
-      {#each presetColors.slice(0, 5) as { color, title, isGradient }}
+      {#each presetColors.slice(0, 5) as preset}
         <ColorButton
-          {color}
-          {title}
-          isGradient={isGradient || false}
-          isSelected={currentColor === color}
-          {isProcessing}
-          onclick={(e) => handleColorChange(e.detail.color)}
+          color={preset.color}
+          title={preset.title}
+          isGradient={preset.isGradient || false}
+          isSelected={currentColor === preset.color}
+          isProcessing={isProcessing}
+          onClick={preset.isGradient 
+            ? () => handlePresetColorClick(preset)
+            : handleColorChange}
         />
       {/each}
     </div>
     <!-- Row 2 -->
     <div class="grid grid-cols-5 gap-2">
-      {#each presetColors.slice(5) as { color, title, isGradient }}
+      {#each presetColors.slice(5) as preset}
         <ColorButton
-          {color}
-          {title}
-          isGradient={isGradient || false}
-          isSelected={isGradient ? showColorPicker : currentColor === color}
-          {isProcessing}
-          onclick={(e) => {
-            if (isGradient) {
-              showColorPicker = !showColorPicker;
-            } else {
-              handleColorChange(e.detail.color);
-            }
-          }}
+          color={preset.color}
+          title={preset.title}
+          isGradient={preset.isGradient || false}
+          isSelected={preset.isGradient ? showColorPicker : currentColor === preset.color}
+          isProcessing={isProcessing}
+          onClick={() => handlePresetColorClick(preset)}
         />
       {/each}
     </div>
