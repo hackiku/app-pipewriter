@@ -1,4 +1,4 @@
-// $lib/iframe/features/dropper/elements/elements.ts
+// $lib/data/addon/elements/elements.ts
 import { elements } from './data';
 
 const BASE_URL = 'elements';

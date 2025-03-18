@@ -1,4 +1,4 @@
-// $lib/iframe/features/dropper/elements/types.ts
+// $lib/data/addon/elements/types.ts
 export type ElementsTheme = 'white' | 'gray' | 'dark';
 
 export interface ElementProps {

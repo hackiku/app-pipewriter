@@ -1,4 +1,4 @@
-// features/dropper/elements/data.ts
+// $lib/data/addon/elements/data.ts
 
 export const elements = {
 	// Containers ------------------------------------
