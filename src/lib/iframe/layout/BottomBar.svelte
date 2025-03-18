@@ -1,14 +1,15 @@
 <!-- $lib/iframe/layout/BottomBar.svelte -->
 <script lang="ts">
   import { ExternalLink, HelpCircle, FileText, ChevronUp } from 'lucide-svelte';
-  import { Button } from "$lib/components/ui/button";
-  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-  import * as Tooltip from "$lib/components/ui/tooltip";
-  import { cn } from "$lib/utils";
-  import { showAboutModal } from '../stores/aboutStore';
-  import { showInfo } from '../stores';
+  
+  // Import template data
   import { docLinks, DRIVE_FOLDER_URL } from '$lib/data/addon/templateDocs';
-
+  
+  // State variables 
+  let showAboutModal = $state(false);
+  let showInfo = $state(false);
+  let dropdownOpen = $state(false);
+  
   const BG_STYLE = 'bg-white dark:bg-slate-900';
   
   function openUrl(url: string) {
@@ -16,80 +17,101 @@
   }
 
   function toggleAboutModal() {
-    showAboutModal.update(n => !n);
+    showAboutModal = !showAboutModal;
+  }
+  
+  function toggleDropdown() {
+    dropdownOpen = !dropdownOpen;
   }
 
-  $: buttonClass = cn(
-    "transition-all duration-200 relative z-10",
-    $showAboutModal
+  // Computed button class with conditional styling
+  let buttonClass = $derived(`transition-all duration-200 relative z-10 ${
+    showAboutModal
       ? `w-9 h-11 mb-1 rounded-b-full ${BG_STYLE} 
          border-b border-l border-r border-gray-300 dark:border-gray-600
          after:content-[''] after:absolute after:top-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-inherit`
       : "w-9 h-9 rounded-full -mt-1 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600"
-  );
+  }`);
 </script>
 
 <div class="w-full pr-5 h-12 flex items-center justify-between">
-  <DropdownMenu.Root>
-    <DropdownMenu.Trigger asChild let:builder>
-      <Button 
-        variant="outline" 
-        builders={[builder]}
-        class="h-8 px-3"
+  <!-- Docs Dropdown -->
+  <div class="relative">
+    <button 
+      class="h-8 px-3 rounded-md border border-gray-300 dark:border-gray-600 
+             bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800
+             text-sm font-medium transition-colors flex items-center"
+      onclick={toggleDropdown}
+    >
+      <span>Docs</span>
+      <ChevronUp class="ml-2 h-4 w-4" style={dropdownOpen ? '' : 'transform: rotate(180deg)'} />
+    </button>
+
+    {#if dropdownOpen}
+      <div 
+        class="absolute bottom-full mb-1 w-64 rounded-md border border-gray-200 
+               dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg z-50"
       >
-        <span>Docs</span>
-        <ChevronUp class="ml-2 h-4 w-4" />
-      </Button>
-    </DropdownMenu.Trigger>
-
-    <DropdownMenu.Content side="top" align="start" class="w-64">
-      <DropdownMenu.Label>Templates</DropdownMenu.Label>
-      <DropdownMenu.Separator />
-
-      <DropdownMenu.Group>
-        {#each docLinks as link}
-          <DropdownMenu.Item on:click={() => openUrl(link.url)}>
-            <div class="flex items-start gap-2">
-              <FileText class="h-4 w-4 mt-0.5" />
-              <div class="flex flex-col">
-                <span>{link.title}</span>
-                {#if $showInfo}
-                  <span class="text-xs text-muted-foreground">{link.desc}</span>
-                {/if}
-              </div>
-            </div>
-          </DropdownMenu.Item>
-        {/each}
-      </DropdownMenu.Group>
-
-      <DropdownMenu.Separator />
-      
-      <DropdownMenu.Item on:click={() => openUrl(DRIVE_FOLDER_URL)}>
-        <div class="flex items-center gap-2">
-          <ExternalLink class="h-4 w-4" />
-          <span>Drive Folder</span>
+        <div class="py-1 px-2 text-xs font-medium text-gray-500 dark:text-gray-400">
+          Templates
         </div>
-      </DropdownMenu.Item>
-    </DropdownMenu.Content>
-  </DropdownMenu.Root>
-
+        
+        <div class="border-t border-gray-200 dark:border-gray-700"></div>
+        
+        <div class="py-1">
+          {#each docLinks as link}
+            <button 
+              class="w-full text-left px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors rounded-sm"
+              onclick={() => openUrl(link.url)}
+            >
+              <div class="flex items-start gap-2">
+                <FileText class="h-4 w-4 mt-0.5" />
+                <div class="flex flex-col">
+                  <span>{link.title}</span>
+                  {#if showInfo}
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{link.desc}</span>
+                  {/if}
+                </div>
+              </div>
+            </button>
+          {/each}
+        </div>
+        
+        <div class="border-t border-gray-200 dark:border-gray-700"></div>
+        
+        <button 
+          class="w-full text-left px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors rounded-sm"
+          onclick={() => openUrl(DRIVE_FOLDER_URL)}
+        >
+          <div class="flex items-center gap-2">
+            <ExternalLink class="h-4 w-4" />
+            <span>Drive Folder</span>
+          </div>
+        </button>
+      </div>
+    {/if}
+  </div>
 
   <!-- Help Button -->
   <div class="-mt-[1px] flex items-center z-50">
-    <Tooltip.Root>
-      <Tooltip.Trigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          class={buttonClass}
-          on:click={toggleAboutModal}
-        >
-          <HelpCircle class="h-4 w-4" />
-        </Button>
-      </Tooltip.Trigger>
-      <Tooltip.Content>
-        <p>Help & About</p>
-      </Tooltip.Content>
-    </Tooltip.Root>
+    <button
+      class={buttonClass}
+      onclick={toggleAboutModal}
+      title="Help & About"
+    >
+      <HelpCircle class="h-4 w-4 mx-auto" />
+    </button>
   </div>
 </div>
+
+<style>
+  /* Optional: Add dropdown animation */
+  div[class*="absolute"] {
+    animation: slideIn 0.15s ease-out;
+  }
+  
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
