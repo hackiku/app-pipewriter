@@ -93,8 +93,10 @@
   
   function handleImageError() {
     console.error(`Failed to load image: ${imgSrc}`);
+    console.error(`Full element data:`, props.element);
     imageError = true;
   }
+
 </script>
 
 <div class="relative">
@@ -112,12 +114,12 @@
           <span class="text-xs text-neutral-500">{props.element.id}</span>
         </div>
       {:else}
-        <img
-          src={imgSrc}
-          alt={props.element.alt}
-          class="w-full h-full object-cover group-hover:opacity-40"
-          onerror={handleImageError}
-        />
+				<img
+					src={imgSrc}
+					alt={props.element.alt}
+					class="w-full h-full object-cover group-hover:opacity-40"
+					onerror={handleImageError}
+				/>
       {/if}
       
       <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">

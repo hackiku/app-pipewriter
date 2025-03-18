@@ -121,7 +121,10 @@
       Theme: {elementsTheme}
     </div>
   {/if}
-    
+  
+  <!-- Test SVG (hidden, just to verify SVG loading works) -->
+  <img src="/elements/blurbs-3.svg" alt="Test SVG" class="w-1 h-1 opacity-5 absolute top-0 left-0" />
+  
   <!-- Main Scrollable Container -->
   <div class="custom-scrollbar overflow-y-scroll h-full pb-8 pt-2">
     <DropperGrid 
