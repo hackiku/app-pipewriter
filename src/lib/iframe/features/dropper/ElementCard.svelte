@@ -1,60 +1,70 @@
 <!-- $lib/iframe/features/dropper/ElementCard.svelte -->
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
-  import * as Tooltip from "$lib/components/ui/tooltip";
   import { cn } from "$lib/utils";
-  import type { ElementObject } from "./elements/elements";
-  import type { ElementsTheme } from "./elements/elements";
-  import { onMount, createEventDispatcher } from 'svelte';
-  import { X, Plus } from 'lucide-svelte';
+  import { Plus, X } from 'lucide-svelte';
 
-  export let element: ElementObject;
-  export let onSelect: (id: string) => void;
-  export let theme: ElementsTheme;
-  export let disabled = false;
-  export let isSelected = false;
+  // Props
+  const props = $props<{
+    element: {
+      id: string;
+      baseId: string;
+      category: string;
+      theme: string;
+      src: string;
+      alt: string;
+      description: string;
+    };
+    onSelect: (id: string) => void;
+    theme: string;
+    disabled?: boolean;
+    isSelected?: boolean;
+  }>();
 
-  const dispatch = createEventDispatcher();
-  let mounted = false;
-  let isProcessing = false;
-  let isDarkMode = false;
+  // Local state
+  let mounted = $state(false);
+  let isProcessing = $state(false);
+  let isDarkMode = $state(false);
 
-  onMount(() => {
+  // Set mounted state and check theme when component is active
+  $effect(() => {
     mounted = true;
-    // Initial dark mode check
-    isDarkMode = document.documentElement.classList.contains('dark');
-    
-    // Watch for dark mode changes
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.attributeName === 'class') {
-          isDarkMode = document.documentElement.classList.contains('dark');
-        }
+    // Check for dark mode
+    if (typeof document !== 'undefined') {
+      isDarkMode = document.documentElement.classList.contains('dark');
+      
+      // Watch for theme changes
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.attributeName === 'class') {
+            isDarkMode = document.documentElement.classList.contains('dark');
+          }
+        });
       });
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    });
-
-    return () => observer.disconnect();
+      
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class']
+      });
+      
+      // Cleanup on destroy
+      return () => observer.disconnect();
+    }
   });
 
   async function handleClick() {
-    if (disabled || isProcessing) return;
+    if (props.disabled || isProcessing) return;
+    
     isProcessing = true;
-    dispatch('processingStart');
     
     try {
-      await onSelect(element.id);
+      await props.onSelect(props.element.id);
     } finally {
       isProcessing = false;
-      dispatch('processingEnd');
     }
   }
 
-  // Card background styles based on current theme
+  // Card styling based on theme
   const cardStyles = {
     light: "bg-white dark:bg-black border border-gray-300 dark:border-gray-700/80 hover:bg-slate-400/30 dark:hover:bg-slate-900/80",
     dark: "bg-slate-950 dark:bg-white hover:bg-slate-900/80 dark:hover:bg-slate-400/30 border border-gray-300",
@@ -69,57 +79,53 @@
     "active:translate-y-0 active:translate-x-0 active:shadow-none"
   );
 
-  $: buttonClass = cn(
+  // Computed properties using $derived
+  let buttonClass = $derived(cn(
     baseButtonClasses,
     cardBackground,
-    isSelected && "ring-2 ring-primary ring-offset-2",
-    (disabled || isProcessing) && "opacity-90 cursor-not-allowed pointer-events-none",
+    props.isSelected && "ring-2 ring-primary ring-offset-2",
+    (props.disabled || isProcessing) && "opacity-90 cursor-not-allowed pointer-events-none",
+  ));
+
+  let cardBackground = $derived(
+    mounted ? cardStyles[props.theme] : cardStyles[props.theme]
   );
-
-  $: cardBackground = mounted ? cn(cardStyles[theme]) : cardStyles[theme];
   
-  // Dynamic SVG source based on theme and dark mode
-  $: imgSrc = mounted ? getSvgUrl(element, theme, isDarkMode) : element.src;
-
-  function getSvgUrl(element: ElementObject, theme: ElementsTheme, isDarkMode: boolean): string {
+  // Get SVG URL based on theme and dark mode
+  let imgSrc = $derived(() => {
+    if (!mounted) return props.element.src;
+    
     // In dark mode, we invert the theme logic
-    const shouldUseDarkVariant = isDarkMode ? theme === 'light' : theme === 'dark';
-    const svgId = shouldUseDarkVariant ? `${element.baseId}-dark` : element.baseId;
+    const shouldUseDarkVariant = isDarkMode ? props.theme === 'light' : props.theme === 'dark';
+    const svgId = shouldUseDarkVariant ? `${props.element.baseId}-dark` : props.element.baseId;
     return `elements/${svgId}.svg`;
-  }
+  });
 </script>
 
 <div class="relative">
-  <Tooltip.Root>
-    <Tooltip.Trigger asChild>
-      <Button
-        variant="ghost"
-        class={buttonClass}
-        on:click={handleClick}
-        {disabled}
-      >
-        <div class="relative w-full h-full">
-          <img
-            src={imgSrc}
-            alt={element.alt}
-            class="w-full h-full object-cover group-hover:opacity-40"
-          />
-          
-          <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <!-- <div class="w-2 h-8 bg-black/80 dark:bg-white/80 animate-cursor" /> -->
-            <Plus class="text-gray-500 dark:text-sblack asnimate-spin" size={30} />
-          </div>
+  <Button
+    variant="ghost"
+    class={buttonClass}
+    onclick={handleClick}
+    disabled={props.disabled}
+    title={props.element.description}
+  >
+    <div class="relative w-full h-full">
+      <img
+        src={imgSrc}
+        alt={props.element.alt}
+        class="w-full h-full object-cover group-hover:opacity-40"
+      />
+      
+      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+        <Plus class="text-gray-500 dark:text-black" size={30} />
+      </div>
 
-          {#if isProcessing}
-            <div class="absolute inset-0 flex items-center justify-center bg-black/50 dark:bg-white/50">
-              <X class="text-white dark:text-black animate-spin" size={24} />
-            </div>
-          {/if}
+      {#if isProcessing}
+        <div class="absolute inset-0 flex items-center justify-center bg-black/50 dark:bg-white/50">
+          <X class="text-white dark:text-black animate-spin" size={24} />
         </div>
-      </Button>
-    </Tooltip.Trigger>
-    <Tooltip.Content>
-      <p>{element.description}</p>
-    </Tooltip.Content>
-  </Tooltip.Root>
+      {/if}
+    </div>
+  </Button>
 </div>

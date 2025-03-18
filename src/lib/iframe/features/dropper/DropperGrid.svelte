@@ -1,23 +1,29 @@
 <!-- $lib/iframe/features/dropper/DropperGrid.svelte -->
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
   import ElementCard from "./ElementCard.svelte";
   
   // Props
-  const { isProcessing, context } = $props();
+  const props = $props<{
+    isProcessing: boolean;
+    context: any;
+    theme: string;
+    onElementSelect: (event: CustomEvent<{ elementId: string }>) => void;
+  }>();
   
   // Local state
   let showInfo = $state(false);
-  let elementsThemeStore = $state('light');
-  let gridClass = $state({
-    grid: 'grid-cols-3',
-    gap: 'gap-2',
-    padding: 'px-2'
+  let gridColumns = $state(3);
+  
+  // Computed grid classes
+  let gridClass = $derived({
+    grid: `grid-cols-${gridColumns}`,
+    gap: gridColumns === 1 ? 'gap-5' : 'gap-2',
+    padding: gridColumns === 1 ? 'px-8' : 'px-2'
   });
   
   // Create mock element data for initial testing
   // This would normally come from a store or API
-  const mockElements = $state([
+  const elements = $state([
     {
       id: 'container-center',
       baseId: 'container-center',
@@ -50,7 +56,7 @@
   // Group elements by category
   let categories = $derived(() => {
     const grouped = {};
-    mockElements.forEach(element => {
+    elements.forEach(element => {
       if (!grouped[element.category]) {
         grouped[element.category] = [];
       }
@@ -58,19 +64,19 @@
     });
     return grouped;
   });
-  
-  const dispatch = createEventDispatcher();
 
   // Handle element selection
   function handleElementSelect(elementId) {
-    if (!isProcessing) {
-      dispatch("elementSelect", { elementId });
+    if (!props.isProcessing) {
+      props.onElementSelect(new CustomEvent('elementSelect', { 
+        detail: { elementId } 
+      }));
     }
   }
 </script>
 
 <div class="space-y-2 pb-10 -pr-2">
-  {#each Object.entries(categories) as [category, elements]}
+  {#each Object.entries(categories) as [category, categoryElements]}
     <section>
       {#if showInfo}
         <h3 class="text-xs font-normal text-gray-400 mb-2 ml-2 capitalize">
@@ -79,12 +85,12 @@
       {/if}
       
       <div class="grid {gridClass.grid} {gridClass.gap} {gridClass.padding}">
-        {#each elements as element (element.id)}
+        {#each categoryElements as element (element.id)}
           <ElementCard
             element={element}
             onSelect={() => handleElementSelect(element.id)}
-            theme={elementsThemeStore}
-            disabled={isProcessing}
+            theme={props.theme}
+            disabled={props.isProcessing}
             isSelected={false}
           />
         {/each}
