@@ -3,12 +3,12 @@
   import { fade, slide } from "svelte/transition";
   import * as Resizable from "$lib/components/ui/resizable";
   import { onDestroy } from "svelte";
+  import { browser } from '$app/environment';
   
   import TopBar from "./layout/TopBar.svelte";
   import BottomBar from "./layout/BottomBar.svelte";
   import AppAbout from "./layout/AppAbout.svelte";
   import Dropper from "./features/Dropper.svelte";
-  import Tabs from "./features/Tabs.svelte";
   import { AppsScriptClient } from "./utils/appsScript";
 
   // Using $state for stores
@@ -16,17 +16,25 @@
   let activeTab = $state(false);
   let showAboutModal = $state(false);
 
-  // Create instance of AppsScript client
-  const appsScript = AppsScriptClient.getInstance(5000);
+  // Create instance of AppsScript client (safely)
+  let appsScript = $state<any>(null);
   
-  // Create a context similar to setContext
-  const context = {
+  $effect(() => {
+    if (browser) {
+      appsScript = AppsScriptClient.getInstance(5000);
+    }
+  });
+  
+  // Create a context object to pass to components
+  let context = $derived(() => ({
     appsScript
-  };
+  }));
 
   // Handle cleanup on component destruction
   onDestroy(() => {
-    appsScript.destroy();
+    if (browser && appsScript) {
+      appsScript.destroy();
+    }
   });
 </script>
 
@@ -46,14 +54,20 @@
         minSize={30} 
         maxSize={80}
       >
-				Dropper
-        <Dropper {context} />
+        <!-- Only render Dropper if appsScript is available -->
+        {#if appsScript}
+          <Dropper context={context} />
+        {:else}
+          <div class="h-full flex items-center justify-center text-gray-400">
+            <p>Loading Dropper component...</p>
+          </div>
+        {/if}
       </Resizable.Pane>
 
       {#if !zenMode}
         <Resizable.Handle 
           withHandle 
-          class="{activeTab || showAboutModal ? 'z-0' : ''}"
+          class={activeTab || showAboutModal ? 'z-0' : ''}
         />
         <Resizable.Pane defaultSize={30} minSize={0} />
       {/if}
@@ -67,7 +81,7 @@
       out:slide={{ duration: 200, axis: "y" }}
     >
       <div class="mb-2">
-        <!-- <Tabs {context} /> -->
+        <!-- Tabs placeholder -->
       </div>
       
       {#if showAboutModal}

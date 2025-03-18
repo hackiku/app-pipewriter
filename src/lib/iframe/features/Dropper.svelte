@@ -44,7 +44,7 @@
   $effect(() => {
     if (status && status.type !== "processing") {
       clearStatusTimeout();
-      statusTimeout = setTimeout(() => {
+      statusTimeout = window.setTimeout(() => {
         status = null;
       }, 2000) as unknown as number;
     }
@@ -58,7 +58,7 @@
   // Helper function to clear timeout
   function clearStatusTimeout() {
     if (statusTimeout) {
-      clearTimeout(statusTimeout);
+      window.clearTimeout(statusTimeout);
       statusTimeout = null;
     }
   }
@@ -130,7 +130,7 @@
 <div class="relative h-full z-0 bg-gray-100 dark:bg-gray-800">
   <!-- Status Bar -->
   {#if status}
-    <StatusBar {status} />
+    <StatusBar status={status} />
   {/if}
   
   <!-- Chain Dropper Component (for chaining multiple elements) -->
@@ -138,11 +138,17 @@
   
   <!-- Main Scrollable Container -->
   <div class="custom-scrollbar overflow-y-scroll h-full pb-8 pt-2">
+    <!-- Comment out DropperGrid for now to isolate issues -->
+    <!-- 
     <DropperGrid 
-      {isProcessing}
-      {context}
+      isProcessing={isProcessing}
+      context={context}
       on:elementSelect={handleElementSelect}
     />
+    -->
+    <div class="flex items-center justify-center h-full text-gray-400">
+      <p>Content area (Elements will display here)</p>
+    </div>
   </div>
 
   <!-- Bottom Control Bar -->
