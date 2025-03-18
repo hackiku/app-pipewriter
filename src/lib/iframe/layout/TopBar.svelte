@@ -2,7 +2,7 @@
 <script lang="ts">
   import { toggleMode } from "mode-watcher";
   import { showInfo, zenMode } from '$lib/iframe/stores';
-  import { Info, Sun, Moon, Minimize2, MaximizeIcon } from "lucide-svelte";
+  import { Info, Sun, Moon, Minimize2, MaximizeIcon } from 'lucide-svelte';
   import IconButton from '../components/IconButton.svelte';
   import { fade } from 'svelte/transition';
 

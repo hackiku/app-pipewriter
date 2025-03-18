@@ -7,7 +7,7 @@
   import { cn } from "$lib/utils";
   import { showAboutModal } from '../stores/aboutStore';
   import { showInfo } from '../stores';
-  import { docLinks, DRIVE_FOLDER_URL } from '$data/templateDocs';
+  import { docLinks, DRIVE_FOLDER_URL } from '$lib/data/addon/templateDocs';
 
   const BG_STYLE = 'bg-white dark:bg-slate-900';
   
