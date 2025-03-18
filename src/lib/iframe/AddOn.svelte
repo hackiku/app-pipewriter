@@ -7,7 +7,7 @@
   import TopBar from "./layout/TopBar.svelte";
   import BottomBar from "./layout/BottomBar.svelte";
   import AppAbout from "./layout/AppAbout.svelte";
-  import Dropper from "./layout/Dropper.svelte";
+  import Dropper from "./features/Dropper.svelte";
   import Tabs from "./features/Tabs.svelte";
   import { AppsScriptClient } from "./utils/appsScript";
 
@@ -47,7 +47,7 @@
         maxSize={80}
       >
 				Dropper
-        <!-- <Dropper {context} /> -->
+        <Dropper {context} />
       </Resizable.Pane>
 
       {#if !zenMode}

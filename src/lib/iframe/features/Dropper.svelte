@@ -1,54 +1,73 @@
 <!-- $lib/iframe/features/Dropper.svelte -->
 <script lang="ts">
   import { fade, slide, fly } from "svelte/transition";
-  import { createEventDispatcher, onDestroy, getContext } from "svelte";
-  import type { AppsScriptClient } from "../utils/appsScript";
+  import { onDestroy } from "svelte";
   import type { StatusUpdate } from "../types/status";
   
+  import StatusBar from "../components/StatusBar.svelte";
+  import ChainDropper from "./dropper/ChainDropper.svelte";
   import DropperGrid from "./dropper/DropperGrid.svelte";
   import DropperBar from "./dropper/DropperBar.svelte";
-  import ChainDropper from "./dropper/ChainDropper.svelte";
-  import StatusBar from "../components/StatusBar.svelte";
- 
-  import { zenMode } from "../stores";
-  import { dropperStore, dropperStatus, chainMode } from "../stores/dropperStore";
-  import { elementsThemeStore } from "../stores/elementsThemeStore";
-
-  // Get AppsScript client from context
-  const appsScript = getContext<AppsScriptClient>('appsScript');
   
-  const dispatch = createEventDispatcher();
-  let isProcessing = false;
-  let status: StatusUpdate | null = null;
-  let statusTimeout: number;
+  // Props
+  const { context } = $props();
+  
+  // Local state variables
+  let isProcessing = $state(false);
+  let status = $state<StatusUpdate | null>(null);
+  let statusTimeout = $state<number | null>(null);
+  
+  // State from stores - converted to runes state
+  let zenMode = $state(false);
+  let elementsThemeStore = $state('light');
+  let chainMode = $state(false);
+  
+  // Mock dropperStore state
+  let selectedElements = $state<string[]>([]);
+  
+  // Mock dropperStore for initial setup - will be replaced with proper state management
+  const dropperStore = {
+    addElement: (elementId: string) => {
+      console.log(`Adding element to chain: ${elementId}`);
+      selectedElements = [...selectedElements, elementId];
+      // Will implement actual chain logic later
+    },
+    setProcessing: (state: boolean) => {
+      isProcessing = state;
+    },
+    get selectedElements() {
+      return selectedElements;
+    }
+  };
 
-  // Watch status changes
-  $: if (status && status.type !== "processing") {
-    if (statusTimeout) clearTimeout(statusTimeout);
-    statusTimeout = setTimeout(() => {
-      status = null;
-    }, 2000);
-  }
-
-	// if (status && status.type !== "processing") {
-	// 	if (statusTimeout) clearTimeout(statusTimeout);
-	// 	// Use execution time + small buffer, or default client timeout
-	// 	const duration = status.executionTime 
-	// 		? status.executionTime + 500 
-	// 		: appsScript.getTimeout();
-	// 	statusTimeout = setTimeout(() => {
-	// 		status = null;
-	// 	}, duration);
-	// }
-
-  onDestroy(() => {
-    if (statusTimeout) clearTimeout(statusTimeout);
+  // Status effect - clear timeout after delay
+  $effect(() => {
+    if (status && status.type !== "processing") {
+      clearStatusTimeout();
+      statusTimeout = setTimeout(() => {
+        status = null;
+      }, 2000) as unknown as number;
+    }
   });
 
-  async function handleElementSelect(event: CustomEvent<{elementId: string}>) {
+  // Cleanup on destroy
+  onDestroy(() => {
+    clearStatusTimeout();
+  });
+
+  // Helper function to clear timeout
+  function clearStatusTimeout() {
+    if (statusTimeout) {
+      clearTimeout(statusTimeout);
+      statusTimeout = null;
+    }
+  }
+
+  // Element selection handler
+  async function handleElementSelect(event: CustomEvent<{ elementId: string }>) {
     const { elementId } = event.detail;
 
-    if ($chainMode) {
+    if (chainMode) {
       dropperStore.addElement(elementId);
       return;
     }
@@ -56,23 +75,31 @@
     isProcessing = true;
     dropperStore.setProcessing(true);
     status = {
-      type: 'processing',
+      type: "processing",
       message: `Inserting ${elementId}...`,
-      details: `Theme: ${$elementsThemeStore}\nAttempting to fetch and insert element...`
+      details: `Theme: ${elementsThemeStore}\nAttempting to fetch and insert element...`
     };
 
     try {
-      console.log(`Attempting to insert element: ${elementId} (${$elementsThemeStore})`);
-      const response = await appsScript.sendMessage('getElement', {
-        elementId, 
-        theme: $elementsThemeStore
+      console.log(`Attempting to insert element: ${elementId} (${elementsThemeStore})`);
+      
+      // Get AppsScript client from context
+      const appsScript = context?.appsScript;
+      
+      if (!appsScript) {
+        throw new Error("AppsScript client not available");
+      }
+      
+      const response = await appsScript.sendMessage("getElement", {
+        elementId,
+        theme: elementsThemeStore
       });
 
       if (response.success) {
         status = {
           type: "success",
           message: "Element inserted",
-          details: `Successfully inserted ${elementId} (${$elementsThemeStore})`,
+          details: `Successfully inserted ${elementId} (${elementsThemeStore})`,
           executionTime: response.executionTime
         };
       } else {
@@ -85,11 +112,11 @@
       status = {
         type: "error",
         message: "Failed to insert element",
-        details: `Failed to insert ${elementId} (${$elementsThemeStore})`,
+        details: `Failed to insert ${elementId} (${elementsThemeStore})`,
         error: {
           message: error instanceof Error ? error.message : "Unknown error",
           elementId,
-          theme: $elementsThemeStore,
+          theme: elementsThemeStore,
           timestamp: new Date().toISOString()
         }
       };
@@ -106,20 +133,22 @@
     <StatusBar {status} />
   {/if}
   
+  <!-- Chain Dropper Component (for chaining multiple elements) -->
   <ChainDropper />
   
+  <!-- Main Scrollable Container -->
   <div class="custom-scrollbar overflow-y-scroll h-full pb-8 pt-2">
-    <DropperGrid
-  		{isProcessing}
-  		on:elementSelect={handleElementSelect}
-/>
-
-
+    <DropperGrid 
+      {isProcessing}
+      {context}
+      on:elementSelect={handleElementSelect}
+    />
   </div>
 
+  <!-- Bottom Control Bar -->
   <div
     class={`w-full transition-all duration-200 ${
-      $zenMode ? "fixed bottom-0 left-1/2 -translate-x-1/2" : ""
+      zenMode ? "fixed bottom-0 left-1/2 -translate-x-1/2" : ""
     }`}
     in:slide={{ duration: 200, axis: "y" }}
     out:fly={{ duration: 200 }}
