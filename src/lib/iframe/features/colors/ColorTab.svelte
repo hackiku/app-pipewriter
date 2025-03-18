@@ -1,6 +1,5 @@
 <!-- $lib/iframe/features/colors/ColorTab.svelte -->
 <script lang="ts">
-  import { onMount, createEventDispatcher } from "svelte";
   import { slide } from "svelte/transition";
   import { Button } from "$lib/components/ui/button";
   import { Check, Loader2 } from "lucide-svelte";
@@ -10,12 +9,11 @@
   // Props
   const { context } = $props();
   
-  const dispatch = createEventDispatcher();
-
   // State
   let currentColor = $state("#FFFFFF");
   let showColorPicker = $state(false);
   let isProcessing = $state(false);
+  
   
   // Preset colors
   const presetColors = [
@@ -44,11 +42,6 @@
     if (isProcessing) return;
 
     isProcessing = true;
-    dispatch("processingStart");
-    dispatch("status", {
-      type: "processing",
-      message: "Applying color...",
-    });
 
     try {
       const cleanColor = stripAlpha(color);
@@ -64,24 +57,13 @@
 
       if (response.success) {
         currentColor = cleanColor;
-        dispatch("status", {
-          type: "success",
-          message: "Color applied!",
-          executionTime: response.executionTime,
-        });
       } else {
         throw new Error(response.error || "Failed to change color");
       }
     } catch (error) {
       console.error("Failed to change background:", error);
-      dispatch("status", {
-        type: "error",
-        message:
-          error instanceof Error ? error.message : "Failed to change color",
-      });
     } finally {
       isProcessing = false;
-      dispatch("processingEnd");
     }
   }
 
@@ -100,7 +82,7 @@
       class="relative rounded-xl z-10 w-full p-2 mb-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm"
       transition:slide={{ duration: 150, axis: "y" }}
     >
-      <ColorPicker on:colorUpdate={handleColorUpdate} />
+      <ColorPicker initialColor={currentColor} oncolorUpdate={handleColorUpdate} />
     </div>
   {/if}
 
@@ -108,7 +90,7 @@
   <div class="flex gap-2 h-10">
     <button
       class="flex flex-1 items-center rounded-lg overflow-clip border border-input bg-white dark:bg-gray-800 text-sm shadow-sm transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-      on:click={() => showColorPicker = !showColorPicker}
+      onclick={() => showColorPicker = !showColorPicker}
     >
       <div 
         class="h-full aspect-square"
@@ -121,7 +103,7 @@
       variant="default" 
       class="px-3 h-full w-1/4"
       disabled={isProcessing}
-      on:click={handleSubmit}
+      onclick={handleSubmit}
     >
       {#if isProcessing}
         <Loader2 class="h-4 w-4 animate-spin" />
@@ -142,7 +124,7 @@
           isGradient={isGradient || false}
           isSelected={currentColor === color}
           {isProcessing}
-          on:click={() => handleColorChange(color)}
+          onclick={(e) => handleColorChange(e.detail.color)}
         />
       {/each}
     </div>
@@ -155,11 +137,11 @@
           isGradient={isGradient || false}
           isSelected={isGradient ? showColorPicker : currentColor === color}
           {isProcessing}
-          on:click={() => {
+          onclick={(e) => {
             if (isGradient) {
               showColorPicker = !showColorPicker;
             } else {
-              handleColorChange(color);
+              handleColorChange(e.detail.color);
             }
           }}
         />

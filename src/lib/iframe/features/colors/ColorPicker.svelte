@@ -1,41 +1,48 @@
 <!-- $lib/iframe/features/colors/ColorPicker.svelte -->
-
 <script lang="ts">
   import { onMount, onDestroy, createEventDispatcher } from 'svelte';
   import { browser } from '$app/environment';
-  import { currentColor } from '../../stores';
-	// TODO create store
-  // import { currentColor } from '../../stores/colorStore';
+  
+  // Props
+  let initialColor = $state("#FFFFFF");
+  // let initialColor = $props("#FFFFFF");
+  
+  // State
+  let pickerElement = $state<HTMLDivElement | null>(null);
+  let picker = $state<any>(null);
+  let colorValue = $state(initialColor);
   
   const dispatch = createEventDispatcher();
-  let pickerElement: HTMLDivElement;
-  let picker: any;
-  let colorInput: string;
 
-	function stripAlpha(color: string): string {
-		return color.length === 9 ? color.slice(0, 7).toUpperCase() : color.toUpperCase();
-	}
+  function stripAlpha(color: string): string {
+    return color.length === 9 ? color.slice(0, 7).toUpperCase() : color.toUpperCase();
+  }
+  
+  $effect(() => {
+    // When initialColor changes from parent
+    if (initialColor && initialColor !== colorValue) {
+      colorValue = initialColor;
+      if (picker) {
+        picker.setColor(colorValue, true);
+      }
+    }
+  });
+  
   onMount(async () => {
-    if (browser) {
+    if (browser && pickerElement) {
       const { default: Picker } = await import('vanilla-picker');
-      
-      const initialColor = $currentColor !== '#000000' ? $currentColor : colorInput;
       
       picker = new Picker({
         parent: pickerElement,
         popup: false,
         alpha: false,
-        color: initialColor,
+        color: colorValue,
         onChange: (color: { hex: string }) => {
           const cleanColor = stripAlpha(color.hex);
-          colorInput = cleanColor;
-          currentColor.set(cleanColor);
+          colorValue = cleanColor;
           dispatch('colorUpdate', { color: cleanColor });
         }
       });
-
-      colorInput = stripAlpha(initialColor);
-      currentColor.set(colorInput);
     }
   });
 
