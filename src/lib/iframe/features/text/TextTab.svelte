@@ -1,17 +1,20 @@
 <!-- $lib/iframe/features/text/TextTab.svelte -->
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import { elementsTheme } from "../../stores";
-  import { textStyles, selectedStyle as selectedStyleStore, type TextStyle } from "../../stores/textStyles";
   import TextStyleDropdown from "./TextStyleDropdown.svelte";
   import TextButtons from "./TextButtons.svelte";
-  import ComingSoon from "../../components/ComingSoon.svelte";
-
-  export let appsScript: any;
+  
+  // Props
+  const { context } = $props();
+  
+  // State
+  let isProcessing = $state(false);
+  let showDeleteConfirm = $state(false);
+  let selectedStyle = $state(null);
+  let savedStyles = $state([]);
+  let theme = $state('light');
+  
   const dispatch = createEventDispatcher();
-  let isProcessing = false;
-  let showDeleteConfirm = false;
-  let showDropdown = false;
 
   async function handleStyleGuideInsert() {
     if (isProcessing) return;
@@ -24,6 +27,12 @@
     });
 
     try {
+      const appsScript = context?.appsScript;
+      
+      if (!appsScript) {
+        throw new Error("AppsScript client not available");
+      }
+      
       const response = await appsScript.sendMessage("getElement", { 
         elementId: "styleguide" 
       });
@@ -48,51 +57,59 @@
     }
   }
 
-  async function handleStyleSelect(event: CustomEvent<TextStyle>) {
-    selectedStyleStore.set(event.detail);
+  async function handleStyleSelect(event) {
+    selectedStyle = event.detail;
     showDeleteConfirm = false;
+  }
+  
+  function handleSaveStyle() {
+    // Save style logic
+    savedStyles = [...savedStyles, selectedStyle];
+  }
+  
+  function handleApplyStyle() {
+    // Apply style logic
   }
 
   function handleDeleteAll() {
-    textStyles.deleteAll();
-    selectedStyleStore.set(null);
+    savedStyles = [];
+    selectedStyle = null;
     showDeleteConfirm = false;
+  }
+  
+  function handleDeleteStyle(style) {
+    savedStyles = savedStyles.filter(s => s.id !== style.id);
+    if (selectedStyle && selectedStyle.id === style.id) {
+      selectedStyle = null;
+    }
   }
 </script>
 
 <div class="flex flex-col items-stretch w-full gap-2">
-  <!-- Styles Dropdown with ComingSoon -->
+  <!-- Styles Dropdown -->
   <div class="relative">
     <TextStyleDropdown
-      selectedStyle={$selectedStyleStore}
+      {selectedStyle}
+      {savedStyles}
       disabled={isProcessing}
       on:select={handleStyleSelect}
-      bind:showDropdown
+      on:deleteStyle={e => handleDeleteStyle(e.detail)}
     />
-    <!-- {#if showDropdown} -->
-      <ComingSoon
-        title="Save styles (Soon)"
-        position="full"
-      />
-    <!-- {/if} -->
   </div>
 
-  <!-- Buttons Section with ComingSoon -->
-  
-	<div class="relative">
+  <!-- Buttons Section -->
+  <div class="relative">
     <TextButtons
       {isProcessing}
       {showDeleteConfirm}
-      selectedStyle={$selectedStyleStore}
-      savedCount={$textStyles.filter(s => s.saved).length}
-      theme={$elementsTheme}
+      {selectedStyle}
+      savedCount={savedStyles.length}
+      {theme}
       on:insertStyleGuide={handleStyleGuideInsert}
+      on:save={handleSaveStyle}
+      on:apply={handleApplyStyle}
       on:deleteAll={handleDeleteAll}
       on:toggleDeleteConfirm={() => showDeleteConfirm = !showDeleteConfirm}
     />
-    <!-- <ComingSoon 
-      title="Style Commands"
-      position="full"
-    /> -->
   </div>
 </div>

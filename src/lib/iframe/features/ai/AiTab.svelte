@@ -2,16 +2,19 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { ArrowDown, ArrowUp, Trash2, Code, Clipboard } from 'lucide-svelte';
-  import { promptStore, activePrompt } from '../../stores/promptStore';
-  import PromptDropdown from './PromptDropdown.svelte';
+  import { Button } from "$lib/components/ui/button";
   import HtmlButton from './HtmlButton.svelte';
+  import PromptDropdown from './PromptDropdown.svelte';
 
-	import ComingSoon from "../../components/ComingSoon.svelte";
-
-
-  export let appsScript: any;
+  // Props
+  const { context } = $props();
+  
+  // State
+  let isProcessing = $state(false);
+  let activePrompt = $state(null);
+  let useMasterPrompt = $state(true);
+  
   const dispatch = createEventDispatcher();
-  let isProcessing = false;
 
   async function handleHtmlAction(action: string, params = {}) {
     if (isProcessing) return;
@@ -24,10 +27,16 @@
     });
 
     try {
+      const appsScript = context?.appsScript;
+      
+      if (!appsScript) {
+        throw new Error("AppsScript client not available");
+      }
+      
       const payload = {
         ...params,
-        ...(action === 'dropHtml' && $activePrompt ? {
-          prompt: $activePrompt.content
+        ...(action === 'dropHtml' && activePrompt ? {
+          prompt: activePrompt.content
         } : {})
       };
 
@@ -91,13 +100,25 @@
       onClick: () => handleHtmlAction('stripHtml', { all: true })
     }
   ];
+  
+  function setActivePrompt(prompt) {
+    activePrompt = prompt;
+  }
+  
+  function toggleMasterPrompt() {
+    useMasterPrompt = !useMasterPrompt;
+  }
 </script>
 
 <div class="flex flex-col items-stretch w-full gap-3">
   <div class="relative">
-    <PromptDropdown disabled={isProcessing} />
-			
-		<!-- <ComingSoon /> -->
+    <PromptDropdown 
+      {activePrompt}
+      {useMasterPrompt}
+      on:promptSelect={e => setActivePrompt(e.detail)}
+      on:toggleMasterPrompt={toggleMasterPrompt}
+      disabled={isProcessing} 
+    />
   </div>
 
   <HtmlButton

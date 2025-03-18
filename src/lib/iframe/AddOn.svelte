@@ -9,6 +9,7 @@
   import BottomBar from "./layout/BottomBar.svelte";
   import AppAbout from "./layout/AppAbout.svelte";
   import Dropper from "./features/Dropper.svelte";
+  import Tabs from "./features/Tabs.svelte";
   import { AppsScriptClient } from "./utils/appsScript";
 
   // Using $state for stores
@@ -56,7 +57,7 @@
       >
         <!-- Only render Dropper if appsScript is available -->
         {#if appsScript}
-          <Dropper context={context} />
+          <Dropper {context} />
         {:else}
           <div class="h-full flex items-center justify-center text-gray-400">
             <p>Loading Dropper component...</p>
@@ -69,7 +70,9 @@
           withHandle 
           class={activeTab || showAboutModal ? 'z-0' : ''}
         />
-        <Resizable.Pane defaultSize={30} minSize={0} />
+        <Resizable.Pane defaultSize={30} minSize={0}>
+          <!-- Placeholder for future pane content -->
+        </Resizable.Pane>
       {/if}
     </Resizable.PaneGroup>
   </div>
@@ -81,16 +84,16 @@
       out:slide={{ duration: 200, axis: "y" }}
     >
       <div class="mb-2">
-        <!-- Tabs placeholder -->
+        <Tabs {context} />
+      </div>
+      
+      <div class="border-t border-gray-200 dark:border-gray-700">
+        <BottomBar />
       </div>
       
       {#if showAboutModal}
         <AppAbout />
       {/if}
-      
-      <div class="border-t border-gray-200 dark:border-gray-700">
-        <BottomBar />
-      </div>
     </section>
   {/if}
 </main>

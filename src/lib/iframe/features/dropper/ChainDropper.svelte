@@ -8,7 +8,7 @@
   // State
   let chainMode = $state(false);
   let showAboutModal = $state(false);
-  let showTooltip = $state(false);
+  // let showTooltip = $state(false);
   
   function toggleAboutModal() {
     showAboutModal = true;
