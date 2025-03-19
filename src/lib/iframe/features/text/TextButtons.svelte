@@ -1,100 +1,89 @@
-<!-- src/lib/iframe/features/text/TextButtons.svelte -->
-
+<!-- $lib/iframe/features/text/TextButtons.svelte -->
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
-  import { Save, Heading, Trash2, Sun, Moon } from "lucide-svelte";
   import { Button } from "$lib/components/ui/button";
+  import { Loader2, Pipette, RefreshCw, Moon, Sun } from "lucide-svelte";
+  import ElementCard from "../dropper/ElementCard.svelte";
+  import { elementManager } from '$lib/data/addon/utils';
   import type { ElementTheme } from '$lib/data/addon/types';
-  
-  // Props with SvelteKit 5 syntax
+
+  // Props
   const props = $props<{
     isProcessing: boolean;
-    showDeleteConfirm: boolean;
     selectedStyle: any;
-    savedCount: number;
     theme: ElementTheme;
+    onStyleGuideInsert: () => void;
+    onApplyStyle: () => void;
+    onResetStyle: () => void;
+    onToggleTheme: () => void;
   }>();
   
-  const dispatch = createEventDispatcher();
-
-  // Computed state
-  let applyButtonDisabled = $derived(
-    !props.selectedStyle || props.isProcessing
-  );
-  
-  function dispatchEvent(event: string) {
-    dispatch(event);
-  }
-  
-  function getThemeIcon() {
-    return props.theme === 'light' ? Moon : Sun;
-  }
+  // Get the styleguide element
+  const styleGuideElement = $state(elementManager.getElement("styleguide"));
 </script>
 
-<div class="flex items-start gap-2">
-  <!-- Theme Button and Style Guide -->
-  <div class="w-2/5 h-full">
+<div class="flex gap-4">
+  <!-- Left Column: Style Guide Element Card -->
+  <div class="w-1/3">
+    {#if styleGuideElement}
+      <ElementCard
+        element={styleGuideElement}
+        onSelect={props.onStyleGuideInsert}
+        theme={props.theme}
+        disabled={props.isProcessing}
+        isSelected={false}
+      />
+    {:else}
+      <div class="w-full h-full bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+        <span class="text-muted-foreground">Style guide not found</span>
+      </div>
+    {/if}
+  </div>
+  
+  <!-- Right Column: Action Buttons -->
+  <div class="w-3/5 flex flex-col gap-2">
+    <!-- Apply Style Button -->
     <Button
-      variant="outline"
-      class="h-8 text-xs w-full mb-1 flex items-center gap-2"
-      disabled={props.isProcessing}
-      on:click={() => dispatch('insertStyleGuide')}
+      variant={props.selectedStyle ? "default" : "outline"}
+      class="h-10 text-sm w-full flex items-center gap-2"
+      disabled={props.isProcessing || !props.selectedStyle}
+      onclick={props.onApplyStyle}
     >
-      <Heading class="h-3 w-3" />
-      Insert Style Guide
+      {#if props.isProcessing}
+        <Loader2 class="h-4 w-4 animate-spin mr-1" />
+        Applying...
+      {:else}
+        <Pipette class="h-4 w-4 mr-1" />
+        {props.selectedStyle ? `Apply ${props.selectedStyle.label}` : 'Select style'}
+      {/if}
     </Button>
     
-    <Button
-      variant="outline"
-      class="h-8 text-xs w-full flex items-center gap-2"
-      disabled={props.isProcessing}
-      on:click={() => dispatch('toggleTheme')}
-    >
-      <svelte:component this={getThemeIcon()} class="h-3 w-3" />
-      {props.theme === 'light' ? 'Dark' : 'Light'} Theme
-    </Button>
-  </div>
-
-  <!-- Action Buttons -->
-  <div class="flex flex-col w-3/5 gap-1">
-    <!-- Save Button -->
-    <Button
-      variant="outline"
-      class="h-8 text-xs w-full flex items-center gap-2"
-      disabled={props.isProcessing || !props.selectedStyle}
-      on:click={() => dispatchEvent('save')}
-    >
-      <Save class="h-3 w-3" />
-      Save selection
-    </Button>
-
-    <!-- Apply Style Row -->
-    <div class="flex gap-1">
-      {#if props.savedCount > 0 && !props.showDeleteConfirm}
-        <Button
-          variant="outline"
-          size="icon"
-          class="h-8 w-8"
-          disabled={props.isProcessing}
-          on:click={() => dispatch('toggleDeleteConfirm')}
-        >
-          <Trash2 class="h-3 w-3" />
-        </Button>
-      {/if}
-
-      <Button
-        variant="outline"
-        class="h-8 text-xs flex-1 flex items-center gap-2"
-        disabled={applyButtonDisabled && !props.showDeleteConfirm}
-        on:click={() => dispatch(props.showDeleteConfirm ? 'deleteAll' : 'apply')}
-      >
-        {#if props.showDeleteConfirm}
-          Delete all styles?
-        {:else}
-          <Heading class="h-3 w-3" />
-          Apply style
-        {/if}
-      </Button>
-    </div>
+    <!-- Theme Toggle Button -->
+    <div class="flex flex-row gap-2">
+			<Button
+				variant="outline"
+				class="aspect-square text-sm flex items-center gap-2"
+				disabled={props.isProcessing}
+				onclick={props.onToggleTheme}
+			>
+				{#if props.theme === 'light'}
+					<Moon class="h-4 w-4 mr-1" />
+				{:else}
+					<Sun class="h-4 w-4 mr-1" />
+				{/if}
+			</Button>
+			
+			<!-- Reset Button (only shown when a style is selected) -->
+			{#if props.selectedStyle}
+				<Button
+					variant="outline"
+					class="text-sm w-full flex items-center gap-2"
+					disabled={props.isProcessing}
+					onclick={props.onResetStyle}
+				>
+					<RefreshCw class="h-4 w-4 mr-1" />
+					Reset
+				</Button>
+			{/if}
+		</div>
   </div>
 </div>

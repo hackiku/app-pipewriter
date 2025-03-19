@@ -1,24 +1,21 @@
-<!-- src/lib/iframe/features/text/TextStyleDropdown.svelte -->
+<!-- $lib/iframe/features/text/TextStyleDropdown.svelte -->
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
   import { slide } from "svelte/transition";
-  import { ChevronUp, X } from "lucide-svelte";
+  import { ChevronUp } from "lucide-svelte";
   import { cn } from "$lib/utils";
 
   // Props with SvelteKit 5 syntax
   const props = $props<{
     selectedStyle: any;
-    savedStyles: any[];
     disabled: boolean;
+    onSelect: (style: any) => void;
   }>();
   
   // Local state
   let showOptions = $state(false);
   
-  const dispatch = createEventDispatcher();
-
   // Default text styles that are always available
-  const defaultStyles = [
+  const textStyles = [
     { headingType: 'NORMAL', tag: 'p', label: 'Normal text', fontSize: 11 },
     { headingType: 'HEADING1', tag: 'h1', label: 'Heading 1', fontSize: 24 },
     { headingType: 'HEADING2', tag: 'h2', label: 'Heading 2', fontSize: 20 },
@@ -29,55 +26,56 @@
   ];
 
   function handleSelect(style: any) {
-    dispatch("select", style);
+    props.onSelect(style);
     showOptions = false;
   }
-
-  function handleDeleteStyle(style: any, e: MouseEvent) {
-    e.stopPropagation();
-    dispatch("deleteStyle", style);
-  }
-
-  // Calculate all available styles, combining saved and default styles
-  let allStyles = $derived(() => {
-    // Mark saved styles
-    const savedWithFlag = props.savedStyles.map(s => ({ ...s, saved: true }));
-    
-    // Filter out default styles that are already saved
-    const filteredDefaults = defaultStyles.filter(d => 
-      !props.savedStyles.find(s => s.headingType === d.headingType)
-    );
-    
-    // Combine saved and default styles
-    return [...savedWithFlag, ...filteredDefaults];
-  });
-
-  // Count of saved styles
-  let savedCount = $derived(() => props.savedStyles.length);
   
-  // Get button class dynamically
-  function getButtonClass() {
-    return cn(
-      "h-full w-full px-3 font-mono text-xs flex items-center justify-between",
-      "border rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors",
-      props.selectedStyle?.saved && "bg-gray-500/5 border-2 border-primary",
-      props.disabled && "opacity-50 cursor-not-allowed"
-    );
+  function toggleDropdown() {
+    if (!props.disabled) {
+      showOptions = !showOptions;
+    }
   }
   
-  // Get style item class
   function getStyleItemClass(style: any) {
     return cn(
-      "flex items-center justify-between px-2 py-1.5 rounded-sm group transition-colors",
-      style.saved && "bg-gray-500/5 border-l-2 border-primary",
-      !style.saved && "hover:bg-gray-50 dark:hover:bg-gray-700",
-      props.selectedStyle?.headingType === style.headingType && "bg-gray-100 dark:bg-gray-700"
+      "flex items-center justify-between px-2 py-1.5 rounded-sm transition-colors",
+      props.selectedStyle?.headingType === style.headingType && "bg-gray-100 dark:bg-gray-700",
+      "hover:bg-gray-50 dark:hover:bg-gray-700"
     );
   }
 </script>
 
 <div class="relative">
-  <!-- Options Dropdown -->
+  <!-- Main Button -->
+  <button
+    class="w-full h-10 px-3 flex items-center justify-between rounded-lg
+           border border-input bg-white dark:bg-gray-800 text-sm shadow-sm 
+           transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+    onclick={toggleDropdown}
+    disabled={props.disabled}
+  >
+    {#if props.selectedStyle}
+      <div class="flex items-center gap-2">
+        <span class="opacity-70">{props.selectedStyle.tag}</span>
+        <span 
+          class="text-muted-foreground"
+          style={props.selectedStyle.fontSize ? `font-size: ${props.selectedStyle.fontSize}px` : ''}
+        >
+          {props.selectedStyle.label}
+        </span>
+      </div>
+    {:else}
+      <span class="text-muted-foreground">Select text style...</span>
+    {/if}
+    <ChevronUp
+      class={cn(
+        "h-4 w-4 transition-transform duration-200",
+        !showOptions && "rotate-180"
+      )}
+    />
+  </button>
+
+  <!-- Dropdown Options -->
   {#if showOptions}
     <div
       class="absolute bottom-full mb-1 w-full p-2 bg-white dark:bg-gray-800 
@@ -85,75 +83,23 @@
       transition:slide={{ duration: 150, axis: "y" }}
     >
       <div class="flex flex-col gap-0.5 max-h-52 overflow-y-auto">
-        {#each allStyles as style}
-          <div class={getStyleItemClass(style)}>
-            <button
-              class="flex-1 text-left text-[10px] font-mono"
-              on:click={() => handleSelect(style)}
-            >
-              <div class="flex items-center gap-2">
-                <span class="opacity-70">{style.tag}</span>
-                <span 
-                  class="text-[9px] text-muted-foreground"
-                  style={style.fontSize ? `font-size: ${style.fontSize}px` : ''}
-                >
-                  {style.label}
-                </span>
-              </div>
-            </button>
-            {#if style.saved}
-              <button 
-                class="p-1 opacity-0 group-hover:opacity-100 hover:bg-gray-200 
-                       dark:hover:bg-gray-600 rounded-full transition-opacity"
-                on:click={(e) => handleDeleteStyle(style, e)}
+        {#each textStyles as style}
+          <button
+            class={getStyleItemClass(style)}
+            onclick={() => handleSelect(style)}
+          >
+            <div class="flex items-center gap-2">
+              <span class="opacity-70 text-xs">{style.tag}</span>
+              <span 
+                class="text-muted-foreground"
+                style={style.fontSize ? `font-size: ${style.fontSize}px` : ''}
               >
-                <X class="h-3 w-3" />
-              </button>
-            {/if}
-          </div>
+                {style.label}
+              </span>
+            </div>
+          </button>
         {/each}
       </div>
     </div>
   {/if}
-
-  <!-- Main Button -->
-  <div class="flex gap-2 h-8">
-    <button
-      class={getButtonClass()}
-      disabled={props.disabled}
-      on:click={() => showOptions = !showOptions}
-    >
-      <div class="flex items-center gap-2">
-        {#if props.selectedStyle}
-          <span class="opacity-70">{props.selectedStyle.tag}</span>
-          <span 
-            class="text-muted-foreground"
-            style={props.selectedStyle.fontSize ? `font-size: ${props.selectedStyle.fontSize}px` : ''}
-          >
-            {props.selectedStyle.label}
-          </span>
-        {:else}
-          <span class="opacity-70">
-            {savedCount > 0 ? 'Saved styles...' : 'Select style...'}
-          </span>
-        {/if}
-      </div>
-      
-      <!-- Counter Badge -->
-      <div class="flex items-center gap-2">
-        {#if savedCount > 0}
-          <div class="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-700 
-                    flex items-center justify-center text-[10px]">
-            {savedCount}
-          </div>
-        {/if}
-        <ChevronUp
-          class={cn(
-            "h-4 w-4 transition-transform duration-200",
-            !showOptions && "rotate-180"
-          )}
-        />
-      </div>
-    </button>
-  </div>
 </div>
