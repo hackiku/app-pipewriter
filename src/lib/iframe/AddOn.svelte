@@ -16,7 +16,7 @@
 	
 	// Component state with Runes
 	let zenMode = $state(false);
-	let showInfo = $state(true);
+	let showInfo = $state(false);
 	let activeTab = $state(false);
 	let showAboutModal = $state(false);
 

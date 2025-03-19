@@ -1,7 +1,7 @@
 <!-- $lib/iframe/features/text/TextButtons.svelte -->
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
-  import { Loader2, Pipette, RefreshCw, Moon, Sun } from "lucide-svelte";
+  import { Pipette, RefreshCw, Moon, Sun, Heading } from "lucide-svelte";
   import ElementCard from "../dropper/ElementCard.svelte";
   import { elementManager } from '$lib/data/addon/utils';
   import type { ElementTheme } from '$lib/data/addon/types';
@@ -11,7 +11,9 @@
     isProcessing: boolean;
     selectedStyle: any;
     theme: ElementTheme;
+    layout: 'left' | 'right';
     onStyleGuideInsert: () => void;
+    onExtractStyle: () => void;
     onApplyStyle: () => void;
     onResetStyle: () => void;
     onToggleTheme: () => void;
@@ -21,9 +23,9 @@
   const styleGuideElement = $state(elementManager.getElement("styleguide"));
 </script>
 
-<div class="flex gap-4">
-  <!-- Left Column: Style Guide Element Card -->
-  <div class="w-1/3">
+{#if props.layout === 'left'}
+  <!-- Left Pane - ElementCard -->
+  <div class="w-full h-full">
     {#if styleGuideElement}
       <ElementCard
         element={styleGuideElement}
@@ -38,52 +40,57 @@
       </div>
     {/if}
   </div>
-  
-  <!-- Right Column: Action Buttons -->
-  <div class="w-3/5 flex flex-col gap-2">
-    <!-- Apply Style Button -->
-    <Button
-      variant={props.selectedStyle ? "default" : "outline"}
-      class="h-10 text-sm w-full flex items-center gap-2"
-      disabled={props.isProcessing || !props.selectedStyle}
-      onclick={props.onApplyStyle}
-    >
-      {#if props.isProcessing}
-        <Loader2 class="h-4 w-4 animate-spin mr-1" />
-        Applying...
-      {:else}
-        <Pipette class="h-4 w-4 mr-1" />
-        {props.selectedStyle ? `Apply ${props.selectedStyle.label}` : 'Select style'}
-      {/if}
-    </Button>
+{:else}
+  <!-- Right Pane - Buttons Layout with Flex Rows -->
+  <div class="w-full h-full flex flex-col gap-2">
+    <!-- Row 1: Extract Style & Reset -->
+    <div class="flex gap-2 h-[46px]">
+      <Button
+        variant="outline"
+        class="h-full flex-1 flex items-center justify-center"
+        disabled={props.isProcessing}
+        onclick={props.onExtractStyle}
+      >
+        <Pipette class="h-4 w-4 mr-2" />
+        <span>Extract Style</span>
+      </Button>
+      
+      <Button
+        variant="outline"
+        class="h-full aspect-square"
+        disabled={props.isProcessing || !props.selectedStyle}
+        onclick={props.onResetStyle}
+        title="Reset style selection"
+      >
+        <RefreshCw class="h-4 w-4" />
+      </Button>
+    </div>
     
-    <!-- Theme Toggle Button -->
-    <div class="flex flex-row gap-2">
-			<Button
-				variant="outline"
-				class="aspect-square text-sm flex items-center gap-2"
-				disabled={props.isProcessing}
-				onclick={props.onToggleTheme}
-			>
-				{#if props.theme === 'light'}
-					<Moon class="h-4 w-4 mr-1" />
-				{:else}
-					<Sun class="h-4 w-4 mr-1" />
-				{/if}
-			</Button>
-			
-			<!-- Reset Button (only shown when a style is selected) -->
-			{#if props.selectedStyle}
-				<Button
-					variant="outline"
-					class="text-sm w-full flex items-center gap-2"
-					disabled={props.isProcessing}
-					onclick={props.onResetStyle}
-				>
-					<RefreshCw class="h-4 w-4 mr-1" />
-					Reset
-				</Button>
-			{/if}
-		</div>
+    <!-- Row 2: Theme Toggle & Apply -->
+    <div class="flex gap-2 h-[46px]">
+      <Button
+        variant="outline"
+        class="h-full aspect-square"
+        disabled={props.isProcessing}
+        onclick={props.onToggleTheme}
+        title={props.theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
+      >
+        {#if props.theme === 'light'}
+          <Moon class="h-4 w-4" />
+        {:else}
+          <Sun class="h-4 w-4" />
+        {/if}
+      </Button>
+      
+      <Button
+        variant={props.selectedStyle ? "default" : "outline"}
+        class="h-full flex-1 flex items-center justify-center"
+        disabled={props.isProcessing || !props.selectedStyle}
+        onclick={props.onApplyStyle}
+      >
+        <Heading class="h-4 w-4 mr-2" />
+        <span>Apply Style</span>
+      </Button>
+    </div>
   </div>
-</div>
+{/if}

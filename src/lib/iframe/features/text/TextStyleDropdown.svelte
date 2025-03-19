@@ -9,6 +9,7 @@
     selectedStyle: any;
     disabled: boolean;
     onSelect: (style: any) => void;
+    onOpenChange?: (isOpen: boolean) => void;
   }>();
   
   // Local state
@@ -27,12 +28,20 @@
 
   function handleSelect(style: any) {
     props.onSelect(style);
-    showOptions = false;
+    setShowOptions(false);
   }
   
   function toggleDropdown() {
     if (!props.disabled) {
-      showOptions = !showOptions;
+      setShowOptions(!showOptions);
+    }
+  }
+
+  // Helper function to update showOptions and notify parent
+  function setShowOptions(isOpen: boolean) {
+    showOptions = isOpen;
+    if (props.onOpenChange) {
+      props.onOpenChange(isOpen);
     }
   }
   
