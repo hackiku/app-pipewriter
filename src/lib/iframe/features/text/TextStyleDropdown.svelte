@@ -1,7 +1,7 @@
 <!-- $lib/iframe/features/text/TextStyleDropdown.svelte -->
 <script lang="ts">
   import { slide } from "svelte/transition";
-  import { ChevronUp } from "lucide-svelte";
+  import { ChevronUp, X } from "lucide-svelte";
   import { cn } from "$lib/utils";
 
   // Props with SvelteKit 5 syntax
@@ -26,23 +26,21 @@
     { headingType: 'HEADING6', tag: 'h6', label: 'Heading 6', fontSize: 11 }
   ];
 
-  function handleSelect(style: any) {
-    props.onSelect(style);
-    setShowOptions(false);
-  }
-  
-  function toggleDropdown() {
+  // Toggle options visibility and notify parent
+  function toggleOptions() {
     if (!props.disabled) {
-      setShowOptions(!showOptions);
+      const newState = !showOptions;
+      showOptions = newState;
+      if (props.onOpenChange) {
+        props.onOpenChange(newState);
+      }
     }
   }
 
-  // Helper function to update showOptions and notify parent
-  function setShowOptions(isOpen: boolean) {
-    showOptions = isOpen;
-    if (props.onOpenChange) {
-      props.onOpenChange(isOpen);
-    }
+  // Select a style and close dropdown
+  function handleSelect(style: any) {
+    props.onSelect(style);
+    toggleOptions();
   }
   
   function getStyleItemClass(style: any) {
@@ -54,13 +52,13 @@
   }
 </script>
 
-<div class="relative">
-  <!-- Main Button -->
+<div class="flex flex-col">
+  <!-- Main selector button -->
   <button
     class="w-full h-10 px-3 flex items-center justify-between rounded-lg
            border border-input bg-white dark:bg-gray-800 text-sm shadow-sm 
            transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-    onclick={toggleDropdown}
+    onclick={toggleOptions}
     disabled={props.disabled}
   >
     {#if props.selectedStyle}
@@ -84,14 +82,14 @@
     />
   </button>
 
-  <!-- Dropdown Options -->
+  <!-- Styles Options Panel -->
   {#if showOptions}
-    <div
-      class="absolute bottom-full mb-1 w-full p-2 bg-white dark:bg-gray-800 
-             rounded-lg border border-gray-200 dark:border-gray-600 shadow-lg z-20"
-      transition:slide={{ duration: 150, axis: "y" }}
+    <div 
+      class="w-full p-2 mt-2 bg-white dark:bg-gray-800 
+             rounded-lg border border-gray-200 dark:border-gray-600 shadow-md"
+      transition:slide={{ duration: 150 }}
     >
-      <div class="flex flex-col gap-0.5 max-h-52 overflow-y-auto">
+      <div class="flex flex-col gap-0.5">
         {#each textStyles as style}
           <button
             class={getStyleItemClass(style)}
@@ -108,6 +106,16 @@
             </div>
           </button>
         {/each}
+      </div>
+      
+      <div class="mt-2 flex justify-center">
+        <button 
+          class="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+          onclick={toggleOptions}
+        >
+          <X class="h-3 w-3" />
+          <span>Close</span>
+        </button>
       </div>
     </div>
   {/if}

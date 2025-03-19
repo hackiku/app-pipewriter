@@ -173,7 +173,7 @@
       {#if isProcessing}
         <Loader2 class="h-4 w-4 animate-spin" />
       {:else}
-        <Check class="h-4 mr-1"/> Ok 
+        <Check class="h-4 mr-1"/> Set 
       {/if}
     </Button>
   </div>

@@ -138,7 +138,7 @@
   {#if activeTab && activeTabData}
     <div
       class="absolute bottom-full w-full rounded-t-lg border border-gray-300 
-             dark:border-gray-600 {BG_STYLE} overflow-hidden"
+             dark:border-gray-600 {BG_STYLE}"
       transition:fade={{ duration: 200 }}
     >
       <!-- Tab Header -->
@@ -205,6 +205,5 @@
         </Button>
       {/if}
     </div>
-
   </div>
 </div>
