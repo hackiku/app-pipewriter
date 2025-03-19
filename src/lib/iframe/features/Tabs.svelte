@@ -1,6 +1,7 @@
 <!-- $lib/iframe/features/Tabs.svelte -->
 <script lang="ts">
   import { fade } from "svelte/transition";
+  import { getContext } from "svelte";
   // Import components
   import { Button } from "$lib/components/ui/button";
   import { Palette, Type, Code, X, Loader2, ThumbsUp, AlertCircle } from "lucide-svelte";
@@ -14,9 +15,11 @@
   // Props
   const { context } = $props<{ context: any }>();
   
-  // State
+  // Get UI state from context
+  const uiState = getContext('uiState');
+  
+  // Local state
   let activeTab = $state<string | null>(null);
-  let showInfo = $state(true);
   let isProcessing = $state(false);
   let status = $state<{
     type: 'processing' | 'success' | 'error';
@@ -139,7 +142,7 @@
       transition:fade={{ duration: 200 }}
     >
       <!-- Tab Header -->
-      {#if showInfo}
+      {#if uiState.showInfo}
         <div class="px-4 pt-3">
           <h3 class="text-xs font-medium text-muted-foreground/60">
             {activeTabData.title}

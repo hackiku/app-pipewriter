@@ -111,6 +111,10 @@ export class GoogleAppsService {
 		}
 	}
 
+	public isAvailable(): boolean {
+		return typeof window !== 'undefined';
+	}
+
 	async sendMessage(
 		action: GasFunction,
 		payload: Record<string, any> = {},
@@ -171,4 +175,9 @@ export class GoogleAppsService {
 		});
 		this.activeRequests.clear();
 	}
+}
+
+// Export a helper function for convenience
+export function getGoogleService(timeout?: number): GoogleAppsService {
+	return GoogleAppsService.getInstance(timeout);
 }

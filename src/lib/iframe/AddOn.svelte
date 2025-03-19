@@ -1,3 +1,5 @@
+
+
 <!-- $lib/iframe/AddOn.svelte -->
 <script lang="ts">
 	import { fade, slide } from "svelte/transition";
@@ -9,21 +11,27 @@
 	import BottomBar from "./layout/BottomBar.svelte";
 	import Dropper from "./features/Dropper.svelte";
 	import Tabs from "./features/Tabs.svelte";
-	import { GoogleAppsService } from "$lib/services/google/client";
-
+	import { getGoogleService } from "$lib/services/google/client";
+	import type { GoogleAppsService } from "$lib/services/google/client";
+	
 	// Component state with Runes
 	let zenMode = $state(false);
 	let showInfo = $state(true);
 	let activeTab = $state(false);
 	let showAboutModal = $state(false);
 
-	// Google Apps Service client
+	// Google service client
 	let googleService = $state<any>(null);
 
-	// Initialize Google Apps Service client
+	// Initialize Google service client
 	$effect(() => {
 		if (browser) {
-			googleService = GoogleAppsService.getInstance(5000);
+			try {
+				googleService = getGoogleService(5000);
+				console.log("Google service initialized");
+			} catch (error) {
+				console.error("Failed to initialize Google service:", error);
+			}
 		}
 	});
 

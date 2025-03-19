@@ -5,6 +5,7 @@
   import { Check, Loader2 } from "lucide-svelte";
   import ColorPicker from "./ColorPicker.svelte";
   import ColorButton from "./ColorButton.svelte";
+  import { changeBackground, getCurrentColor } from "$lib/services/google/colors";
   
   // Props using SvelteKit 5 syntax
   const props = $props<{
@@ -41,6 +42,35 @@
     { color: "", title: "Custom Color", isGradient: true },
   ];
 
+  // Initialize by getting the current color
+  $effect(() => {
+    if (props.context?.googleService) {
+      loadCurrentColor();
+    }
+  });
+
+  async function loadCurrentColor() {
+    if (isProcessing) return;
+    
+    isProcessing = true;
+    props.onProcessingStart();
+    
+    try {
+      const response = await getCurrentColor((status) => {
+        props.onStatusUpdate(status);
+      });
+      
+      if (response.success && response.data?.color) {
+        currentColor = response.data.color;
+      }
+    } catch (error) {
+      console.error("Failed to get current color:", error);
+    } finally {
+      isProcessing = false;
+      props.onProcessingEnd();
+    }
+  }
+
   function stripAlpha(color: string): string {
     if (color.toUpperCase() === "#FFFFFF" || color.toUpperCase() === "FFFFFF") {
       return "#FFFFFF";
@@ -61,14 +91,9 @@
 
     try {
       const cleanColor = stripAlpha(color);
-      const appsScript = props.context?.appsScript;
       
-      if (!appsScript) {
-        throw new Error("AppsScript client not available");
-      }
-      
-      const response = await appsScript.sendMessage("changeBg", {
-        color: cleanColor,
+      const response = await changeBackground(cleanColor, (status) => {
+        props.onStatusUpdate(status);
       });
 
       if (response.success) {

@@ -5,6 +5,7 @@
   import { Button } from "$lib/components/ui/button";
   import HtmlButton from './HtmlButton.svelte';
   import PromptDropdown from './PromptDropdown.svelte';
+  import { insertHtml, stripHtml } from '$lib/services/google/html';
 
   // Props
   const { context } = $props();
@@ -27,36 +28,48 @@
     });
 
     try {
-      const appsScript = context?.appsScript;
-      
-      if (!appsScript) {
-        throw new Error("AppsScript client not available");
-      }
-      
-      const payload = {
-        ...params,
-        ...(action === 'dropHtml' && activePrompt ? {
-          prompt: activePrompt.content
-        } : {})
-      };
+      if (action === 'dropHtml') {
+        const payload = {
+          ...params,
+          ...(activePrompt ? {
+            prompt: activePrompt.content
+          } : {})
+        };
 
-      const response = await appsScript.sendMessage(action, payload);
-      
-      if (!response.success) {
-        throw new Error(response.error);
-      }
-
-      if (response.clipboardContent) {
-        await navigator.clipboard.writeText(response.clipboardContent);
-        dispatch('status', {
-          type: 'success',
-          message: 'Copied to clipboard',
-          executionTime: response.executionTime
+        const response = await insertHtml(payload, (status) => {
+          dispatch('status', status);
         });
-      } else {
+        
+        if (!response.success) {
+          throw new Error(response.error);
+        }
+
+        if (response.clipboardContent) {
+          await navigator.clipboard.writeText(response.clipboardContent);
+          dispatch('status', {
+            type: 'success',
+            message: 'Copied to clipboard',
+            executionTime: response.executionTime
+          });
+        } else {
+          dispatch('status', {
+            type: 'success',
+            message: 'HTML inserted successfully',
+            executionTime: response.executionTime
+          });
+        }
+      } else if (action === 'stripHtml') {
+        const response = await stripHtml(params, (status) => {
+          dispatch('status', status);
+        });
+        
+        if (!response.success) {
+          throw new Error(response.error);
+        }
+
         dispatch('status', {
           type: 'success',
-          message: 'Operation completed',
+          message: params.all ? 'All HTML removed' : 'HTML tags removed',
           executionTime: response.executionTime
         });
       }
@@ -93,7 +106,7 @@
   const stripHtmlActions = [
     { 
       label: 'Tags',
-      onClick: () => handleHtmlAction('stripHtml', { tags: true })
+      onClick: () => handleHtmlAction('stripHtml', { all: false })
     },
     { 
       label: 'All',
