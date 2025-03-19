@@ -5,6 +5,7 @@
   import { Pipette, RefreshCw, Heading } from "lucide-svelte";
   import StyleDropper from "./StyleDropper.svelte";
   import type { ElementTheme } from '$lib/data/addon/types';
+  import { onMount } from "svelte";
 
   // Props
   const props = $props<{
@@ -17,9 +18,31 @@
     onResetStyle: () => void;
     onToggleTheme: () => void;
   }>();
+
+  // State
+  let rightPaneWidth = $state(0);
+  let rightPaneElement = $state<HTMLDivElement | null>(null);
+  let compactMode = $derived(rightPaneWidth < 120);
+
+  // Resize observer to detect width changes
+  $effect(() => {
+    if (!rightPaneElement) return;
+    
+    const resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        rightPaneWidth = entry.contentRect.width;
+      }
+    });
+    
+    resizeObserver.observe(rightPaneElement);
+    
+    return () => {
+      resizeObserver.disconnect();
+    };
+  });
 </script>
 
-<Resizable.PaneGroup direction="horizontal" class="h-36 gap-3">
+<Resizable.PaneGroup direction="horizontal" class="h-36 gap-2">
   <!-- Left Pane: StyleDropper -->
   <Resizable.Pane defaultSize={40} minSize={25} maxSize={60}>
     <StyleDropper
@@ -34,22 +57,26 @@
   
   <!-- Right Pane: Action Buttons -->
   <Resizable.Pane defaultSize={60} minSize={40} maxSize={75}>
-    <div class="h-full flex flex-col _gap-1">
+    <div bind:this={rightPaneElement} class="h-full flex flex-col gap-2">
       <!-- Row 1: Extract Style & Reset -->
-      <div class="flex-1 flex __gap-2">
+      <div class="flex-1 flex gap-2">
+        <!-- Extract Style Button -->
         <Button
           variant="outline"
           class="flex-1 flex items-center justify-center text-xs"
           disabled={props.isProcessing}
           onclick={props.onExtractStyle}
         >
-          <Pipette class="h-2 w-2 mr-1" />
-          <span>Get</span>
+          <Pipette class="h-3 w-3 {!compactMode && 'mr-1'}" />
+          {#if !compactMode}
+            <span>Get</span>
+          {/if}
         </Button>
         
+        <!-- Reset Button -->
         <Button
           variant="outline"
-          class="aspect-square"
+          class={compactMode ? "flex-1" : "aspect-square"}
           disabled={props.isProcessing || !props.selectedStyle}
           onclick={props.onResetStyle}
           title="Reset style selection"
@@ -58,7 +85,7 @@
         </Button>
       </div>
       
-      <!-- Row 2: Apply Style -->
+      <!-- Row 2: Apply Style Button -->
       <div class="flex-1">
         <Button
           variant={props.selectedStyle ? "default" : "outline"}
@@ -66,8 +93,8 @@
           disabled={props.isProcessing || !props.selectedStyle}
           onclick={props.onApplyStyle}
         >
-          <Heading class="h-2 w-2 mr-1" />
-          <span>Apply {props.selectedStyle ? props.selectedStyle.label : 'Style'}</span>
+          <Heading class="h-3 w-3 mr-1" />
+          <span>{compactMode ? "Apply" : `Apply ${props.selectedStyle ? props.selectedStyle.label : 'Style'}`}</span>
         </Button>
       </div>
     </div>
