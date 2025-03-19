@@ -1,7 +1,7 @@
 <!-- $lib/iframe/features/dropper/DropperGrid.svelte -->
 <script lang="ts">
   import ElementCard from "./ElementCard.svelte";
-	import { elementManager, getElementsByCategory } from '$lib/data/addon/utils';
+  import { elementManager, getElementsByCategory } from '$lib/data/addon/utils';
   import type { ElementTheme, ElementCategory } from '$lib/data/addon/types';
   
   // Props
@@ -17,12 +17,13 @@
   let showInfo = $state(true);
   let categoriesCache = $state<Record<string, any>>({});
   
-  // Simple getters for grid classes without reactive dependencies
+  // Get grid classes based on column count
   function getGridClasses() {
+    const gridCols = props.gridColumns || 3; // Default to 3 if undefined
     return {
-      grid: `grid-cols-${props.gridColumns}`,
-      gap: props.gridColumns === 1 ? 'gap-5' : 'gap-2',
-      padding: props.gridColumns === 1 ? 'px-8' : 'px-2'
+      grid: `grid-cols-${gridCols}`,
+      gap: gridCols === 1 ? 'gap-5' : 'gap-2',
+      padding: gridCols === 1 ? 'px-8' : 'px-2'
     };
   }
   
@@ -40,6 +41,7 @@
     setTimeout(() => {
       categoriesCache = categories;
       lastTheme = props.theme;
+      console.log("Categories loaded:", Object.keys(categoriesCache).length);
     }, 0);
   });
   
@@ -68,9 +70,7 @@
           </h3>
         {/if}
         
-        <!-- Use the getGridClasses function -->
-        <!-- <div class="grid {getGridClasses().grid} {getGridClasses().gap} {getGridClasses().padding}"> -->
-        <div class="grid grid-cols-3 gap-2">
+        <div class="grid {getGridClasses().grid} {getGridClasses().gap} {getGridClasses().padding}">
           {#each categoryElements as element (element.id)}
             <ElementCard
               element={element}

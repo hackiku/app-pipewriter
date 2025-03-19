@@ -7,36 +7,35 @@
 
 	import TopBar from "./layout/TopBar.svelte";
 	import BottomBar from "./layout/BottomBar.svelte";
-	// import AppAbout from "./layout/AppAbout.svelte";
 	import Dropper from "./features/Dropper.svelte";
 	import Tabs from "./features/Tabs.svelte";
-	import { AppsScriptClient } from "./utils/appsScript";
+	import { GoogleAppsService } from "$lib/services/google/client";
 
 	// Component state with Runes
 	let zenMode = $state(false);
 	let activeTab = $state(false);
 	let showAboutModal = $state(false);
 
-	// AppsScript client
-	let appsScript = $state<any>(null);
+	// Google Apps Service client
+	let googleService = $state<any>(null);
 
-	// Initialize AppsScript client
+	// Initialize Google Apps Service client
 	$effect(() => {
 		if (browser) {
-			appsScript = AppsScriptClient.getInstance(5000);
+			googleService = GoogleAppsService.getInstance(5000);
 		}
 	});
 
 	// Create context for child components
 	let context = $derived(() => ({
-		appsScript,
+		googleService,
 	}));
 
 	// Cleanup on destroy
 	$effect(() => {
 		return () => {
-			if (browser && appsScript) {
-				appsScript.destroy();
+			if (browser && googleService) {
+				googleService.destroy();
 			}
 		};
 	});
@@ -64,8 +63,8 @@
 			class="h-full {activeTab ? 'z-0' : 'z-10'}"
 		>
 			<Resizable.Pane defaultSize={55} minSize={30} maxSize={80}>
-				<!-- Only render Dropper if appsScript is available -->
-				{#if appsScript}
+				<!-- Only render Dropper if googleService is available -->
+				{#if googleService}
 					<Dropper {context} />
 				{:else}
 					<div class="h-full flex items-center justify-center text-gray-400">

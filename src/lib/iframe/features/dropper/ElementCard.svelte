@@ -88,11 +88,6 @@
     );
   }
   
-  // Pure function to get image source - no reactive dependencies
-  function getImageSrc() {
-    return props.element.src;
-  }
-  
   // Handle image loading errors
   function handleImageError() {
     console.error(`Failed to load image: ${props.element.src}`);
@@ -116,7 +111,7 @@
         </div>
       {:else}
         <img
-          src={getImageSrc()}
+          src={props.element.src}
           alt={props.element.alt}
           class="w-full h-full object-cover group-hover:opacity-40"
           onerror={handleImageError}

@@ -1,7 +1,7 @@
 <!-- $lib/iframe/features/Dropper.svelte -->
 <script lang="ts">
   import { fade, slide, fly } from "svelte/transition";
-  import type { StatusUpdate } from "$lib/data/addon/status";
+  import type { StatusUpdate } from "$lib/data/addon/types";
   import { insertElement } from "$lib/services/google/docs";
   import { elementManager, getElementsByCategory } from '$lib/data/addon/utils';
   import type { ElementTheme } from '$lib/data/addon/types';
@@ -120,7 +120,7 @@
   function cleanup() {
     clearStatusTimeout();
   }
-</script>
+	</script>
 
 <div class="relative h-full z-0 bg-neutral-100/50 dark:bg-neutral-800/50">
   <!-- Status Bar -->
@@ -134,7 +134,6 @@
       {elementsTheme} | grid-{gridColumns}
     </div>
   {/if}
-  
   
   <!-- Main Container - No scrollbar visible but still scrollable -->
   <div class="h-full pb-8 pt-2 overflow-y-auto scrollbar-none">
