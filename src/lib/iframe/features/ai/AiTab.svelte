@@ -33,7 +33,7 @@
   }
 </script>
 
-<div class="flex flex-col items-stretch w-full gap-3">
+<div class="flex flex-col items-stretch w-full gap-2">
   <!-- Prompt Dropdown on top -->
   <div class="relative">
     <PromptDropdown

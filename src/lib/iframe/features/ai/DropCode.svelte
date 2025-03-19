@@ -16,7 +16,7 @@
 
   // Button classes - similar to original HtmlButton
   let buttonClass = $derived(cn(
-    "h-10 text-sm",
+    "h-10 text-xs",
     "relative",
     "flex items-center justify-between px-4",
     "w-full rounded-lg",
