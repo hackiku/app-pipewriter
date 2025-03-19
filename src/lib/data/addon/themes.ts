@@ -1,14 +1,5 @@
 // src/lib/data/addon/themes.ts
-
-export type ThemeMode = 'light' | 'dark';
-
-export interface Theme {
-	id: string;
-	color: string;
-	label: string;
-	mode: ThemeMode;
-	textColor: string;
-}
+import { ElementTheme, Theme } from './types';
 
 // Define available themes
 export const themes: Theme[] = [
@@ -40,3 +31,36 @@ export function getNextTheme(currentId: string): Theme {
 
 // Default theme
 export const defaultTheme = themes[0];
+
+// Get opposite theme
+export function getOppositeTheme(theme: ElementTheme): ElementTheme {
+	return theme === 'light' ? 'dark' : 'light';
+}
+
+// Detect if should show dark theme based on element theme and app theme
+export function shouldUseDarkTheme(elementTheme: ElementTheme, appTheme: ElementTheme): boolean {
+	// If element is already in dark theme, it should always be shown as is
+	if (elementTheme === 'dark') return true;
+
+	// If element is in light theme but app is in dark mode, we should consider inverting
+	if (elementTheme === 'light' && appTheme === 'dark') return true;
+
+	return false;
+}
+
+// Get appropriate element theme based on current context
+export function getContextualElementTheme(elementId: string, appTheme: ElementTheme): string {
+	const baseId = elementId.endsWith('-dark') ? elementId.replace(/-dark$/, '') : elementId;
+	const isDarkVariant = elementId.endsWith('-dark');
+
+	// If element is explicitly dark, keep it dark
+	if (isDarkVariant) return elementId;
+
+	// If app is in dark mode and element is light, make it dark
+	if (appTheme === 'dark' && !isDarkVariant) {
+		return `${baseId}-dark`;
+	}
+
+	// Default case: keep the original ID
+	return elementId;
+}

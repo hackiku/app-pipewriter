@@ -3,7 +3,7 @@
   import { Button } from "$lib/components/ui/button";
   import { cn } from "$lib/utils";
   import { Plus, X, AlertCircle } from 'lucide-svelte';
-  import type { Element, ElementTheme } from '$lib/data/addon/elements';
+  import type { Element, ElementTheme } from '$lib/data/addon/types';
 
   // Props
   const props = $props<{
@@ -108,7 +108,7 @@
     disabled={props.disabled}
     title={props.element.description}
   >
-    <div class="relative w-full h-full aspect-square">
+    <div class="relative w-full h-full __aspect-video">
       {#if imageError}
         <div class="flex flex-col items-center justify-center h-full p-2 text-center">
           <AlertCircle class="w-6 h-6 text-neutral-400 mb-1" />

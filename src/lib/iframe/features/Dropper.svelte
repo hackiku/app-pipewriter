@@ -3,8 +3,8 @@
   import { fade, slide, fly } from "svelte/transition";
   import type { StatusUpdate } from "$lib/data/addon/status";
   import { insertElement } from "$lib/services/google/docs";
-  import { elementManager } from "$lib/data/addon/elements";
-  import type { ElementTheme } from '$lib/data/addon/elements';
+  import { elementManager, getElementsByCategory } from '$lib/data/addon/utils';
+  import type { ElementTheme } from '$lib/data/addon/types';
   
   import StatusBar from "../components/StatusBar.svelte";
   import DropperGrid from "./dropper/DropperGrid.svelte";
@@ -130,8 +130,8 @@
   
   <!-- Debug info in dev mode -->
   {#if import.meta.env.DEV}
-    <div class="absolute top-0 right-0 p-1 text-xs bg-black/50 text-white z-50">
-      Theme: {elementsTheme} | Grid: {gridColumns}
+    <div class="absolute top-0 right-0 p-1 text-[0.6em] rounded-sm bg-black/40 text-white z-50">
+      {elementsTheme} | grid-{gridColumns}
     </div>
   {/if}
   

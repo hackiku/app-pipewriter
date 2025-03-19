@@ -1,8 +1,8 @@
 <!-- $lib/iframe/features/dropper/DropperGrid.svelte -->
 <script lang="ts">
   import ElementCard from "./ElementCard.svelte";
-  import { getElementsByCategory, elementManager } from '$lib/data/addon/elements';
-  import type { ElementTheme } from '$lib/data/addon/elements';
+	import { elementManager, getElementsByCategory } from '$lib/data/addon/utils';
+  import type { ElementTheme, ElementCategory } from '$lib/data/addon/types';
   
   // Props
   const props = $props<{
@@ -54,7 +54,7 @@
   }
 </script>
 
-<div class="space-y-2 pb-10">
+<div class="space-y-2 pb-10 px-2">
   {#if Object.keys(categoriesCache).length === 0}
     <div class="p-4 text-center">
       <p class="text-neutral-500 dark:text-neutral-400">Loading elements for theme: {props.theme}</p>
@@ -69,7 +69,8 @@
         {/if}
         
         <!-- Use the getGridClasses function -->
-        <div class="grid {getGridClasses().grid} {getGridClasses().gap} {getGridClasses().padding}">
+        <!-- <div class="grid {getGridClasses().grid} {getGridClasses().gap} {getGridClasses().padding}"> -->
+        <div class="grid grid-cols-3 gap-2">
           {#each categoryElements as element (element.id)}
             <ElementCard
               element={element}

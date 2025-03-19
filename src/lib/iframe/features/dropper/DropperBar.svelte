@@ -1,6 +1,7 @@
 <!-- $lib/iframe/features/dropper/DropperBar.svelte -->
 <script lang="ts">
   import { Link } from 'lucide-svelte';
+	import type { ElementTheme } from '$lib/data/addon/types';
   
   // Props
   const props = $props<{
