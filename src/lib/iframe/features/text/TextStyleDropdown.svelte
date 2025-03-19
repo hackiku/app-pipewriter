@@ -1,17 +1,23 @@
-<!-- src/lib/iframe/components/TextStyleDropdown.svelte -->
+<!-- src/lib/iframe/features/text/TextStyleDropdown.svelte -->
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import { slide } from "svelte/transition";
   import { ChevronUp, X } from "lucide-svelte";
   import { cn } from "$lib/utils";
 
-  export let selectedStyle: any = null;
-  export let savedStyles: any[] = [];
-  export let disabled = false;
-
-  let showOptions = false;
+  // Props with SvelteKit 5 syntax
+  const props = $props<{
+    selectedStyle: any;
+    savedStyles: any[];
+    disabled: boolean;
+  }>();
+  
+  // Local state
+  let showOptions = $state(false);
+  
   const dispatch = createEventDispatcher();
 
+  // Default text styles that are always available
   const defaultStyles = [
     { headingType: 'NORMAL', tag: 'p', label: 'Normal text', fontSize: 11 },
     { headingType: 'HEADING1', tag: 'h1', label: 'Heading 1', fontSize: 24 },
@@ -32,12 +38,42 @@
     dispatch("deleteStyle", style);
   }
 
-  $: allStyles = [
-    ...savedStyles.map(s => ({ ...s, saved: true })),
-    ...defaultStyles.filter(d => !savedStyles.find(s => s.headingType === d.headingType))
-  ];
+  // Calculate all available styles, combining saved and default styles
+  let allStyles = $derived(() => {
+    // Mark saved styles
+    const savedWithFlag = props.savedStyles.map(s => ({ ...s, saved: true }));
+    
+    // Filter out default styles that are already saved
+    const filteredDefaults = defaultStyles.filter(d => 
+      !props.savedStyles.find(s => s.headingType === d.headingType)
+    );
+    
+    // Combine saved and default styles
+    return [...savedWithFlag, ...filteredDefaults];
+  });
 
-  $: savedCount = savedStyles.length;
+  // Count of saved styles
+  let savedCount = $derived(() => props.savedStyles.length);
+  
+  // Get button class dynamically
+  function getButtonClass() {
+    return cn(
+      "h-full w-full px-3 font-mono text-xs flex items-center justify-between",
+      "border rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors",
+      props.selectedStyle?.saved && "bg-gray-500/5 border-2 border-primary",
+      props.disabled && "opacity-50 cursor-not-allowed"
+    );
+  }
+  
+  // Get style item class
+  function getStyleItemClass(style: any) {
+    return cn(
+      "flex items-center justify-between px-2 py-1.5 rounded-sm group transition-colors",
+      style.saved && "bg-gray-500/5 border-l-2 border-primary",
+      !style.saved && "hover:bg-gray-50 dark:hover:bg-gray-700",
+      props.selectedStyle?.headingType === style.headingType && "bg-gray-100 dark:bg-gray-700"
+    );
+  }
 </script>
 
 <div class="relative">
@@ -48,14 +84,9 @@
              rounded-lg border border-gray-200 dark:border-gray-600 shadow-lg z-20"
       transition:slide={{ duration: 150, axis: "y" }}
     >
-      <div class="flex flex-col gap-0.5">
+      <div class="flex flex-col gap-0.5 max-h-52 overflow-y-auto">
         {#each allStyles as style}
-          <div class={cn(
-            "flex items-center justify-between px-2 py-1.5 rounded-sm group transition-colors",
-            style.saved && "bg-gray-500/5 border-2 border-primary",
-            !style.saved && "hover:bg-gray-50 dark:hover:bg-gray-700",
-            selectedStyle?.headingType === style.headingType && "bg-gray-100 dark:bg-gray-700"
-          )}>
+          <div class={getStyleItemClass(style)}>
             <button
               class="flex-1 text-left text-[10px] font-mono"
               on:click={() => handleSelect(style)}
@@ -88,53 +119,41 @@
   <!-- Main Button -->
   <div class="flex gap-2 h-8">
     <button
-      class={cn(
-        "h-full w-full px-3 font-mono text-xs flex items-center justify-between",
-        "border rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors",
-        selectedStyle?.saved && "bg-gray-500/5 border-2 border-primary",
-        disabled && "opacity-50 cursor-not-allowed"
-      )}
-      {disabled}
+      class={getButtonClass()}
+      disabled={props.disabled}
       on:click={() => showOptions = !showOptions}
     >
       <div class="flex items-center gap-2">
-        {#if selectedStyle}
-          <span class="opacity-70">{selectedStyle.tag}</span>
+        {#if props.selectedStyle}
+          <span class="opacity-70">{props.selectedStyle.tag}</span>
           <span 
             class="text-muted-foreground"
-            style={selectedStyle.fontSize ? `font-size: ${selectedStyle.fontSize}px` : ''}
+            style={props.selectedStyle.fontSize ? `font-size: ${props.selectedStyle.fontSize}px` : ''}
           >
-            {selectedStyle.label}
+            {props.selectedStyle.label}
           </span>
         {:else}
           <span class="opacity-70">
-            {savedCount > 0 ? 'Saved styles...' : 'No saved styles'}
+            {savedCount > 0 ? 'Saved styles...' : 'Select style...'}
           </span>
         {/if}
       </div>
       
       <!-- Counter Badge -->
-      {#if savedCount >= 0}
-        <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2">
+        {#if savedCount > 0}
           <div class="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-700 
                     flex items-center justify-center text-[10px]">
             {savedCount}
           </div>
-          <ChevronUp
-            class={cn(
-              "h-4 w-4 transition-transform duration-200",
-              showOptions && "rotate-180"
-            )}
-          />
-        </div>
-      {:else}
+        {/if}
         <ChevronUp
           class={cn(
             "h-4 w-4 transition-transform duration-200",
-            showOptions && "rotate-180"
+            !showOptions && "rotate-180"
           )}
         />
-      {/if}
+      </div>
     </button>
   </div>
 </div>
