@@ -2,7 +2,7 @@
 
 // Core element types - explicitly export these first
 export type ElementTheme = 'light' | 'dark';
-export type ElementCategory = string; // Simplified to fix import issues
+export type ElementCategory = string;
 
 // Element structure
 export interface ElementContent {
@@ -73,4 +73,4 @@ export interface Theme {
 	label: string;
 	mode: ElementTheme;
 	textColor: string;
-} 
+}

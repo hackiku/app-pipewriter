@@ -1,5 +1,5 @@
 // src/lib/data/addon/elements.ts
-import { ElementDefinition } from './types';
+import type { ElementDefinition } from './types';
 
 // Define elements database
 export const elementsDb: Record<string, ElementDefinition> = {

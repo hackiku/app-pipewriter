@@ -1,4 +1,5 @@
-// src/lib/data/addon/elements.ts
+// OLD ELEMENTS EXPECTED BY SOME COMPONENTS
+// src/lib/data/addon/arch_elements.ts 
 
 // Define element types
 // export type ElementTheme = 'light' | 'dark';

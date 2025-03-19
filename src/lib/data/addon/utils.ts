@@ -1,5 +1,5 @@
 // src/lib/data/addon/utils.ts
-import { ElementTheme, Element, ElementDefinition, StatusUpdate } from './types';
+import type { ElementTheme, Element, ElementDefinition, StatusUpdate } from './types';
 import { elementsDb } from './elements';
 
 // Helper functions for creating status updates
