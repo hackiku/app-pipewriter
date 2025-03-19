@@ -1,5 +1,6 @@
 <!-- $lib/iframe/features/Dropper.svelte -->
 <script lang="ts">
+  import { getContext } from "svelte";
   import { fade, slide, fly } from "svelte/transition";
   import type { StatusUpdate } from "$lib/data/addon/types";
   import { insertElement } from "$lib/services/google/docs";
@@ -10,8 +11,11 @@
   import DropperGrid from "./dropper/DropperGrid.svelte";
   import DropperBar from "./dropper/DropperBar.svelte";
   
-  // Props
+  // Props - service context
   const { context } = $props();
+  
+  // Get UI state from context
+  const uiState = getContext('uiState');
   
   // Local state variables - using plain variables where possible to reduce reactivity
   let isProcessing = $state(false);
@@ -120,7 +124,7 @@
   function cleanup() {
     clearStatusTimeout();
   }
-	</script>
+</script>
 
 <div class="relative h-full z-0 bg-neutral-100/50 dark:bg-neutral-800/50">
   <!-- Status Bar -->
@@ -129,11 +133,11 @@
   {/if}
   
   <!-- Debug info in dev mode -->
-  {#if import.meta.env.DEV}
-    <div class="absolute top-0 right-0 p-1 text-[0.6em] rounded-sm bg-black/40 text-white z-50">
-      {elementsTheme} | grid-{gridColumns}
+  <!-- {#if import.meta.env.DEV}
+    <div class="opacity-70 absolute top-0 right-0 p-1 text-[0.6em] rounded-sm bg-black/15 text-neutral-900/40 z-50">
+      {elementsTheme} | grid-{gridColumns} | info: {uiState.showInfo ? 'true' : 'false'}
     </div>
-  {/if}
+  {/if} -->
   
   <!-- Main Container - No scrollbar visible but still scrollable -->
   <div class="h-full pb-8 pt-2 overflow-y-auto scrollbar-none">

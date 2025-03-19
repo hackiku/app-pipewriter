@@ -1,75 +1,44 @@
 <!-- $lib/iframe/layout/TopBar.svelte -->
 <script lang="ts">
   import { toggleMode } from "mode-watcher";
+  import { getContext } from "svelte";
   import { Info, Sun, Moon, Minimize2 } from 'lucide-svelte';
   import { fade } from 'svelte/transition';
+  import { Button } from "$lib/components/ui/button";
 
-  // Replace stores with state variables
-  let showInfo = $state(false);
-  let zenMode = $state(false);
+  // Get UI state from context
+  const uiState = getContext('uiState');
+
+  // Local state for theme
   let isDarkMode = $state(false);
-
-  function toggleShowInfo() {
-    showInfo = !showInfo;
-  }
-
-  function toggleZenMode() {
-    zenMode = !zenMode;
-  }
 
   function handleToggleMode() {
     isDarkMode = !isDarkMode;
     toggleMode();
   }
-
-  // Create simple button component to replace IconButton
-  const Button = (props) => {
-    const { icon, selected, size, className } = props;
-    
-    return {
-      tag: 'button',
-      props: {
-        class: `rounded-full transition-all duration-200 
-                ${size === 'sm' ? 'h-7 w-7 p-1.5' : 'h-8 w-8 p-2'} 
-                ${selected ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'text-muted-foreground hover:text-foreground'} 
-                ${className || ''}`,
-        onclick: props.onclick
-      },
-      slots: {
-        default: {
-          render: (slotProps) => {
-            return {
-              tag: props.icon,
-              props: {
-                class: 'w-full h-full'
-              }
-            };
-          }
-        }
-      }
-    };
-  };
 </script>
 
 <div class="flex items-center justify-between py-2">
   <!-- Zen Mode Button -->
-  <button 
-    class="rounded-full h-7 w-7 p-1.5 transition-all duration-200 hover:rotate-90
-           {zenMode ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'text-muted-foreground hover:text-foreground'}"
-    onclick={toggleZenMode}
+  <Button 
+    variant="ghost"
+    size="icon"
+    class="rounded-full h-7 w-7 p-1.5 {uiState.zenMode ? 'bg-primary/10 text-primary' : 'text-muted-foreground'}" 
+    onclick={uiState.toggleZenMode}
   >
-    <Minimize2 class="w-full h-full" />
-  </button>
+    <Minimize2 class="h-4 w-4" />
+  </Button>
   
   <div class="flex items-center justify-middle gap-2">
     <!-- Info Button -->
-    <button
-      class="rounded-full h-7 w-7 p-1.5 transition-all duration-200 hover:rotate-12
-             {showInfo ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'text-muted-foreground hover:text-foreground'}"
-      onclick={toggleShowInfo}
+    <Button
+      variant="ghost"
+      size="icon"
+      class="rounded-full h-7 w-7 p-1.5 {uiState.showInfo ? 'bg-primary/10 text-primary' : 'text-muted-foreground'}"
+      onclick={uiState.toggleShowInfo}
     >
-      <Info class="w-full h-full" />
-    </button>
+      <Info class="h-4 w-4" />
+    </Button>
     
     <!-- Theme Toggle Button -->
     <div class="relative w-7 h-7 mr-1">
@@ -79,27 +48,20 @@
           out:fade={{ duration: 200 }}
           class="absolute inset-0"
         >
-          <button
-            class="rounded-full h-7 w-7 p-1.5 transition-all duration-200
-                  {isDarkMode ? 'hover:rotate-12' : 'hover:rotate-90'}
-                  text-muted-foreground hover:text-foreground"
+          <Button
+            variant="ghost"
+            size="icon"
+            class="rounded-full h-7 w-7 p-1.5 text-muted-foreground"
             onclick={handleToggleMode}
           >
             {#if isDarkMode}
-              <Moon class="w-full h-full" />
+              <Moon class="h-4 w-4" />
             {:else}
-              <Sun class="w-full h-full" />
+              <Sun class="h-4 w-4" />
             {/if}
-          </button>
+          </Button>
         </div>
       {/key}
     </div>
   </div>
 </div>
-
-<style>
-  /* Optional: Add a subtle transition for the container itself */
-  div {
-    transition: background-color 0.2s ease;
-  }
-</style>

@@ -1,5 +1,6 @@
 <!-- $lib/iframe/features/dropper/DropperGrid.svelte -->
 <script lang="ts">
+  import { getContext } from "svelte";
   import ElementCard from "./ElementCard.svelte";
   import { elementManager, getElementsByCategory } from '$lib/data/addon/utils';
   import type { ElementTheme, ElementCategory } from '$lib/data/addon/types';
@@ -13,8 +14,10 @@
     onElementSelect: (event: CustomEvent<{ elementId: string }>) => void;
   }>();
   
+  // Get UI state from context
+  const uiState = getContext('uiState');
+  
   // Local state
-  let showInfo = $state(true);
   let categoriesCache = $state<Record<string, any>>({});
   
   // Get grid classes based on column count
@@ -34,7 +37,7 @@
     // Only update categories when theme changes
     if (lastTheme === props.theme) return;
     
-    console.log(`DropperGrid: Loading categories for theme ${props.theme}, grid: ${props.gridColumns}`);
+    console.log(`DropperGrid: Loading categories for theme ${props.theme}, grid: ${props.gridColumns}, showInfo: ${uiState.showInfo}`);
     const categories = elementManager.getElementsByCategory(props.theme);
     
     // Update state after a microtask to prevent immediate dependent updates
@@ -64,7 +67,8 @@
   {:else}
     {#each Object.entries(categoriesCache) as [category, categoryElements]}
       <section>
-        {#if showInfo}
+        <!-- Use uiState.showInfo from context instead of local state -->
+        {#if uiState.showInfo}
           <h3 class="text-xs font-normal text-neutral-400 dark:text-neutral-500 mb-2 ml-2 capitalize">
             {category.replace("-", " ")} ({categoryElements.length})
           </h3>

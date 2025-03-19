@@ -1,7 +1,7 @@
 <!-- $lib/iframe/AddOn.svelte -->
 <script lang="ts">
 	import { fade, slide } from "svelte/transition";
-	import { getContext } from "svelte";
+	import { setContext } from "svelte";
 	import * as Resizable from "$lib/components/ui/resizable";
 	import { browser } from "$app/environment";
 
@@ -13,6 +13,7 @@
 
 	// Component state with Runes
 	let zenMode = $state(false);
+	let showInfo = $state(true);
 	let activeTab = $state(false);
 	let showAboutModal = $state(false);
 
@@ -26,8 +27,24 @@
 		}
 	});
 
-	// Create context for child components
-	let context = $derived(() => ({
+	// Set up context for UI state access by all child components
+	setContext('uiState', {
+		// Getter functions allow accessing the latest state
+		get showInfo() { return showInfo; },
+		get zenMode() { return zenMode; },
+		// Methods to modify state
+		toggleShowInfo: () => { 
+			showInfo = !showInfo; 
+			console.log('showInfo toggled to:', showInfo);
+		},
+		toggleZenMode: () => { 
+			zenMode = !zenMode; 
+			console.log('zenMode toggled to:', zenMode);
+		}
+	});
+
+	// Create context for service instances
+	let serviceContext = $derived(() => ({
 		googleService,
 	}));
 
@@ -44,16 +61,11 @@
 	function toggleAboutModal() {
 		showAboutModal = !showAboutModal;
 	}
-
-	// Toggle zen mode
-	function toggleZenMode() {
-		zenMode = !zenMode;
-	}
 </script>
 
 <main class="flex flex-col h-full overflow-hidden">
 	<section class="flex-none px-2">
-		<TopBar {zenMode} onToggleZenMode={toggleZenMode} />
+		<TopBar />
 	</section>
 	<hr />
 
@@ -65,7 +77,7 @@
 			<Resizable.Pane defaultSize={55} minSize={30} maxSize={80}>
 				<!-- Only render Dropper if googleService is available -->
 				{#if googleService}
-					<Dropper {context} />
+					<Dropper context={serviceContext} />
 				{:else}
 					<div class="h-full flex items-center justify-center text-gray-400">
 						<p>Loading Dropper component...</p>
@@ -86,7 +98,7 @@
 	</div>
 
 	<div class="mb-2 px-2">
-		<Tabs {context} />
+		<Tabs context={serviceContext} />
 	</div>
 
 	<div class="px-2 border-t border-gray-200 dark:border-gray-700">
