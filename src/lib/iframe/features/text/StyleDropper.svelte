@@ -46,12 +46,12 @@
   </div>
   
   <!-- Controls Row (smaller height) -->
-  <div class="flex justify-between items-center mt-2 h-6">
+  <div class="flex justify-between items-center h-6 px-1">
     <!-- Theme Toggle Button -->
     <Button
       variant="ghost"
       size="icon"
-      class="h-6 w-6 p-0"
+      class="h-5 w-5"
       disabled={props.isProcessing}
       onclick={props.onToggleTheme}
       title={props.theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
@@ -63,20 +63,23 @@
       {/if}
     </Button>
     
+    <!-- Spacer to push select to the right -->
+    <div class="flex-grow"></div>
+    
     <!-- Style Mode Select -->
-    <div class="flex-1 ml-1">
+    <div class="w-11">
       <Select.Root 
         type="single" 
         value={styleMode}
         onValueChange={handleStyleModeChange} 
         disabled={props.isProcessing}
       >
-        <Select.Trigger class="h-6 text-[0.6em]">
-          {styleMode === "local" ? "Local" : "Original"}
+        <Select.Trigger class="h-6 text-[0.6em] bg-transparent border-0 p-0 w-full px-1 justify-end">
+          {styleMode === "local" ? "local" : "base"}
         </Select.Trigger>
         <Select.Content>
           <Select.Item value="local" class="text-xs">Local</Select.Item>
-          <Select.Item value="original" class="text-xs">Original</Select.Item>
+          <Select.Item value="original" class="text-xs">Base</Select.Item>
         </Select.Content>
       </Select.Root>
     </div>

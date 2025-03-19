@@ -5,7 +5,6 @@
   import { Pipette, RefreshCw, Heading } from "lucide-svelte";
   import StyleDropper from "./StyleDropper.svelte";
   import type { ElementTheme } from '$lib/data/addon/types';
-  import { onMount } from "svelte";
 
   // Props
   const props = $props<{
@@ -19,7 +18,7 @@
     onToggleTheme: () => void;
   }>();
 
-  // State
+  // State for responsive UI
   let rightPaneWidth = $state(0);
   let rightPaneElement = $state<HTMLDivElement | null>(null);
   let compactMode = $derived(rightPaneWidth < 120);
