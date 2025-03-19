@@ -1,152 +1,61 @@
 <!-- $lib/iframe/features/ai/AiTab.svelte -->
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
-  import { ArrowDown, ArrowUp, Trash2, Code, Clipboard } from 'lucide-svelte';
-  import { Button } from "$lib/components/ui/button";
-  import HtmlButton from './HtmlButton.svelte';
-  import PromptDropdown from './PromptDropdown.svelte';
-  import { insertHtml, stripHtml } from '$lib/services/google/html';
+  import PromptDropdown from "./PromptDropdown.svelte";
+  import DropCode from "./DropCode.svelte";
+  import StripCode from "./StripCode.svelte";
 
-  // Props
-  const { context } = $props();
-  
+  // Props with modern SvelteKit 5 syntax
+  const props = $props<{
+    context: any;
+    onStatusUpdate: (status: any) => void;
+    onProcessingStart: () => void;
+    onProcessingEnd: () => void;
+  }>();
+
   // State
   let isProcessing = $state(false);
   let activePrompt = $state(null);
-  let useMasterPrompt = $state(true);
-  
-  const dispatch = createEventDispatcher();
+  let promptOpen = $state(false);
 
-  async function handleHtmlAction(action: string, params = {}) {
-    if (isProcessing) return;
+  // This function will be called by the DropCode and StripCode components
+  function handleStatusUpdate(status: any) {
+    props.onStatusUpdate(status);
+  }
 
+  function handleProcessingStart() {
     isProcessing = true;
-    dispatch('processingStart');
-    dispatch('status', {
-      type: 'processing',
-      message: 'Processing...'
-    });
-
-    try {
-      if (action === 'dropHtml') {
-        const payload = {
-          ...params,
-          ...(activePrompt ? {
-            prompt: activePrompt.content
-          } : {})
-        };
-
-        const response = await insertHtml(payload, (status) => {
-          dispatch('status', status);
-        });
-        
-        if (!response.success) {
-          throw new Error(response.error);
-        }
-
-        if (response.clipboardContent) {
-          await navigator.clipboard.writeText(response.clipboardContent);
-          dispatch('status', {
-            type: 'success',
-            message: 'Copied to clipboard',
-            executionTime: response.executionTime
-          });
-        } else {
-          dispatch('status', {
-            type: 'success',
-            message: 'HTML inserted successfully',
-            executionTime: response.executionTime
-          });
-        }
-      } else if (action === 'stripHtml') {
-        const response = await stripHtml(params, (status) => {
-          dispatch('status', status);
-        });
-        
-        if (!response.success) {
-          throw new Error(response.error);
-        }
-
-        dispatch('status', {
-          type: 'success',
-          message: params.all ? 'All HTML removed' : 'HTML tags removed',
-          executionTime: response.executionTime
-        });
-      }
-    } catch (error) {
-      console.error(`Failed to ${action}:`, error);
-      dispatch('status', {
-        type: 'error',
-        message: error instanceof Error ? error.message : `Failed to ${action}`
-      });
-    } finally {
-      isProcessing = false;
-      dispatch('processingEnd');
-    }
+    props.onProcessingStart();
   }
 
-  const dropHtmlActions = [
-    { 
-      label: 'Start',
-      icon: ArrowUp,
-      onClick: () => handleHtmlAction('dropHtml', { position: 'start' })
-    },
-    {
-      label: 'End',
-      icon: ArrowDown,
-      onClick: () => handleHtmlAction('dropHtml', { position: 'end' })
-    },
-    {
-      label: 'Copy',
-      icon: Clipboard,
-      onClick: () => handleHtmlAction('dropHtml', { copyToClipboard: true })
-    }
-  ];
-
-  const stripHtmlActions = [
-    { 
-      label: 'Tags',
-      onClick: () => handleHtmlAction('stripHtml', { all: false })
-    },
-    { 
-      label: 'All',
-      onClick: () => handleHtmlAction('stripHtml', { all: true })
-    }
-  ];
-  
-  function setActivePrompt(prompt) {
-    activePrompt = prompt;
-  }
-  
-  function toggleMasterPrompt() {
-    useMasterPrompt = !useMasterPrompt;
+  function handleProcessingEnd() {
+    isProcessing = false;
+    props.onProcessingEnd();
   }
 </script>
 
 <div class="flex flex-col items-stretch w-full gap-3">
+  <!-- Prompt Dropdown on top -->
   <div class="relative">
-    <PromptDropdown 
-      {activePrompt}
-      {useMasterPrompt}
-      on:promptSelect={e => setActivePrompt(e.detail)}
-      on:toggleMasterPrompt={toggleMasterPrompt}
-      disabled={isProcessing} 
+    <PromptDropdown
+      isOpen={promptOpen}
+      isProcessing={isProcessing}
     />
   </div>
 
-  <HtmlButton
-    icon={Code}
-    label="Drop HTML"
-    variant="icon-only"
-    actions={dropHtmlActions}
+  <!-- Drop Code Control -->
+  <DropCode
     disabled={isProcessing}
+    activePrompt={activePrompt}
+    onStatusUpdate={handleStatusUpdate}
+    onProcessingStart={handleProcessingStart}
+    onProcessingEnd={handleProcessingEnd}
   />
-
-  <HtmlButton
-    icon={Trash2}
-    label="Strip HTML"
-    variant="text"
-    actions={stripHtmlActions}
+  
+  <!-- Strip Code Control -->
+  <StripCode
     disabled={isProcessing}
+    onStatusUpdate={handleStatusUpdate}
+    onProcessingStart={handleProcessingStart}
+    onProcessingEnd={handleProcessingEnd}
   />
 </div>
