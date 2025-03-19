@@ -135,8 +135,6 @@
     </div>
   {/if}
   
-  <!-- Test SVG for verifying SVG loading works -->
-  <img src="/elements/blurbs-4.svg" alt="Test SVG" class="w-1 h-1 opacity-5 absolute top-0 left-0" />
   
   <!-- Main Container - No scrollbar visible but still scrollable -->
   <div class="h-full pb-8 pt-2 overflow-y-auto scrollbar-none">

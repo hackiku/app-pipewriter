@@ -14,51 +14,41 @@
     isSelected?: boolean;
   }>();
 
-  // Local state
-  let mounted = $state(false);
+  // Local state - minimal reactivity
   let isProcessing = $state(false);
-  let isDarkMode = $state(false);
   let imageError = $state(false);
-
-  // Use a simple flag to prevent multiple runs
-  let hasRun = $state(false);
   
-  // Set mounted state and check theme when component is active
-  $effect(() => {
-    if (hasRun) return;
-    hasRun = true;
+  // Use a DOM flag instead of state for mounted/dark mode
+  // This avoids unnecessary reactivity
+  let mounted = false;
+  let isDarkModeEl = false;
+  
+  // Initialize dark mode detection once at mount time
+  function initDarkModeDetection() {
+    if (typeof document === 'undefined') return () => {};
     
     mounted = true;
-    console.log(`ElementCard mounted for ${props.element.id} (theme: ${props.theme})`);
+    isDarkModeEl = document.documentElement.classList.contains('dark');
     
-    // Check for dark mode
-    if (typeof document !== 'undefined') {
-      // Initial check
-      isDarkMode = document.documentElement.classList.contains('dark');
-      
-      // Watch for theme changes
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          if (mutation.attributeName === 'class') {
-            // Update isDarkMode without triggering cascading effects
-            const newDarkMode = document.documentElement.classList.contains('dark');
-            if (isDarkMode !== newDarkMode) {
-              isDarkMode = newDarkMode;
-            }
-          }
-        });
-      });
-      
-      observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ['class']
-      });
-      
-      // Cleanup on destroy
-      return () => observer.disconnect();
-    }
-  });
-
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.attributeName === 'class') {
+          isDarkModeEl = document.documentElement.classList.contains('dark');
+        }
+      }
+    });
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+    
+    return () => observer.disconnect();
+  }
+  
+  // Run once at component initialization
+  const cleanup = initDarkModeDetection();
+  
   // Handle click on the element card
   async function handleClick() {
     if (props.disabled || isProcessing) return;
@@ -66,6 +56,7 @@
     isProcessing = true;
     
     try {
+      // Call the select handler without capturing any reactive dependencies
       await props.onSelect(props.element.id);
     } finally {
       isProcessing = false;
@@ -87,33 +78,24 @@
     "active:translate-y-0 active:translate-x-0 active:shadow-none"
   );
 
-  // Simplified computed properties to avoid circular dependencies
-  function getCardBackground() {
-    return cardStyles[props.theme];
-  }
-  
+  // Pure function to get button class - no reactive dependencies
   function getButtonClass() {
     return cn(
       baseButtonClasses,
-      getCardBackground(),
+      cardStyles[props.theme], // Direct lookup by theme
       props.isSelected && "ring-2 ring-primary ring-offset-2",
       (props.disabled || isProcessing) && "opacity-90 cursor-not-allowed pointer-events-none",
     );
   }
   
-  // Get image source from the element
+  // Pure function to get image source - no reactive dependencies
   function getImageSrc() {
-    // Log for debugging
-    if (imageError) {
-      console.log(`Using element src: ${props.element.src} (had error previously)`);
-    }
     return props.element.src;
   }
   
   // Handle image loading errors
   function handleImageError() {
     console.error(`Failed to load image: ${props.element.src}`);
-    console.error(`Element details: ${JSON.stringify(props.element)}`);
     imageError = true;
   }
 </script>

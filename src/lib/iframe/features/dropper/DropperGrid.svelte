@@ -68,8 +68,8 @@
           </h3>
         {/if}
         
-        <!-- Use direct grid class computation rather than derived state -->
-        <div class="grid grid-cols-{props.gridColumns} {props.gridColumns === 1 ? 'gap-5 px-8' : 'gap-2 px-2'}">
+        <!-- Use the getGridClasses function -->
+        <div class="grid {getGridClasses().grid} {getGridClasses().gap} {getGridClasses().padding}">
           {#each categoryElements as element (element.id)}
             <ElementCard
               element={element}
