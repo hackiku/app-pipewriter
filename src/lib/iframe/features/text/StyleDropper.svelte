@@ -57,9 +57,9 @@
       title={props.theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
     >
       {#if props.theme === 'light'}
-        <Moon class="h-3 w-3" />
+				<Sun class="h-3 w-3" />
       {:else}
-        <Sun class="h-3 w-3" />
+				<Moon class="h-3 w-3" />
       {/if}
     </Button>
     

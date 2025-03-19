@@ -30,7 +30,7 @@
   } | null>(null);
   let statusTimeout = $state<number | null>(null);
   
-  const BG_STYLE = 'bg-gray-50 dark:bg-slate-950';
+  const BG_STYLE = 'bg-neutral-50 dark:bg-neutral-950';
 
   // Tab definitions
   const tabs = {
@@ -91,10 +91,10 @@
   function getButtonClass(tab: string) {
     return activeTab === tab 
       ? `transition-all duration-200 relative z-10 w-10 h-[calc(3rem+1px)] rounded-b-full ${BG_STYLE}
-         border-b border-l border-r border-gray-300 dark:border-gray-600
+         border-b border-l border-r border-neutral-300 dark:border-neutral-600
          after:content-[''] after:absolute after:top-[-1px] 
          after:left-0 after:right-0 after:h-[1px] after:bg-inherit`
-      : "transition-all duration-200 relative z-10 w-10 h-10 rounded-full mt-1 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600";
+      : "transition-all duration-200 relative z-10 w-10 h-10 rounded-full mt-1 hover:bg-neutral-100 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-600";
   }
   
   let activeTabData = $derived(
@@ -114,7 +114,7 @@
   <!-- Status Bar -->
   {#if status}
     <div class="absolute top-0 left-0 right-0 z-50" transition:fade={{ duration: 150 }}>
-      <div class="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 shadow-sm">
+      <div class="bg-white/95 dark:bg-neutral-800/95 backdrop-blur-sm border-b border-neutral-200 dark:border-neutral-700 shadow-sm">
         <div class="h-8 px-4 flex items-center justify-between">
           <div class="flex items-center gap-2 {status.type === 'processing' ? 'text-blue-600 dark:text-blue-400' : status.type === 'success' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">
             {#if status.type === 'processing'}
@@ -137,8 +137,8 @@
   <!-- Active Tab Content -->
   {#if activeTab && activeTabData}
     <div
-      class="absolute bottom-full w-full rounded-t-lg border border-gray-300 
-             dark:border-gray-600 {BG_STYLE}"
+      class="absolute bottom-full w-full rounded-t-lg border border-neutral-300 
+             dark:border-neutral-600 {BG_STYLE}"
       transition:fade={{ duration: 200 }}
     >
       <!-- Tab Header -->
