@@ -1,9 +1,7 @@
 <!-- $lib/iframe/features/text/TextTab.svelte -->
 <script lang="ts">
-  import { slide } from "svelte/transition";
-  import * as Resizable from "$lib/components/ui/resizable";
-  import TextStyleDropdown from "./TextStyleDropdown.svelte";
-  import TextButtons from "./TextButtons.svelte";
+  import TextDropdown from "./TextDropdown.svelte";
+  import TextActions from "./TextActions.svelte";
   import { insertElement } from "$lib/services/google/docs";
   import type { ElementTheme } from '$lib/data/addon/types';
   
@@ -19,12 +17,10 @@
     }) => void;
     onProcessingStart: () => void;
     onProcessingEnd: () => void;
-    onDropdownOpenChange?: (isOpen: boolean) => void;
   }>();
   
   // State
   let isProcessing = $state(false);
-  let dropdownOpen = $state(false);
   let selectedStyle = $state<{
     headingType: string;
     tag: string;
@@ -41,6 +37,11 @@
       type: 'success',
       message: `Switched to ${elementsTheme} theme`
     });
+  }
+
+  // Handle style selection
+  function selectStyle(style) {
+    selectedStyle = style;
   }
 
   // Handle styleguide insertion
@@ -82,19 +83,6 @@
     } finally {
       isProcessing = false;
       props.onProcessingEnd();
-    }
-  }
-
-  // Handle style selection
-  function selectStyle(style) {
-    selectedStyle = style;
-  }
-
-  // Handle dropdown state
-  function setDropdownState(isOpen) {
-    dropdownOpen = isOpen;
-    if (props.onDropdownOpenChange) {
-      props.onDropdownOpenChange(isOpen);
     }
   }
 
@@ -182,46 +170,21 @@
 
 <div class="flex flex-col items-stretch w-full gap-2">
   <!-- Style Selector Dropdown -->
-  <TextStyleDropdown
+  <TextDropdown
     selectedStyle={selectedStyle}
     disabled={isProcessing}
     onSelect={selectStyle}
-    onOpenChange={setDropdownState}
   />
 
-  <!-- Resizable Layout -->
-  <Resizable.PaneGroup direction="horizontal" class="h-44 gap-2">
-    <!-- Left Pane: Element Card -->
-    <Resizable.Pane defaultSize={40} minSize={25} maxSize={60}>
-      <TextButtons
-        isProcessing={isProcessing}
-        selectedStyle={selectedStyle}
-        theme={elementsTheme}
-        onStyleGuideInsert={handleStyleGuideInsert}
-        onExtractStyle={extractStyle}
-        onApplyStyle={applyStyle}
-        onResetStyle={resetStyle}
-        onToggleTheme={toggleTheme}
-        layout="left"
-      />
-    </Resizable.Pane>
-    
-    <!-- <Resizable.Handle withHandle /> -->
-    <Resizable.Handle />
-    
-    <!-- Right Pane: Buttons -->
-    <Resizable.Pane defaultSize={60} minSize={40} maxSize={75}>
-      <TextButtons
-        isProcessing={isProcessing}
-        selectedStyle={selectedStyle}
-        theme={elementsTheme}
-        onStyleGuideInsert={handleStyleGuideInsert}
-        onExtractStyle={extractStyle}
-        onApplyStyle={applyStyle}
-        onResetStyle={resetStyle}
-        onToggleTheme={toggleTheme}
-        layout="right"
-      />
-    </Resizable.Pane>
-  </Resizable.PaneGroup>
+  <!-- Actions with Resizable Layout -->
+  <TextActions
+    isProcessing={isProcessing}
+    selectedStyle={selectedStyle}
+    theme={elementsTheme}
+    onStyleGuideInsert={handleStyleGuideInsert}
+    onExtractStyle={extractStyle}
+    onApplyStyle={applyStyle}
+    onResetStyle={resetStyle}
+    onToggleTheme={toggleTheme}
+  />
 </div>
