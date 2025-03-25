@@ -74,7 +74,8 @@
               onclick={() => openUrl(link.url)}
             >
               <div class="flex items-start gap-2">
-                <FileText class="h-4 w-4 mt-0.5" />
+                <!-- <FileText class="h-4 w-4 mt-0.5" /> -->
+                <img class="h-4 w-4 mt-1" src="/icons/gdocs-square.svg" alt="Google Docs square icon"/>
                 <div class="flex flex-col">
                   <span>{link.title}</span>
                   {#if showInfo}
@@ -93,8 +94,9 @@
           onclick={() => openUrl(DRIVE_FOLDER_URL)}
         >
           <div class="flex items-center gap-2">
+						<img class="h-4 w-4 smt-0.5" src="/icons/google-drive.svg" alt="Google Docs square icon"/>
+						<span>Drive Folder</span>
             <ExternalLink class="h-4 w-4" />
-            <span>Drive Folder</span>
           </div>
         </button>
       </div>

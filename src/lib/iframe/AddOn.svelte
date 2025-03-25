@@ -1,5 +1,3 @@
-
-
 <!-- $lib/iframe/AddOn.svelte -->
 <script lang="ts">
 	import { fade, slide } from "svelte/transition";
@@ -10,6 +8,7 @@
 	import TopBar from "./layout/TopBar.svelte";
 	import BottomBar from "./layout/BottomBar.svelte";
 	import Dropper from "./features/Dropper.svelte";
+	import TableProperties from "./features/TableProperties.svelte";
 	import Tabs from "./features/Tabs.svelte";
 	import { getGoogleService } from "$lib/services/google/client";
 	import type { GoogleAppsService } from "$lib/services/google/client";
@@ -99,11 +98,13 @@
 					class={activeTab || showAboutModal ? "z-0" : ""}
 				/>
 				<Resizable.Pane defaultSize={30} minSize={0}>
-					<!-- Placeholder for future pane content -->
+					<TableProperties />
 				</Resizable.Pane>
 			{/if}
 		</Resizable.PaneGroup>
 	</div>
+
+	<!-- <TableProperties /> -->
 
 	<div class="mb-2 px-2">
 		<Tabs context={serviceContext} />
