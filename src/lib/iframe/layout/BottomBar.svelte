@@ -1,9 +1,15 @@
 <!-- $lib/iframe/layout/BottomBar.svelte -->
 <script lang="ts">
   import { ExternalLink, HelpCircle, FileText, ChevronUp } from 'lucide-svelte';
+  import AppAbout from './AppAbout.svelte';
   
   // Import template data
   import { docLinks, DRIVE_FOLDER_URL } from '$lib/data/addon/templateDocs';
+  
+  // Props
+  const props = $props<{
+    onToggleAboutModal: () => void
+  }>();
   
   // State variables 
   let showAboutModal = $state(false);
@@ -18,6 +24,9 @@
 
   function toggleAboutModal() {
     showAboutModal = !showAboutModal;
+    if (typeof props.onToggleAboutModal === 'function') {
+      props.onToggleAboutModal();
+    }
   }
   
   function toggleDropdown() {
@@ -93,7 +102,7 @@
   </div>
 
   <!-- Help Button -->
-  <div class="-mt-[1px] flex items-center z-50">
+  <div class="-mt-[1px] flex items-center">
     <button
       class={buttonClass}
       onclick={toggleAboutModal}
@@ -102,6 +111,12 @@
       <HelpCircle class="h-4 w-4 mx-auto" />
     </button>
   </div>
+  
+  <!-- About Modal -->
+  <AppAbout 
+    showAboutModal={showAboutModal}
+    onToggleAboutModal={toggleAboutModal}
+  />
 </div>
 
 <style>
