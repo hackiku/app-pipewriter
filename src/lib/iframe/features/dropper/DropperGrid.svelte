@@ -74,7 +74,8 @@
           </h3>
         {/if}
         
-        <div class="grid {getGridClasses().grid} {getGridClasses().gap} {getGridClasses().padding}">
+        <!-- <div class="grid {getGridClasses().grid} {getGridClasses().gap} {getGridClasses().padding}"> -->
+        <div class="grid grid-cols-3 gap-2">
           {#each categoryElements as element (element.id)}
             <ElementCard
               element={element}

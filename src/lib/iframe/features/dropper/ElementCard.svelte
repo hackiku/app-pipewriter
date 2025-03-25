@@ -4,6 +4,7 @@
   import { cn } from "$lib/utils";
   import { Plus, X, AlertCircle } from 'lucide-svelte';
   import type { Element, ElementTheme } from '$lib/data/addon/types';
+  import { onMount, onDestroy } from 'svelte';
 
   // Props
   const props = $props<{
@@ -17,23 +18,23 @@
   // Local state - minimal reactivity
   let isProcessing = $state(false);
   let imageError = $state(false);
+  let appTheme = $state<ElementTheme>('light');
+  let observer: MutationObserver | null = null;
   
-  // Use a DOM flag instead of state for mounted/dark mode
-  // This avoids unnecessary reactivity
-  let mounted = false;
-  let isDarkModeEl = false;
-  
-  // Initialize dark mode detection once at mount time
-  function initDarkModeDetection() {
-    if (typeof document === 'undefined') return () => {};
+  // Setup mutation observer to detect theme changes on document
+  onMount(() => {
+    // Initial dark mode check
+    appTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
     
-    mounted = true;
-    isDarkModeEl = document.documentElement.classList.contains('dark');
-    
-    const observer = new MutationObserver((mutations) => {
+    // Watch for dark mode changes
+    observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         if (mutation.attributeName === 'class') {
-          isDarkModeEl = document.documentElement.classList.contains('dark');
+          const newAppTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+          if (appTheme !== newAppTheme) {
+            console.log(`App theme changed from ${appTheme} to ${newAppTheme}`);
+            appTheme = newAppTheme;
+          }
         }
       }
     });
@@ -42,12 +43,14 @@
       attributes: true,
       attributeFilter: ['class']
     });
-    
-    return () => observer.disconnect();
-  }
+  });
   
-  // Run once at component initialization
-  const cleanup = initDarkModeDetection();
+  // Clean up observer on component destroy
+  onDestroy(() => {
+    if (observer) {
+      observer.disconnect();
+    }
+  });
   
   // Handle click on the element card
   async function handleClick() {
@@ -61,6 +64,20 @@
     } finally {
       isProcessing = false;
     }
+  }
+
+  // Function to get the correct image path based on both element theme and app theme
+  function getSvgUrl(): string {
+    const element = props.element;
+    const baseId = element.id.endsWith('-dark') ? element.id.replace(/-dark$/, '') : element.id;
+    
+    // In app dark mode, we invert the theme logic
+    const shouldUseDarkVariant = appTheme === 'dark' 
+      ? props.theme === 'light'  // In dark app, light elements should be dark
+      : props.theme === 'dark';  // In light app, dark elements stay dark
+    
+    const svgPath = shouldUseDarkVariant ? `${baseId}-dark.svg` : `${baseId}.svg`;
+    return `/elements/${svgPath}`;
   }
 
   // Card styling based on theme
@@ -90,7 +107,7 @@
   
   // Handle image loading errors
   function handleImageError() {
-    console.error(`Failed to load image: ${props.element.src}`);
+    console.error(`Failed to load image: ${getSvgUrl()}`);
     imageError = true;
   }
 </script>
@@ -111,7 +128,7 @@
         </div>
       {:else}
         <img
-          src={props.element.src}
+          src={getSvgUrl()}
           alt={props.element.alt}
           class="w-full h-full object-cover group-hover:opacity-40"
           onerror={handleImageError}
