@@ -1,55 +1,70 @@
 // src/lib/services/firebase/auth.svelte.ts
-import { getAuth, onAuthStateChanged, type User } from 'firebase/auth';
+import { getFirebaseService } from '$lib/services/firebase/client';
 import { browser } from '$app/environment';
-import { getFirebaseService } from './client';
+import type { User } from 'firebase/auth';
 
-// Export state variables directly
+// Define state with the correct Svelte 5 runes syntax
 let user = $state<User | null>(null);
 let loading = $state(true);
 
-// Initialize listener in a browser-only context
+// Initialize Firebase auth
 if (browser) {
-	try {
+	import('firebase/auth').then(({ onAuthStateChanged }) => {
 		const { auth } = getFirebaseService();
-		if (auth) {
-			onAuthStateChanged(auth, (firebaseUser) => {
-				user = firebaseUser;
-				loading = false;
-				console.log("Auth state changed:", firebaseUser?.displayName || "Not signed in");
-			});
-		}
-	} catch (error) {
-		console.error("Firebase auth initialization error:", error);
-		loading = false;
-	}
+		onAuthStateChanged(auth, (firebaseUser) => {
+			user = firebaseUser;
+			loading = false;
+			console.log("Auth state:", user ? "Signed in" : "Signed out");
+		});
+	});
 }
 
-// Sign out function
-export async function logout() {
-	if (!browser) return false;
+// Simple sign in function
+export function signIn() {
+	if (!browser) return;
 
-	try {
-		const { auth } = getFirebaseService();
-		await auth.signOut();
-		return true;
-	} catch (error) {
-		console.error("Logout error:", error);
-		return false;
-	}
-}
-
-// Helper for testing Google sign-in within components
-export async function signInWithGoogle() {
-	if (!browser) return false;
-
-	try {
-		const { GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
+	return import('firebase/auth').then(({ GoogleAuthProvider, signInWithPopup }) => {
 		const { auth } = getFirebaseService();
 		const provider = new GoogleAuthProvider();
-		const result = await signInWithPopup(auth, provider);
-		return result.user;
-	} catch (error) {
-		console.error("Google sign-in error:", error);
-		return false;
-	}
+		return signInWithPopup(auth, provider)
+			.then(result => {
+				console.log("Signed in:", result.user.displayName);
+				return result.user;
+			})
+			.catch(error => {
+				console.error("Sign in failed:", error.message);
+				throw error;
+			});
+	});
+}
+
+// Simple sign out function
+export function signOut() {
+	if (!browser) return;
+
+	return import('firebase/auth').then(({ signOut: firebaseSignOut }) => {
+		const { auth } = getFirebaseService();
+		return firebaseSignOut(auth)
+			.then(() => {
+				console.log("Signed out");
+				return true;
+			})
+			.catch(error => {
+				console.error("Sign out failed:", error.message);
+				throw error;
+			});
+	});
+}
+
+// Export getters for reactive state
+export function getUser() {
+	return user;
+}
+
+export function isLoading() {
+	return loading;
+}
+
+export function isAuthenticated() {
+	return !!user;
 }
