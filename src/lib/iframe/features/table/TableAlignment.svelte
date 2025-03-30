@@ -94,57 +94,55 @@
 	});
 </script>
 
-<!-- 50/50 2-column layout -->
+<!-- Table Alignments Grid -->
+<div class="grid grid-cols-3 gap-2">
+	<!-- Horizontal Alignments (Row 1) -->
+	<Button
+		variant="outline"
+		class={getButtonClass(localValues.tableAlignment, "left")}
+		onclick={() => setTableAlignment("left")}
+	>
+		<AlignLeft class="h-5 w-5" />
+	</Button>
 
-		<!-- Table Alignments Grid -->
-		<div class="grid grid-cols-3 gap-2">
-			<!-- Horizontal Alignments (Row 1) -->
-			<Button
-				variant="outline"
-				class={getButtonClass(localValues.tableAlignment, "left")}
-				onclick={() => setTableAlignment("left")}
-			>
-				<AlignLeft class="h-5 w-5" />
-			</Button>
+	<Button
+		variant="outline"
+		class={getButtonClass(localValues.tableAlignment, "center")}
+		onclick={() => setTableAlignment("center")}
+	>
+		<AlignCenter class="h-5 w-5" />
+	</Button>
 
-			<Button
-				variant="outline"
-				class={getButtonClass(localValues.tableAlignment, "center")}
-				onclick={() => setTableAlignment("center")}
-			>
-				<AlignCenter class="h-5 w-5" />
-			</Button>
+	<Button
+		variant="outline"
+		class={getButtonClass(localValues.tableAlignment, "right")}
+		onclick={() => setTableAlignment("right")}
+	>
+		<AlignRight class="h-5 w-5" />
+	</Button>
 
-			<Button
-				variant="outline"
-				class={getButtonClass(localValues.tableAlignment, "right")}
-				onclick={() => setTableAlignment("right")}
-			>
-				<AlignRight class="h-5 w-5" />
-			</Button>
+	<!-- Vertical Alignments (Row 2) -->
+	<Button
+		variant="outline"
+		class={getButtonClass(localValues.cellVerticalAlignment, "top")}
+		onclick={() => setCellVerticalAlignment("top")}
+	>
+		<AlignStartVertical class="h-5 w-5" />
+	</Button>
 
-			<!-- Vertical Alignments (Row 2) -->
-			<Button
-				variant="outline"
-				class={getButtonClass(localValues.cellVerticalAlignment, "top")}
-				onclick={() => setCellVerticalAlignment("top")}
-			>
-				<AlignStartVertical class="h-5 w-5" />
-			</Button>
+	<Button
+		variant="outline"
+		class={getButtonClass(localValues.cellVerticalAlignment, "middle")}
+		onclick={() => setCellVerticalAlignment("middle")}
+	>
+		<AlignCenterVertical class="h-5 w-5" />
+	</Button>
 
-			<Button
-				variant="outline"
-				class={getButtonClass(localValues.cellVerticalAlignment, "middle")}
-				onclick={() => setCellVerticalAlignment("middle")}
-			>
-				<AlignCenterVertical class="h-5 w-5" />
-			</Button>
-
-			<Button
-				variant="outline"
-				class={getButtonClass(localValues.cellVerticalAlignment, "bottom")}
-				onclick={() => setCellVerticalAlignment("bottom")}
-			>
-				<AlignEndVertical class="h-5 w-5" />
-			</Button>
-		</div>
+	<Button
+		variant="outline"
+		class={getButtonClass(localValues.cellVerticalAlignment, "bottom")}
+		onclick={() => setCellVerticalAlignment("bottom")}
+	>
+		<AlignEndVertical class="h-5 w-5" />
+	</Button>
+</div>

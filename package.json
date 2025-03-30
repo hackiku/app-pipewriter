@@ -36,6 +36,7 @@
 		"zod": "^3.24.2"
 	},
 	"dependencies": {
+		"firebase": "^11.5.0",
 		"lucide-svelte": "^0.483.0",
 		"mode-watcher": "^0.5.1",
 		"vanilla-picker": "^2.12.3"
