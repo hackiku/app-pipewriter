@@ -1,5 +1,5 @@
 // src/lib/services/firebase/auth.svelte.ts
-import { getFirebaseService } from '$lib/services/firebase/client';
+import { getFirebaseService } from './client';
 import { browser } from '$app/environment';
 import type { User } from 'firebase/auth';
 
@@ -14,14 +14,24 @@ if (browser) {
 		onAuthStateChanged(auth, (firebaseUser) => {
 			user = firebaseUser;
 			loading = false;
-			console.log("Auth state:", user ? "Signed in" : "Signed out");
+			console.log("Auth state changed:", user ? "Signed in" : "Signed out");
 		});
 	});
 }
 
+// Get current user
+export function getUser() {
+	return user;
+}
+
+// Get loading state
+export function isLoading() {
+	return loading;
+}
+
 // Simple sign in function
 export function signIn() {
-	if (!browser) return;
+	if (!browser) return Promise.resolve(null);
 
 	return import('firebase/auth').then(({ GoogleAuthProvider, signInWithPopup }) => {
 		const { auth } = getFirebaseService();
@@ -40,7 +50,7 @@ export function signIn() {
 
 // Simple sign out function
 export function signOut() {
-	if (!browser) return;
+	if (!browser) return Promise.resolve(false);
 
 	return import('firebase/auth').then(({ signOut: firebaseSignOut }) => {
 		const { auth } = getFirebaseService();
@@ -54,17 +64,4 @@ export function signOut() {
 				throw error;
 			});
 	});
-}
-
-// Export getters for reactive state
-export function getUser() {
-	return user;
-}
-
-export function isLoading() {
-	return loading;
-}
-
-export function isAuthenticated() {
-	return !!user;
 }

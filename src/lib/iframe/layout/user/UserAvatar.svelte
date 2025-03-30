@@ -1,77 +1,102 @@
 <!-- $lib/iframe/layout/user/UserAvatar.svelte -->
 <script lang="ts">
+  import { fade } from 'svelte/transition';
+  import ProfileCard from './ProfileCard.svelte';
   import { UserCircle } from 'lucide-svelte';
+  import * as Avatar from "$lib/components/ui/avatar/index.js";
   import { getUser, signIn, signOut } from '$lib/services/firebase/auth.svelte';
   
   // Local state
-  let isOpen = $state(false);
+  let showProfile = $state(false);
   
-  // Get user from the auth module
-  $effect(() => {
-    const user = getUser();
-    console.log("User in component:", user ? "Signed in" : "Signed out");
+  // Props
+  const props = $props<{
+    size?: 'sm' | 'md' | 'lg';
+  }>();
+  
+  // Computed size properties
+  let dimensions = $derived(() => {
+    switch (props.size || 'md') {
+      case 'sm': return 'w-8 h-8';
+      case 'lg': return 'w-12 h-12';
+      default: return 'w-10 h-10';
+    }
   });
   
-  // Toggle dropdown
-  function toggle() {
-    isOpen = !isOpen;
+  function toggleProfile() {
+    showProfile = !showProfile;
   }
   
-  // Handle sign in
+  // Compute initials for the avatar
+  let initials = $derived(() => {
+    const user = getUser();
+    if (!user) return '';
+    
+    if (user.displayName) {
+      return user.displayName
+        .split(' ')
+        .map(name => name[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    
+    if (user.email) {
+      return user.email[0].toUpperCase();
+    }
+    
+    return '';
+  });
+  
+  let avatarSrc = $derived(() => getUser()?.photoURL || '');
+  
+  // Handle sign in button click
   async function handleSignIn() {
     try {
       await signIn();
-      isOpen = false;
     } catch (error) {
-      console.error("Sign in error in component:", error);
-    }
-  }
-  
-  // Handle sign out
-  async function handleSignOut() {
-    try {
-      await signOut();
-      isOpen = false;
-    } catch (error) {
-      console.error("Sign out error in component:", error);
+      console.error("Failed to sign in:", error);
     }
   }
 </script>
 
 <div class="relative">
-  <!-- Avatar button -->
   <button 
-    class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center"
-    onclick={toggle}
+    class="w-8 h-8 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+    onclick={toggleProfile}
   >
-    {#if getUser()?.photoURL}
-      <img src={getUser().photoURL} alt="User" class="w-full h-full rounded-full" />
+    {#if getUser()}
+      <Avatar.Root class={dimensions}>
+        {#if avatarSrc}
+          <Avatar.Image src={avatarSrc} alt={getUser()?.displayName || 'User'} />
+        {:else}
+          <Avatar.Fallback class="bg-primary/10 text-primary">
+            {initials}
+          </Avatar.Fallback>
+        {/if}
+      </Avatar.Root>
     {:else}
-      <UserCircle class="w-5 h-5 text-gray-500" />
+      <Avatar.Root class={dimensions}>
+        <Avatar.Fallback class="bg-gray-100 dark:bg-gray-800">
+          <UserCircle class="w-5 h-5 text-gray-500 dark:text-gray-400" />
+        </Avatar.Fallback>
+      </Avatar.Root>
     {/if}
   </button>
   
-  <!-- Simple dropdown menu -->
-  {#if isOpen}
-    <div class="absolute bottom-full mb-2 right-0 w-48 bg-white dark:bg-gray-800 shadow-lg rounded-md border border-gray-200 dark:border-gray-700 py-1">
-      {#if getUser()}
-        <div class="px-4 py-2 text-sm font-medium border-b border-gray-200 dark:border-gray-700">
-          {getUser().displayName || getUser().email || 'User'}
-        </div>
-        <button 
-          class="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-          onclick={handleSignOut}
-        >
-          Sign Out
-        </button>
-      {:else}
-        <button 
-          class="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
-          onclick={handleSignIn}
-        >
-          Sign In with Google
-        </button>
-      {/if}
-    </div>
+  {#if !getUser() && !showProfile}
+    <button 
+      class="absolute -bottom-6 text-xs text-gray-500 hover:text-gray-700 whitespace-nowrap"
+      onclick={handleSignIn}
+    >
+      Sign In
+    </button>
+  {/if}
+  
+  {#if showProfile}
+    <ProfileCard 
+      showProfileCard={showProfile} 
+      onToggleProfileCard={toggleProfile} 
+    />
   {/if}
 </div>
