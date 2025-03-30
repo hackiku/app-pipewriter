@@ -4,7 +4,7 @@
   import ProfileCard from './ProfileCard.svelte';
   import { UserCircle } from 'lucide-svelte';
   import * as Avatar from "$lib/components/ui/avatar/index.js";
-  import { getUser, signIn, signOut } from '$lib/services/firebase/auth.svelte';
+  import { getUser } from '$lib/services/firebase/auth.svelte';
   
   // Local state
   let showProfile = $state(false);
@@ -47,51 +47,20 @@
     
     return '';
   });
-  
-  let avatarSrc = $derived(() => getUser()?.photoURL || '');
-  
-  // Handle sign in button click
-  async function handleSignIn() {
-    try {
-      await signIn();
-    } catch (error) {
-      console.error("Failed to sign in:", error);
-    }
-  }
 </script>
 
 <div class="relative">
   <button 
-    class="w-8 h-8 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+    class="w-9 h-9 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center"
     onclick={toggleProfile}
+    aria-label="Toggle profile menu"
   >
-    {#if getUser()}
-      <Avatar.Root class={dimensions}>
-        {#if avatarSrc}
-          <Avatar.Image src={avatarSrc} alt={getUser()?.displayName || 'User'} />
-        {:else}
-          <Avatar.Fallback class="bg-primary/10 text-primary">
-            {initials}
-          </Avatar.Fallback>
-        {/if}
-      </Avatar.Root>
+    {#if getUser() && getUser()?.photoURL}
+      <img src={getUser().photoURL} alt="User" class="w-full h-full rounded-full" />
     {:else}
-      <Avatar.Root class={dimensions}>
-        <Avatar.Fallback class="bg-gray-100 dark:bg-gray-800">
-          <UserCircle class="w-5 h-5 text-gray-500 dark:text-gray-400" />
-        </Avatar.Fallback>
-      </Avatar.Root>
+      <UserCircle class="w-5 h-5 text-gray-500 dark:text-gray-400" />
     {/if}
   </button>
-  
-  {#if !getUser() && !showProfile}
-    <button 
-      class="absolute -bottom-6 text-xs text-gray-500 hover:text-gray-700 whitespace-nowrap"
-      onclick={handleSignIn}
-    >
-      Sign In
-    </button>
-  {/if}
   
   {#if showProfile}
     <ProfileCard 

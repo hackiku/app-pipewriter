@@ -1,7 +1,8 @@
 <!-- $lib/iframe/layout/BottomBar.svelte -->
 <script lang="ts">
   import { ExternalLink, HelpCircle, FileText, ChevronUp } from 'lucide-svelte';
-  import AppAbout from './AppAbout.svelte';
+  import { Button } from '$lib/components/ui/button';
+	import AppAbout from './AppAbout.svelte';
   import UserAvatar from './user/UserAvatar.svelte'
   // Import template data
   import { docLinks, DRIVE_FOLDER_URL } from '$lib/data/addon/templateDocs';
@@ -37,9 +38,9 @@
   let buttonClass = $derived(`transition-all duration-200 relative z-10 ${
     showAboutModal
       ? `w-9 h-11 mb-1 rounded-b-full ${BG_STYLE} 
-         border-b border-l border-r border-gray-300 dark:border-gray-600
+         border-b border-l border-r border-neutral-300 dark:border-neutral-600
          after:content-[''] after:absolute after:top-[-1px] after:left-0 after:right-0 after:h-[1px] after:bg-inherit`
-      : "w-9 h-9 rounded-full -mt-1 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600"
+      : "w-9 h-9 rounded-full -mt-1 hover:bg-neutral-100 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-600"
   }`);
 </script>
 
@@ -47,8 +48,8 @@
   <!-- Docs Dropdown -->
   <div class="relative">
     <button 
-      class="h-8 px-3 rounded-md border border-gray-300 dark:border-gray-600 
-             bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800
+      class="h-8 px-3 rounded-md border border-neutral-300 dark:border-neutral-600 
+             bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800
              text-sm font-medium transition-colors flex items-center"
       onclick={toggleDropdown}
     >
@@ -58,19 +59,19 @@
 
     {#if dropdownOpen}
       <div 
-        class="absolute bottom-full mb-1 w-64 rounded-md border border-gray-200 
-               dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg z-50"
+        class="absolute bottom-full mb-1 w-64 rounded-md border border-neutral-200 
+               dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg z-50"
       >
-        <div class="py-1 px-2 text-xs font-medium text-gray-500 dark:text-gray-400">
+        <div class="py-1 px-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
           Templates
         </div>
         
-        <div class="border-t border-gray-200 dark:border-gray-700"></div>
+        <div class="border-t border-neutral-200 dark:border-neutral-700"></div>
         
         <div class="py-1">
           {#each docLinks as link}
             <button 
-              class="w-full text-left px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors rounded-sm"
+              class="w-full text-left px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors rounded-sm"
               onclick={() => openUrl(link.url)}
             >
               <div class="flex items-start gap-2">
@@ -79,7 +80,7 @@
                 <div class="flex flex-col">
                   <span>{link.title}</span>
                   {#if showInfo}
-                    <span class="text-xs text-gray-500 dark:text-gray-400">{link.desc}</span>
+                    <span class="text-xs text-neutral-500 dark:text-neutral-400">{link.desc}</span>
                   {/if}
                 </div>
               </div>
@@ -87,10 +88,10 @@
           {/each}
         </div>
         
-        <div class="border-t border-gray-200 dark:border-gray-700"></div>
+        <div class="border-t border-neutral-200 dark:border-neutral-700"></div>
         
         <button 
-          class="w-full text-left px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors rounded-sm"
+          class="w-full text-left px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors rounded-sm"
           onclick={() => openUrl(DRIVE_FOLDER_URL)}
         >
           <div class="flex items-center gap-2">
@@ -104,16 +105,17 @@
   </div>
 
   <!-- Help Button -->
-  <div class="-mt-[1px] flex items-center">
-    <button
+  <div class="__-mt-[1px] flex gap-2 items-center">
+    <Button
+			variant="ghost"
       class={buttonClass}
       onclick={toggleAboutModal}
       title="Help & About"
     >
       <HelpCircle class="h-4 w-4 mx-auto" />
-    </button>
+	</Button>
+		<UserAvatar />
   </div>
-  <UserAvatar />
   <!-- About Modal -->
   <AppAbout 
     showAboutModal={showAboutModal}
