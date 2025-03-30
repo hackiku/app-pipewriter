@@ -2,7 +2,7 @@
 <script lang="ts">
   import { ExternalLink, HelpCircle, FileText, ChevronUp } from 'lucide-svelte';
   import AppAbout from './AppAbout.svelte';
-  // import UserAvatar from './user/UserAvatar.svelte'
+  import UserAvatar from './user/UserAvatar.svelte'
   // Import template data
   import { docLinks, DRIVE_FOLDER_URL } from '$lib/data/addon/templateDocs';
   
@@ -113,7 +113,7 @@
       <HelpCircle class="h-4 w-4 mx-auto" />
     </button>
   </div>
-  <!-- <UserAvatar /> -->
+  <UserAvatar />
   <!-- About Modal -->
   <AppAbout 
     showAboutModal={showAboutModal}
@@ -131,7 +131,6 @@
     from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
   }
-
 
 </style>
 

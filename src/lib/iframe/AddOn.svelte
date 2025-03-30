@@ -119,4 +119,8 @@
 	:global(.resizable-handle) {
 		margin-bottom: 4rem;
 	}
+
+	:global(.firebase-emulator-warning) {
+			display: none !important;
+		}
 </style>
