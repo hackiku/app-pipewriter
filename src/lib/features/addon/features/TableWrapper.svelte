@@ -48,7 +48,8 @@
   }
 </script>
 
-<div class="w-full p-6 flex flex-col gap-6 shadow-sm rounded-lg border border-neutral-200 dark:border-neutral-700">
+<!-- <div class="w-full ___p-6 flex flex-col gap-6 shadow-sm rounded-lg border border-neutral-200 dark:border-neutral-700"> -->
+<div class="w-full flex flex-col gap-4">
   
   
   <!-- Interactive table component -->

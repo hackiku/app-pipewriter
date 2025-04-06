@@ -16,7 +16,7 @@ let hoverPosition = $state<CellPosition | null>(null);
 let selectedPosition = $state<CellPosition | null>(null);
 
 // Layout configuration for 3-column zigzag 
-export const columnWidths = [40, 20, 40]; // Percentages
+export const columnWidths = [40, 40, 5]; // Percentages
 export const columnAlignments: HorizontalAlignment[] = ['left', 'center', 'right'];
 
 // Handle hover over a cell

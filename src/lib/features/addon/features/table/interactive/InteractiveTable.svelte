@@ -83,9 +83,9 @@
               col < 2 && "border-r"
             )}>
               <!-- Interactive Cell -->
-              <div 
+              <button 
                 class={cn(
-                  "h-20 p-3 flex w-full transition-all duration-150",
+                  "h-24 p-3 flex w-full transition-all duration-150",
                   getCellAlignClass(),
                   getHorizontalAlignmentForColumn(col) === "left" && "justify-start",
                   getHorizontalAlignmentForColumn(col) === "center" && "justify-center",
@@ -108,7 +108,7 @@
                     ></div>
                   {/each}
                 </div>
-              </div>
+							</button>
             </div>
           {/each}
         </div>

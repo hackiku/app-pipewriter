@@ -8,8 +8,9 @@
 	import TopBar from "./layout/TopBar.svelte";
 	import BottomBar from "./layout/BottomBar.svelte";
 	import Dropper from "./features/Dropper.svelte";
-	// import { Table } from "./features/table";
-	import Table from "./features/Table.svelte";
+	// import { Table } from "./features/table/index";
+	// import Table from "./features/table/index";
+	import TableWrapper from "./features/TableWrapper.svelte";
 	import Tabs from "./features/Tabs.svelte";
 	import { getGoogleService } from "$lib/services/google/client";
 	import type { GoogleAppsService } from "$lib/services/google/client";
@@ -99,7 +100,8 @@
 					class={activeTab || showAboutModal ? "z-0" : ""}
 				/>
 				<Resizable.Pane defaultSize={30} minSize={0}>
-					<Table />
+					<!-- <TableWrapper /> -->
+					<!-- <Table /> -->
 				</Resizable.Pane>
 			{/if}
 		</Resizable.PaneGroup>
