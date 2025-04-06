@@ -8,6 +8,7 @@
 	import TopBar from "./layout/TopBar.svelte";
 	import BottomBar from "./layout/BottomBar.svelte";
 	import Dropper from "./features/Dropper.svelte";
+	// import { Table } from "./features/table";
 	import Table from "./features/Table.svelte";
 	import Tabs from "./features/Tabs.svelte";
 	import { getGoogleService } from "$lib/services/google/client";

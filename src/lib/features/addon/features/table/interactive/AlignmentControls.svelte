@@ -2,6 +2,7 @@
 <script lang="ts">
   import { cn } from "$lib/utils";
   import { AlignLeft, AlignCenter, AlignRight, AlignStartVertical, AlignCenterVertical, AlignEndVertical } from "lucide-svelte";
+  import { resetInteractiveState } from "../tableContext.svelte";
   
   // Props using Svelte 5 runes
   const props = $props<{
@@ -10,8 +11,6 @@
       cellVerticalAlignment: string;
     };
     onAlignmentChange: (position: {horizontal?: string, vertical?: string}) => void;
-    onHoverStart: (position: {horizontal?: string, vertical?: string}) => void;
-    onHoverEnd: () => void;
   }>();
   
   // Alignment options
@@ -26,6 +25,19 @@
     { value: "middle", icon: AlignCenterVertical, label: "Middle align" },
     { value: "bottom", icon: AlignEndVertical, label: "Bottom align" }
   ];
+  
+  // Handle alignment change
+  function handleAlignmentChange(type: 'horizontal' | 'vertical', value: string) {
+    // Reset interactive state first
+    resetInteractiveState();
+    
+    // Update alignment
+    if (type === 'horizontal') {
+      props.onAlignmentChange({ horizontal: value });
+    } else {
+      props.onAlignmentChange({ vertical: value });
+    }
+  }
   
   // Get button class based on selection state
   function getButtonClass(type: string, value: string) {
@@ -51,9 +63,8 @@
       {#each horizontalAlignments as align}
         <button 
           class={getButtonClass('horizontal', align.value)}
-          onclick={() => props.onAlignmentChange({horizontal: align.value})}
-          onmouseenter={() => props.onHoverStart({horizontal: align.value})}
-          onmouseleave={() => props.onHoverEnd()}
+          onclick={() => handleAlignmentChange('horizontal', align.value)}
+          title={align.label}
         >
           <svelte:component this={align.icon} class="h-5 w-5" />
         </button>
@@ -68,9 +79,8 @@
       {#each verticalAlignments as align}
         <button 
           class={getButtonClass('vertical', align.value)}
-          onclick={() => props.onAlignmentChange({vertical: align.value})}
-          onmouseenter={() => props.onHoverStart({vertical: align.value})}
-          onmouseleave={() => props.onHoverEnd()}
+          onclick={() => handleAlignmentChange('vertical', align.value)}
+          title={align.label}
         >
           <svelte:component this={align.icon} class="h-5 w-5" />
         </button>

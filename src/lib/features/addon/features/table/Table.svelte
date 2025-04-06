@@ -1,10 +1,14 @@
-<!-- src/lib/features/addon/features/Table.svelte -->
+<!-- src/lib/features/addon/features/table/Table.svelte -->
 <script lang="ts">
-  import { Table2, Pipette, Save } from "lucide-svelte";
-  import { Button } from "$lib/components/ui/button";
-  import Interactive from "./table/interactive/index.svelte";
-  import { getTableConfig, updateTableConfig, getAppsScriptConfig } from "./table/data.svelte";
-  import { resetState } from "./table/tableContext.svelte";
+  import { Table2 } from "lucide-svelte";
+  import TableGrid from "./TableGrid.svelte";
+  import ButtonRow from "./ButtonRow.svelte";
+  import {
+    getTableConfig,
+    updateTableConfig,
+    getAppsScriptConfig,
+    resetState
+  } from "./index";
   
   // Local processing state
   let isProcessing = $state(false);
@@ -49,31 +53,19 @@
 </script>
 
 <div class="w-full p-6 flex flex-col gap-6 shadow-sm rounded-lg border border-neutral-200 dark:border-neutral-700">
-  
-  
-  <!-- Interactive table component -->
-  <Interactive />
-  
-  <!-- Button row -->
-  <div class="flex justify-between items-center w-full">
-    <Button 
-      variant="secondary" 
-      onclick={getTableProperties}
-      class="flex items-center gap-2"
-      disabled={isProcessing}
-    >
-      <Pipette class="h-4 w-4" />
-      <span>{isProcessing ? 'Getting...' : 'Get'}</span>
-    </Button>
-    
-    <Button 
-      variant="default" 
-      onclick={applyChanges}
-      class="flex items-center gap-2"
-      disabled={isProcessing}
-    >
-      <Save class="h-4 w-4" />
-      <span>{isProcessing ? 'Applying...' : 'Apply'}</span>
-    </Button>
+  <!-- Header section -->
+  <div class="flex items-center gap-2 mb-0">
+    <Table2 class="h-5 w-5" />
+    <h3 class="text-sm font-medium">Table Alignment</h3>
   </div>
+  
+  <!-- Table Grid Component -->
+  <TableGrid />
+  
+  <!-- Button Row Component -->
+  <ButtonRow 
+    onGet={getTableProperties}
+    onApply={applyChanges}
+    isProcessing={isProcessing}
+  />
 </div>
