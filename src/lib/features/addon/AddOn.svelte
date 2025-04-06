@@ -8,7 +8,7 @@
 	import TopBar from "./layout/TopBar.svelte";
 	import BottomBar from "./layout/BottomBar.svelte";
 	import Dropper from "./features/Dropper.svelte";
-	// import TableProperties from "./features/TableProperties.svelte";
+	import Table from "./features/Table.svelte";
 	import Tabs from "./features/Tabs.svelte";
 	import { getGoogleService } from "$lib/services/google/client";
 	import type { GoogleAppsService } from "$lib/services/google/client";
@@ -87,7 +87,7 @@
 					<Dropper context={serviceContext} />
 				{:else}
 					<div class="h-full flex items-center justify-center text-gray-400">
-						<p>Loading Dropper component...</p>
+						<p>Loading Dropper...</p>
 					</div>
 				{/if}
 			</Resizable.Pane>
@@ -98,13 +98,13 @@
 					class={activeTab || showAboutModal ? "z-0" : ""}
 				/>
 				<Resizable.Pane defaultSize={30} minSize={0}>
-					<!-- <TableProperties /> -->
+					<Table />
 				</Resizable.Pane>
 			{/if}
 		</Resizable.PaneGroup>
 	</div>
 
-	<!-- <TableProperties /> -->
+	<!-- <Table /> -->
 
 	<div class="mb-2 px-2">
 		<Tabs context={serviceContext} />
