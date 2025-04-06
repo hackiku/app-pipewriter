@@ -4,7 +4,6 @@
   import { fade } from 'svelte/transition';
   
   // Import dashboard components
-  import DashboardHeader from './components/DashboardHeader.svelte';
   import ProjectsList from './components/ProjectsList.svelte';
   import StatsCards from './components/StatsCards.svelte';
   import RecentTemplates from './components/RecentTemplates.svelte';
@@ -47,52 +46,46 @@
   ];
 </script>
 
-<div class="flex flex-col min-h-screen">
-  <!-- Dashboard Header -->
-  <DashboardHeader />
-  
-  <!-- Main Content Area -->
-  <main class="flex-1 container mx-auto px-4 py-6 max-w-7xl">
-    {#if loading}
-      <div class="flex justify-center items-center h-32" in:fade>
-        <div class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+<div>
+  {#if loading}
+    <div class="flex justify-center items-center h-32" in:fade>
+      <div class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  {:else}
+    <!-- Welcome section for logged in users -->
+    {#if user}
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold tracking-tight">
+          Welcome back, {user.displayName?.split(' ')[0] || 'Writer'}
+        </h1>
+        <p class="text-muted-foreground mt-1">Here's what's happening with your projects.</p>
       </div>
     {:else}
-      <!-- Welcome section for logged in users -->
-      {#if user}
-        <div class="mb-8">
-          <h1 class="text-3xl font-bold tracking-tight">
-            Welcome back, {user.displayName?.split(' ')[0] || 'Writer'}
-          </h1>
-          <p class="text-muted-foreground mt-1">Here's what's happening with your projects.</p>
-        </div>
-      {:else}
-        <div class="mb-8">
-          <h1 class="text-3xl font-bold tracking-tight">Welcome to Pipewriter</h1>
-          <p class="text-muted-foreground mt-1">Sign in to access your projects and templates.</p>
-        </div>
-      {/if}
-      
-      <!-- Stats Cards Row -->
-      <StatsCards stats={stats} />
-      
-      <!-- Projects & Templates Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-        <!-- Projects List - Wider Column -->
-        <div class="md:col-span-2">
-          <ProjectsList projects={recentProjects} />
-        </div>
-        
-        <!-- Recent Templates - Sidebar -->
-        <div class="md:col-span-1">
-          <RecentTemplates templates={recentTemplates} />
-        </div>
-      </div>
-      
-      <!-- Template Grid -->
-      <div class="mt-8">
-        <TemplateGrid />
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold tracking-tight">Welcome to Pipewriter</h1>
+        <p class="text-muted-foreground mt-1">Sign in to access your projects and templates.</p>
       </div>
     {/if}
-  </main>
+    
+    <!-- Stats Cards Row -->
+    <StatsCards stats={stats} />
+    
+    <!-- Projects & Templates Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+      <!-- Projects List - Wider Column -->
+      <div class="md:col-span-2">
+        <ProjectsList projects={recentProjects} />
+      </div>
+      
+      <!-- Recent Templates - Sidebar -->
+      <div class="md:col-span-1">
+        <RecentTemplates templates={recentTemplates} />
+      </div>
+    </div>
+    
+    <!-- Template Grid -->
+    <div class="mt-8">
+      <TemplateGrid />
+    </div>
+  {/if}
 </div>
