@@ -73,7 +73,6 @@
 <main class="flex flex-col h-full overflow-hidden">
 	<section class="flex-none px-2">
 		<TopBar />
-		coddio
 	</section>
 	<hr />
 
