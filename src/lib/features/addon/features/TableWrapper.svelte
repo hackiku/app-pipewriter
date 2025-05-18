@@ -3,8 +3,8 @@
   import { Table2, Pipette, Save, Loader2 } from "lucide-svelte";
   import { Button } from "$lib/components/ui/button";
   import Interactive from "./table/interactive/index.svelte";
-  import { resetState } from "./table/tableContext.svelte.ts";
-  import { updateTableConfig, getAppsScriptConfig, getTableConfig } from "./table/tableContext.svelte.ts";
+  // import { resetState } from "./table/tableContext.svelte.ts";
+  // import { updateTableConfig, getAppsScriptConfig, getTableConfig } from "./table/tableContext.svelte.ts";
   
   // Get any props passed from parent
   const props = $props<{
@@ -38,7 +38,7 @@
         }
       });
       
-      resetState();
+      // resetState();
       console.log("Retrieved table properties");
       isProcessing = false;
       

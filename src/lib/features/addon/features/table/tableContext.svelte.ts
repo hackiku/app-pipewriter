@@ -1,6 +1,9 @@
 // src/lib/features/addon/features/table/tableContext.svelte.ts
 import { updateTableConfig, getTableConfig } from './data.svelte';
 
+// Re-export the function that's causing the error
+export { updateTableConfig } from './data.svelte';
+
 // Cell position interface
 export interface CellPosition {
 	row: number;
@@ -10,6 +13,12 @@ export interface CellPosition {
 // Cell alignment options
 export type HorizontalAlignment = 'left' | 'center' | 'right';
 export type VerticalAlignment = 'top' | 'middle' | 'bottom';
+
+// Cell alignment type
+export interface CellAlignment {
+	horizontal: HorizontalAlignment;
+	vertical: VerticalAlignment;
+}
 
 // Interactive state
 let hoverPosition = $state<CellPosition | null>(null);
@@ -97,8 +106,37 @@ export function syncSelectedPositionWithConfig() {
 	}
 }
 
+// Generate cell content for interactive table
+export function generateCellElements() {
+	return Array(9).fill(0); // Creates a 3x3 grid of elements
+}
+
+// Generate cell contents for table mockup
+export function generateCellContents(rows: number) {
+	const grid = [];
+	for (let i = 0; i < rows; i++) {
+		const row = [];
+		for (let j = 0; j < 3; j++) {
+			row.push({
+				alignment: {
+					horizontal: columnAlignments[j],
+					vertical: 'middle'
+				}
+			});
+		}
+		grid.push(row);
+	}
+	return grid;
+}
+
 // Reset state
 export function resetState() {
 	hoverPosition = null;
 	selectedPosition = null;
+}
+
+// Reset interactive state for the table
+export function resetInteractiveState() {
+	hoverPosition = null;
+	// Don't reset selection - we may want to keep that
 }
