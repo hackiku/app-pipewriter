@@ -127,8 +127,6 @@
   </div>
 
 
-	
-
 	<div class="flex flex-col justify-center gap-2">
     {#each verticalAlignments as align}
       <button 

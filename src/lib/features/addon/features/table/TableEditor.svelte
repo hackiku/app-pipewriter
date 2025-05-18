@@ -1,12 +1,9 @@
 <!-- src/lib/features/addon/features/table/TableEditor.svelte -->
 <script lang="ts">
   import { cn } from "$lib/utils";
-  import { onMount } from "svelte";
-  import { 
-    getTableConfig, 
-    updateTableConfig,
-    resetState 
-  } from "./index";
+  import { DEFAULT_CONFIG } from "./tableState.svelte";
+  import type { TableConfig } from "./tableState.svelte";
+  import TablePreview from "./TablePreview.svelte";
   import { 
     ChevronDown, 
     Table2, 
@@ -21,7 +18,12 @@
     Square, 
     Palette 
   } from "lucide-svelte";
-  import { Button } from "$lib/components/ui/button";
+  
+  // Props with Svelte 5 runes
+  const { config, onConfigUpdate } = $props<{
+    config: TableConfig;
+    onConfigUpdate: (updatedConfig: TableConfig) => void;
+  }>();
   
   // State for accordion sections
   let openSections = $state({
@@ -32,71 +34,109 @@
     color: false
   });
   
-  // Table state
-  let tableConfig = $derived(getTableConfig());
-  let tablePreviewRef = $state<HTMLDivElement | null>(null);
-  
-  // Numeric inputs
-  let columnWidth = $state(tableConfig.dimensions.columnWidth.toString());
-  let rowHeight = $state(tableConfig.dimensions.rowHeight.toString());
+  // Form state
+  let columnWidth = $state(config?.dimensions.columnWidth.toString() || DEFAULT_CONFIG.dimensions.columnWidth.toString());
+  let rowHeight = $state(config?.dimensions.rowHeight.toString() || DEFAULT_CONFIG.dimensions.rowHeight.toString());
   let cellPadding = $state("0");
   let headerRows = $state("0");
+  
+  // Effect to update form state when props change
+  $effect(() => {
+    columnWidth = config.dimensions.columnWidth.toString();
+    rowHeight = config.dimensions.rowHeight.toString();
+  });
   
   // Toggle section
   function toggleSection(section: keyof typeof openSections) {
     openSections[section] = !openSections[section];
   }
   
-  // Handle alignment changes
-  function setTableAlignment(alignment: "left" | "center" | "right") {
-    updateTableConfig({
+  // Update functions
+  function updateTableAlignment(alignment: "left" | "center" | "right") {
+    onConfigUpdate({
+      ...config,
       alignment: {
-        ...tableConfig.alignment,
+        ...config.alignment,
         tableAlignment: alignment
       }
     });
   }
   
-  function setCellAlignment(alignment: "top" | "middle" | "bottom") {
-    updateTableConfig({
+  function updateCellAlignment(alignment: "top" | "middle" | "bottom") {
+    onConfigUpdate({
+      ...config,
       alignment: {
-        ...tableConfig.alignment,
+        ...config.alignment,
         cellVerticalAlignment: alignment
       }
     });
   }
   
-  // Handle input changes
-  function updateColumnWidth() {
+  function handleColumnWidthUpdate() {
     const width = parseFloat(columnWidth);
     if (!isNaN(width) && width > 0) {
-      updateTableConfig({
+      onConfigUpdate({
+        ...config,
         dimensions: {
-          ...tableConfig.dimensions,
+          ...config.dimensions,
           columnWidth: width
         }
       });
     }
   }
   
-  function updateRowHeight() {
+  function handleRowHeightUpdate() {
     const height = parseFloat(rowHeight);
     if (!isNaN(height) && height > 0) {
-      updateTableConfig({
+      onConfigUpdate({
+        ...config,
         dimensions: {
-          ...tableConfig.dimensions,
+          ...config.dimensions,
           rowHeight: height
         }
       });
     }
   }
   
-  // Update state when component mounts
-  onMount(() => {
-    // Initialize numeric inputs from config
-    columnWidth = tableConfig.dimensions.columnWidth.toString();
-    rowHeight = tableConfig.dimensions.rowHeight.toString();
-  });
+  function updateBorderColor(color: string) {
+    onConfigUpdate({
+      ...config,
+      borders: {
+        ...config.borders,
+        color
+      }
+    });
+  }
+  
+  function updateBorderWidth(width: number) {
+    onConfigUpdate({
+      ...config,
+      borders: {
+        ...config.borders,
+        width
+      }
+    });
+  }
+  
+  function updateColumns(value: number) {
+    onConfigUpdate({
+      ...config,
+      dimensions: {
+        ...config.dimensions,
+        columns: value
+      }
+    });
+  }
+  
+  function updateRows(value: number) {
+    onConfigUpdate({
+      ...config,
+      dimensions: {
+        ...config.dimensions,
+        rows: value
+      }
+    });
+  }
   
   // Helper function for section headers
   function getSectionHeaderClass(isOpen: boolean) {
@@ -121,34 +161,8 @@
 
 <div class="flex flex-col w-full bg-white dark:bg-neutral-950 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-800">
   <!-- Table Preview -->
-  <div class="p-4 border-b border-neutral-200 dark:border-neutral-800">
-    <div 
-      bind:this={tablePreviewRef}
-      class={cn(
-        "w-full flex", 
-        tableConfig.alignment.tableAlignment === "left" ? "justify-start" : 
-        tableConfig.alignment.tableAlignment === "right" ? "justify-end" : "justify-center"
-      )}
-    >
-      <div class="border border-neutral-300 dark:border-neutral-700 rounded overflow-hidden shadow-sm">
-        <div class="grid grid-cols-3">
-          {#each [0, 1, 2] as col}
-            <div class={cn(
-              "border-neutral-300 dark:border-neutral-700",
-              col < 2 && "border-r"
-            )}>
-              <div class={cn(
-                "h-12 p-1 flex w-full", 
-                tableConfig.alignment.cellVerticalAlignment === "top" ? "items-start" : 
-                tableConfig.alignment.cellVerticalAlignment === "bottom" ? "items-end" : "items-center"
-              )}>
-                <div class="h-3 bg-neutral-300 dark:bg-neutral-600 rounded w-16"></div>
-              </div>
-            </div>
-          {/each}
-        </div>
-      </div>
-    </div>
+  <div class="border-b border-neutral-200 dark:border-neutral-800">
+    <TablePreview config={config} />
   </div>
 
   <!-- Accordion Sections -->
@@ -174,26 +188,54 @@
           <h3 class="text-sm mb-2">Alignment</h3>
           <div class="grid grid-cols-3 gap-2">
             <button 
-              class={getAlignButtonClass(tableConfig.alignment.tableAlignment, "left")}
-              onclick={() => setTableAlignment("left")}
+              class={getAlignButtonClass(config.alignment.tableAlignment, "left")}
+              onclick={() => updateTableAlignment("left")}
               title="Align left"
             >
               <AlignLeft class="h-5 w-5" />
             </button>
             <button 
-              class={getAlignButtonClass(tableConfig.alignment.tableAlignment, "center")}
-              onclick={() => setTableAlignment("center")}
+              class={getAlignButtonClass(config.alignment.tableAlignment, "center")}
+              onclick={() => updateTableAlignment("center")}
               title="Align center"
             >
               <AlignCenter class="h-5 w-5" />
             </button>
             <button 
-              class={getAlignButtonClass(tableConfig.alignment.tableAlignment, "right")}
-              onclick={() => setTableAlignment("right")}
+              class={getAlignButtonClass(config.alignment.tableAlignment, "right")}
+              onclick={() => updateTableAlignment("right")}
               title="Align right"
             >
               <AlignRight class="h-5 w-5" />
             </button>
+          </div>
+          
+          <div class="mt-4 flex items-center gap-4">
+            <div>
+              <label for="table-columns" class="text-sm block mb-1">Columns</label>
+              <input 
+                id="table-columns"
+                type="number" 
+                min="1" 
+                max="10"
+                value={config.dimensions.columns}
+                onchange={(e) => updateColumns(parseInt(e.target.value) || 3)}
+                class="w-16 h-8 px-2 text-right border border-neutral-300 dark:border-neutral-700 rounded"
+              />
+            </div>
+            
+            <div>
+              <label for="table-rows" class="text-sm block mb-1">Rows</label>
+              <input 
+                id="table-rows"
+                type="number" 
+                min="1" 
+                max="20"
+                value={config.dimensions.rows}
+                onchange={(e) => updateRows(parseInt(e.target.value) || 2)}
+                class="w-16 h-8 px-2 text-right border border-neutral-300 dark:border-neutral-700 rounded"
+              />
+            </div>
           </div>
         </div>
       {/if}
@@ -233,7 +275,7 @@
                   min="0.5" 
                   max="10"
                   bind:value={columnWidth} 
-                  onblur={updateColumnWidth}
+                  onblur={handleColumnWidthUpdate}
                   class="w-16 h-8 px-2 text-right border border-neutral-300 dark:border-neutral-700 rounded"
                 />
                 <span class="ml-2">in</span>
@@ -291,7 +333,7 @@
                   min="0.1" 
                   max="5"
                   bind:value={rowHeight} 
-                  onblur={updateRowHeight}
+                  onblur={handleRowHeightUpdate}
                   class="w-16 h-8 px-2 text-right border border-neutral-300 dark:border-neutral-700 rounded"
                 />
                 <span class="ml-2">in</span>
@@ -345,22 +387,22 @@
             <label for="cell-vertical-alignment" class="text-sm mb-1">Cell vertical alignment</label>
             <div class="grid grid-cols-3 gap-2">
               <button 
-                class={getAlignButtonClass(tableConfig.alignment.cellVerticalAlignment, "top")}
-                onclick={() => setCellAlignment("top")}
+                class={getAlignButtonClass(config.alignment.cellVerticalAlignment, "top")}
+                onclick={() => updateCellAlignment("top")}
                 title="Align top"
               >
                 <AlignStartVertical class="h-5 w-5" />
               </button>
               <button 
-                class={getAlignButtonClass(tableConfig.alignment.cellVerticalAlignment, "middle")}
-                onclick={() => setCellAlignment("middle")}
+                class={getAlignButtonClass(config.alignment.cellVerticalAlignment, "middle")}
+                onclick={() => updateCellAlignment("middle")}
                 title="Align middle"
               >
                 <AlignCenterVertical class="h-5 w-5" />
               </button>
               <button 
-                class={getAlignButtonClass(tableConfig.alignment.cellVerticalAlignment, "bottom")}
-                onclick={() => setCellAlignment("bottom")}
+                class={getAlignButtonClass(config.alignment.cellVerticalAlignment, "bottom")}
+                onclick={() => updateCellAlignment("bottom")}
                 title="Align bottom"
               >
                 <AlignEndVertical class="h-5 w-5" />
@@ -412,17 +454,15 @@
             <div class="flex items-center">
               <div 
                 class="h-8 w-8 border border-neutral-300 dark:border-neutral-700 rounded mr-2"
-                style="background-color: {tableConfig.borders.color};"
+                style="background-color: {config.borders.color};"
               ></div>
               <input 
                 type="color" 
-                value={tableConfig.borders.color}
+                value={config.borders.color}
                 class="opacity-0 absolute"
-                onchange={(e) => updateTableConfig({
-                  borders: { ...tableConfig.borders, color: e.target.value }
-                })}
+                onchange={(e) => updateBorderColor(e.target.value)}
               />
-              <span class="text-xs uppercase">{tableConfig.borders.color}</span>
+              <span class="text-xs uppercase">{config.borders.color}</span>
             </div>
           </div>
           
@@ -434,13 +474,11 @@
                 min="0.5" 
                 max="5" 
                 step="0.5"
-                value={tableConfig.borders.width}
+                value={config.borders.width}
                 class="flex-1 mr-2"
-                onchange={(e) => updateTableConfig({
-                  borders: { ...tableConfig.borders, width: parseFloat(e.target.value) }
-                })}
+                onchange={(e) => updateBorderWidth(parseFloat(e.target.value))}
               />
-              <span class="w-10 text-right">{tableConfig.borders.width}pt</span>
+              <span class="w-10 text-right">{config.borders.width}pt</span>
             </div>
           </div>
         </div>

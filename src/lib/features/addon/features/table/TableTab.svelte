@@ -1,9 +1,10 @@
-<!-- src/lib/features/addon/features/TableTab.svelte -->
+<!-- src/lib/features/addon/features/TableWrapper.svelte -->
 <script lang="ts">
   import { Table2, Pipette, Save, Loader2 } from "lucide-svelte";
   import { Button } from "$lib/components/ui/button";
-  import TableEditor from "./TableEditor.svelte";
-  import { resetState, updateTableConfig, getAppsScriptConfig } from "./";
+  import Interactive from "./interactive/index.svelte";
+  // import { resetState } from "./table/tableContext.svelte.ts";
+  // import { updateTableConfig, getAppsScriptConfig, getTableConfig } from "./table/tableContext.svelte.ts";
   
   // Get any props passed from parent
   const props = $props<{
@@ -37,7 +38,7 @@
         }
       });
       
-      resetState();
+      // resetState();
       console.log("Retrieved table properties");
       isProcessing = false;
       
@@ -77,8 +78,8 @@
 </script>
 
 <div class="w-full flex flex-col gap-4">
-  <!-- Table Editor Component -->
-  <TableEditor />
+  <!-- Interactive table component -->
+  <Interactive />
   
   <!-- Button row -->
   <div class="flex justify-between items-center w-full">
