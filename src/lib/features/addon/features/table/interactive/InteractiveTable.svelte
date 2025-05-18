@@ -14,9 +14,9 @@
     syncSelectedPositionWithConfig,
     resetState
   } from "../tableContext.svelte";
-  import { AlignStartVertical, AlignCenterVertical, AlignEndVertical } from "lucide-svelte";
+  import { AlignStartVertical, AlignCenterVertical, AlignEndVertical, Delete } from "lucide-svelte";
   
-  // Local state
+  // Local statex
   let tableConfig = $derived(getTableConfig());
   
   // Initialize selected position based on current config
@@ -31,15 +31,21 @@
     { value: "bottom", icon: AlignEndVertical, label: "Bottom align" }
   ];
   
+	const tableScope = [
+    { value: "whole", label: "Top align" },
+    { value: "center", icon: AlignCenterVertical, label: "Middle align" },
+    { value: "reset", icon: AlignEndVertical, label: "Bottom align" }
+  ];
+  
   // Get vertical alignment button class
   function getVerticalAlignClass(value: string) {
     const isSelected = tableConfig.alignment.cellVerticalAlignment === value;
     return cn(
-      "flex h-8 w-8 items-center justify-center transition-all duration-150",
-      "rounded-md border",
+      "flex h-7 w-7 items-center justify-center transition-all duration-150",
+      "rounded-md",
       isSelected 
-        ? "bg-primary/10 border-primary text-primary" 
-        : "bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700"
+        ? "border bg-primary/10 border-primary text-primary" 
+        : "__bg-white __dark:bg-neutral-800 __border-neutral-200 __dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700"
     );
   }
   
@@ -67,9 +73,13 @@
   const contentElements = 9; // 3x3 grid of elements
 </script>
 
-<div class="space-y-4">
+
+
+
+<div class="flex flex-row w-full gap-4 h-28">
+
   <!-- Table Mockup -->
-  <div class="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
+  <div class="w-full h-full bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700">
     <!-- Table Container with Horizontal Alignment -->
     <div class={cn("flex w-full transition-all duration-150", getTableAlignClass())}>
       <!-- Table with border styling -->
@@ -85,7 +95,7 @@
               <!-- Interactive Cell -->
               <button 
                 class={cn(
-                  "h-24 p-3 flex w-full transition-all duration-150",
+                  "h-full p-1 flex w-full transition-all duration-150",
                   getCellAlignClass(),
                   getHorizontalAlignmentForColumn(col) === "left" && "justify-start",
                   getHorizontalAlignmentForColumn(col) === "center" && "justify-center",
@@ -115,9 +125,11 @@
       </div>
     </div>
   </div>
-  
-  <!-- Vertical Alignment Controls -->
-  <div class="flex justify-center gap-2">
+
+
+	
+
+	<div class="flex flex-col justify-center gap-2">
     {#each verticalAlignments as align}
       <button 
         class={getVerticalAlignClass(align.value)}
@@ -128,4 +140,44 @@
       </button>
     {/each}
   </div>
+
+  
 </div>
+
+
+	<div class="flex items-center justify-start gap-3 w-full">
+		<button 
+			class={getVerticalAlignClass("whole")}
+			onclick={() => handleVerticalAlignmentSelect("top")}
+			title="all"
+		>
+			<div class="text-sm h-4">Table</div>
+		</button>
+		<button 
+			class="w-"
+			onclick={() => handleVerticalAlignmentSelect("middle")}
+			title="all"
+		>
+			<div class="text-sm h-4 __w-full">Cell</div>
+		</button>
+		
+		<div class="text-sm">
+			<input 
+				class="w-10 h-6 rounded-md text-center text-xs"
+				placeholder=2.102
+				onclick={() => handleVerticalAlignmentSelect("middle")}
+				title="all"
+				/>
+			<span>in</span>
+
+		</div>
+	<!-- </input> -->
+		
+		<button 
+			class="w-"
+			onclick={() => handleVerticalAlignmentSelect("bottom")}
+			title="all"
+		>
+			<Delete class="h-4 w-4" />
+		</button>
+  </div>

@@ -10,7 +10,7 @@
 	import Dropper from "./features/Dropper.svelte";
 	// import { Table } from "./features/table/index";
 	// import Table from "./features/table/index";
-	import TableWrapper from "./features/TableWrapper.svelte";
+	// import TableWrapper from "./features/TableWrapper.svelte";
 	import Tabs from "./features/Tabs.svelte";
 	import { getGoogleService } from "$lib/services/google/client";
 	import type { GoogleAppsService } from "$lib/services/google/client";

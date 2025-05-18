@@ -1,3 +1,2 @@
-10:51:48.018 [NamespaceSystem-akka.actor.default-dispatcher-4] INFO akka.event.slf4j.Slf4jLogger - Slf4jLogger started
-10:51:48.131 [main] INFO com.firebase.server.forge.App$ - Listening at 127.0.0.1:9000
-11:56:59.977 [NamespaceSystem-akka.actor.default-dispatcher-9] INFO com.firebase.core.namespace.NamespaceActor - pipewriter successfully activated FBKV (SurveyIdle(0)) wait: 113ms, init: 0ms
+17:00:21.988 [NamespaceSystem-akka.actor.default-dispatcher-5] INFO akka.event.slf4j.Slf4jLogger - Slf4jLogger started
+17:00:22.079 [main] INFO com.firebase.server.forge.App$ - Listening at 127.0.0.1:9000

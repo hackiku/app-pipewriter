@@ -1,21 +1,32 @@
-<!-- src/lib/features/addon/features/Table.svelte -->
+<!-- src/lib/features/addon/features/TableWrapper.svelte -->
 <script lang="ts">
-  import { Table2, Pipette, Save } from "lucide-svelte";
+  import { Table2, Pipette, Save, Loader2 } from "lucide-svelte";
   import { Button } from "$lib/components/ui/button";
   import Interactive from "./table/interactive/index.svelte";
-  import { getTableConfig, updateTableConfig, getAppsScriptConfig } from "./table/data.svelte";
-  import { resetState } from "./table/tableContext.svelte";
+  import { resetState } from "./table/tableContext.svelte.ts";
+  import { updateTableConfig, getAppsScriptConfig, getTableConfig } from "./table/tableContext.svelte.ts";
+  
+  // Get any props passed from parent
+  const props = $props<{
+    context?: any;
+    onStatusUpdate?: (status: any) => void;
+    onProcessingStart?: () => void;
+    onProcessingEnd?: () => void;
+  }>();
   
   // Local processing state
   let isProcessing = $state(false);
-  
-  // Get table configuration from store
-  let tableConfig = $derived(getTableConfig());
   
   // Get current table properties from the document
   function getTableProperties() {
     console.log("Getting current table properties from document");
     isProcessing = true;
+    
+    if (props.onProcessingStart) props.onProcessingStart();
+    if (props.onStatusUpdate) props.onStatusUpdate({
+      type: 'processing',
+      message: 'Getting table properties...'
+    });
     
     // Simulate API call to Google Apps Script
     setTimeout(() => {
@@ -30,6 +41,12 @@
       resetState();
       console.log("Retrieved table properties");
       isProcessing = false;
+      
+      if (props.onProcessingEnd) props.onProcessingEnd();
+      if (props.onStatusUpdate) props.onStatusUpdate({
+        type: 'success',
+        message: 'Table properties retrieved'
+      });
     }, 800);
   }
   
@@ -40,18 +57,27 @@
     console.log("Applying table changes to Apps Script:", appsScriptConfig);
     isProcessing = true;
     
+    if (props.onProcessingStart) props.onProcessingStart();
+    if (props.onStatusUpdate) props.onStatusUpdate({
+      type: 'processing',
+      message: 'Applying table properties...'
+    });
+    
     // Simulate API call
     setTimeout(() => {
       console.log("Table properties applied");
       isProcessing = false;
+      
+      if (props.onProcessingEnd) props.onProcessingEnd();
+      if (props.onStatusUpdate) props.onStatusUpdate({
+        type: 'success',
+        message: 'Table properties applied'
+      });
     }, 800);
   }
 </script>
 
-<!-- <div class="w-full ___p-6 flex flex-col gap-6 shadow-sm rounded-lg border border-neutral-200 dark:border-neutral-700"> -->
 <div class="w-full flex flex-col gap-4">
-  
-  
   <!-- Interactive table component -->
   <Interactive />
   
@@ -63,8 +89,13 @@
       class="flex items-center gap-2"
       disabled={isProcessing}
     >
-      <Pipette class="h-4 w-4" />
-      <span>{isProcessing ? 'Getting...' : 'Get'}</span>
+      {#if isProcessing}
+        <Loader2 class="h-4 w-4 animate-spin" />
+        <span>Getting...</span>
+      {:else}
+        <Pipette class="h-4 w-4" />
+        <span>Get</span>
+      {/if}
     </Button>
     
     <Button 
@@ -73,8 +104,13 @@
       class="flex items-center gap-2"
       disabled={isProcessing}
     >
-      <Save class="h-4 w-4" />
-      <span>{isProcessing ? 'Applying...' : 'Apply'}</span>
+      {#if isProcessing}
+        <Loader2 class="h-4 w-4 animate-spin" />
+        <span>Applying...</span>
+      {:else}
+        <Save class="h-4 w-4" />
+        <span>Apply</span>
+      {/if}
     </Button>
   </div>
 </div>
