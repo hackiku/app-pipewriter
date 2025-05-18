@@ -9,16 +9,40 @@ let loading = $state(true);
 
 // Initialize Firebase auth
 if (browser) {
-	import('firebase/auth').then(({ onAuthStateChanged }) => {
+	import('firebase/auth').then(({ onAuthStateChanged, getIdToken }) => {
 		const { auth } = getFirebaseService();
-		onAuthStateChanged(auth, (firebaseUser) => {
+		onAuthStateChanged(auth, async (firebaseUser) => {
 			user = firebaseUser;
 			loading = false;
 			console.log("Auth state changed:", user ? "Signed in" : "Signed out");
+
+			// If we have a user, create a session
+			if (firebaseUser) {
+				try {
+					// Get the ID token
+					const idToken = await getIdToken(firebaseUser);
+
+					// Send to our server to create a session
+					await fetch('/api/auth/session', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify({ idToken })
+					});
+				} catch (error) {
+					console.error("Error creating session:", error);
+				}
+			} else {
+				// If signed out, clear the session
+				await fetch('/api/auth/session', { method: 'DELETE' });
+			}
 		});
 	});
 }
 
+// Other functions remain the same
+// ...
 // Get current user
 export function getUser() {
 	return user;
