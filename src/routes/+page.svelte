@@ -9,4 +9,6 @@
 
 	<LoginForm />
 
+	<a href="/addon">Addon</a>
+
 </div>

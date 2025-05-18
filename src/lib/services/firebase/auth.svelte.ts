@@ -1,11 +1,13 @@
 // src/lib/services/firebase/auth.svelte.ts
 import { getFirebaseService } from './client';
 import { browser } from '$app/environment';
+import { invalidateAll } from '$app/navigation';
 import type { User } from 'firebase/auth';
 
 // Define state with the correct Svelte 5 runes syntax
 let user = $state<User | null>(null);
 let loading = $state(true);
+let error = $state<string | null>(null);
 
 // Initialize Firebase auth
 if (browser) {
@@ -14,6 +16,7 @@ if (browser) {
 		onAuthStateChanged(auth, async (firebaseUser) => {
 			user = firebaseUser;
 			loading = false;
+			error = null;
 			console.log("Auth state changed:", user ? "Signed in" : "Signed out");
 
 			// If we have a user, create a session
@@ -23,26 +26,45 @@ if (browser) {
 					const idToken = await getIdToken(firebaseUser);
 
 					// Send to our server to create a session
-					await fetch('/api/auth/session', {
+					const response = await fetch('/api/auth/session', {
 						method: 'POST',
 						headers: {
 							'Content-Type': 'application/json'
 						},
 						body: JSON.stringify({ idToken })
 					});
-				} catch (error) {
-					console.error("Error creating session:", error);
+
+					const data = await response.json();
+
+					if (!response.ok) {
+						throw new Error(data.error || 'Failed to create session');
+					}
+
+					console.log('Session created successfully');
+
+					// Force reload of all server data
+					await invalidateAll();
+
+				} catch (err) {
+					console.error("Error creating session:", err);
+					error = err.message;
 				}
 			} else {
 				// If signed out, clear the session
-				await fetch('/api/auth/session', { method: 'DELETE' });
+				try {
+					await fetch('/api/auth/session', { method: 'DELETE' });
+					console.log('Session deleted successfully');
+
+					// Force reload of all server data
+					await invalidateAll();
+				} catch (err) {
+					console.error("Error deleting session:", err);
+				}
 			}
 		});
 	});
 }
 
-// Other functions remain the same
-// ...
 // Get current user
 export function getUser() {
 	return user;
@@ -53,21 +75,32 @@ export function isLoading() {
 	return loading;
 }
 
+// Get error state
+export function getError() {
+	return error;
+}
+
 // Simple sign in function
 export function signIn() {
 	if (!browser) return Promise.resolve(null);
+	error = null;
 
 	return import('firebase/auth').then(({ GoogleAuthProvider, signInWithPopup }) => {
 		const { auth } = getFirebaseService();
 		const provider = new GoogleAuthProvider();
+
+		// Add scopes if needed for Google Docs access
+		// provider.addScope('https://www.googleapis.com/auth/documents');
+
 		return signInWithPopup(auth, provider)
 			.then(result => {
 				console.log("Signed in:", result.user.displayName);
 				return result.user;
 			})
-			.catch(error => {
-				console.error("Sign in failed:", error.message);
-				throw error;
+			.catch(err => {
+				console.error("Sign in failed:", err.message);
+				error = err.message;
+				throw err;
 			});
 	});
 }
@@ -75,17 +108,26 @@ export function signIn() {
 // Simple sign out function
 export function signOut() {
 	if (!browser) return Promise.resolve(false);
+	error = null;
 
 	return import('firebase/auth').then(({ signOut: firebaseSignOut }) => {
 		const { auth } = getFirebaseService();
 		return firebaseSignOut(auth)
-			.then(() => {
+			.then(async () => {
 				console.log("Signed out");
+
+				// Delete session on server
+				await fetch('/api/auth/session', { method: 'DELETE' });
+
+				// Force reload of all server data
+				await invalidateAll();
+
 				return true;
 			})
-			.catch(error => {
-				console.error("Sign out failed:", error.message);
-				throw error;
+			.catch(err => {
+				console.error("Sign out failed:", err.message);
+				error = err.message;
+				throw err;
 			});
 	});
 }

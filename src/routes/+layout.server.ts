@@ -6,6 +6,8 @@ import { adminAuth, adminFirestore } from '$lib/server/firebase-admin';
 // Trial duration in days
 const TRIAL_PERIOD_DAYS = 10;
 
+// export const load = (async ({ locals }) => {
+
 export const load: LayoutServerLoad = async ({ cookies, url }) => {
 	// Default state - unauthenticated, no features
 	let user = null;

@@ -2,7 +2,7 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
   import { goto } from '$app/navigation';
-  import { signIn } from '$lib/services/firebase/auth.svelte';
+  import { signIn, getError } from '$lib/services/firebase/auth.svelte';
   import LoginForm from '$lib/components/login-form.svelte';
   
   let isProcessing = $state(false);
@@ -11,8 +11,7 @@
     isProcessing = true;
     try {
       await signIn();
-      // After successful sign-in, redirect to addon page
-      goto('/addon');
+      // Auth change listener will handle the reload and redirection
     } catch (error) {
       console.error('Sign in error:', error);
     } finally {

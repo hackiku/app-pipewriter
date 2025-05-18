@@ -1,30 +1,14 @@
 // src/routes/api/auth/session/+server.ts
 import { json } from '@sveltejs/kit';
-import admin from 'firebase-admin';
-import { getApps } from 'firebase-admin/app';
-import { FIREBASE_SERVICE_ACCOUNT } from '$env/static/private';
-
-// Initialize Firebase Admin if not already done
-if (!getApps().length) {
-	// Parse the service account if it's a string
-	let serviceAccount;
-	try {
-		serviceAccount = typeof FIREBASE_SERVICE_ACCOUNT === 'string'
-			? JSON.parse(FIREBASE_SERVICE_ACCOUNT)
-			: FIREBASE_SERVICE_ACCOUNT;
-	} catch (error) {
-		console.error('Error parsing Firebase credentials:', error);
-		throw new Error('Invalid Firebase credentials');
-	}
-
-	admin.initializeApp({
-		credential: admin.credential.cert(serviceAccount)
-	});
-}
+import { adminAuth } from '$lib/server/firebase-admin';
+import { dev } from '$app/environment';
 
 // Session duration (5 days)
 const SESSION_EXPIRES_IN = 60 * 60 * 24 * 5 * 1000;
 
+/**
+ * Creates a session from a Firebase ID token
+ */
 export async function POST({ request, cookies }) {
 	try {
 		const { idToken } = await request.json();
@@ -37,30 +21,54 @@ export async function POST({ request, cookies }) {
 		console.log('Creating session from ID token');
 
 		// Create a session cookie
-		const sessionCookie = await admin.auth().createSessionCookie(idToken, {
+		const sessionCookie = await adminAuth.createSessionCookie(idToken, {
 			expiresIn: SESSION_EXPIRES_IN
 		});
 
 		// Set cookie options
 		const options = {
-			maxAge: SESSION_EXPIRES_IN / 1000, // Convert to seconds for cookie
+			maxAge: SESSION_EXPIRES_IN / 1000, // Convert to seconds
 			httpOnly: true,
-			secure: process.env.NODE_ENV === 'production',
+			secure: !dev, // Only secure in production
 			path: '/',
 			sameSite: 'strict'
 		};
 
 		// Set the cookie
-		cookies.set('__session', sessionCookie, options);
+cookies.set('__session', sessionCookie, {
+  maxAge: SESSION_EXPIRES_IN / 1000,
+  httpOnly: true,
+  secure: !dev,
+  path: '/',
+  sameSite: 'strict' // Change from 'strict' to 'none' for iframe support
+});
+
+		console.log('Session created successfully');
 
 		return json({ success: true });
 	} catch (error) {
 		console.error('Error creating session:', error.message);
-		return json({ error: 'Failed to create session' }, { status: 401 });
+
+		// Provide more detailed error info in development
+		if (dev) {
+			console.error('Full error details:', error);
+			return json({
+				error: 'Failed to create session',
+				message: error.message,
+				code: error.code || 'unknown_error',
+				// Don't include stack trace in response, but log it
+			}, { status: 401 });
+		}
+
+		return json({ error: 'Authentication failed' }, { status: 401 });
 	}
 }
 
+/**
+ * Deletes the session cookie
+ */
 export async function DELETE({ cookies }) {
 	cookies.delete('__session', { path: '/' });
+	console.log('Session deleted successfully');
 	return json({ success: true });
 }

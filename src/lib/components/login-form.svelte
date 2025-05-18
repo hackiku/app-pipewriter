@@ -1,9 +1,8 @@
+<!-- // src/lib/components/login-form.svelte -->
 <script lang="ts">
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Card from "$lib/components/ui/card/index.js";
-  import { Input } from "$lib/components/ui/input/index.js";
-  import { Label } from "$lib/components/ui/label/index.js";
-  import { signIn } from '$lib/services/firebase/auth.svelte';
+  import { signIn, getError } from '$lib/services/firebase/auth.svelte';
   import { goto } from '$app/navigation';
   
   // Props using proper Svelte 5 runes syntax
@@ -23,7 +22,7 @@
       localProcessing = true;
       try {
         await signIn();
-        goto('/addon');
+        // We'll let the auth state change handler handle the redirect
       } catch (error) {
         console.error('Google sign-in error:', error);
       } finally {
@@ -34,6 +33,9 @@
   
   // Use either the prop's processing state or our local one
   let showProcessing = $derived(isProcessing || localProcessing);
+  
+  // Get authentication error
+  let authError = $derived(getError());
 </script>
 
 <Card.Root class="mx-auto max-w-sm">
@@ -43,6 +45,12 @@
   </Card.Header>
   <Card.Content>
     <div class="grid gap-4">
+      {#if authError}
+        <div class="p-3 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 text-sm rounded-md">
+          {authError}
+        </div>
+      {/if}
+      
       <Button 
         variant="outline" 
         class="w-full flex items-center justify-center gap-2"
