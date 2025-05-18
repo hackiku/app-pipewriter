@@ -17,7 +17,7 @@
 	import { cn } from "$lib/utils";
 
 	// Import tab components
-	import TableWrapper from "./TableWrapper.svelte";
+	// import TableWrapper from "./TableWrapper.svelte";
 	import ColorTab from "./colors/ColorTab.svelte";
 	import TextTab from "./text/TextTab.svelte";
 	import AiTab from "./ai/AiTab.svelte";
@@ -44,12 +44,12 @@
 
 	// Tab definitions
 	const tabs = {
-		table: {
-			icon: Table,
-			title: "Background Color",
-			description: "Change document background color",
-			component: TableWrapper,
-		},
+		// table: {
+		// 	icon: Table,
+		// 	title: "Background Color",
+		// 	description: "Change document background color",
+		// 	component: TableWrapper,
+		// },
 		color: {
 			icon: Palette,
 			title: "Background Color",
@@ -178,12 +178,12 @@
 			<!-- Tab Content -->
 			<div class="relative px-4 py-4">
 				{#if activeTab === "table"}
-					<TableWrapper
+					<!-- <TableWrapper
 						{context}
 						onStatusUpdate={handleStatus}
 						onProcessingStart={handleProcessingStart}
 						onProcessingEnd={handleProcessingEnd}
-					/>
+					/> -->
 
 				{:else if activeTab === "color"}
 				<!-- {#if activeTab === "color"} -->

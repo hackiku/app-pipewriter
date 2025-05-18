@@ -10,9 +10,11 @@
 	import Dropper from "./features/Dropper.svelte";
 	// import { Table } from "./features/table/index";
 	// import Table from "./features/table/index";
-	// import TableWrapper from "./features/TableWrapper.svelte";
-	import Tabs from "./features/Tabs.svelte";
+	import TableWrapper from "./features/TableWrapper.svelte";
+	import TableTab from "./features/table/TableTab.svelte";
+	import Tabs from "./features/Tabs.svelte"; 
 	import { getGoogleService } from "$lib/services/google/client";
+	// import { getGoogleService } from "$lib/server/google/client";
 	import type { GoogleAppsService } from "$lib/services/google/client";
 	
 	// Component state with Runes
@@ -83,7 +85,8 @@
 			direction="vertical"
 			class="h-full {activeTab ? 'z-0' : 'z-10'}"
 		>
-			<Resizable.Pane defaultSize={55} minSize={30} maxSize={80}>
+			<!-- <Resizable.Pane defaultSize={55} minSize={30} maxSize={80}> -->
+			<Resizable.Pane defaultSize={25} minSize={30} maxSize={80}>
 				<!-- Only render Dropper if googleService is available -->
 				{#if googleService}
 					<Dropper context={serviceContext} />
@@ -100,7 +103,10 @@
 					class={activeTab || showAboutModal ? "z-0" : ""}
 				/>
 				<Resizable.Pane defaultSize={30} minSize={0}>
-					<!-- <TableWrapper /> -->
+					<div class="m-2 p-4 border rounded-xl">
+						<!-- <TableWrapper /> -->
+						<TableTab />
+					</div>
 					<!-- <Table /> -->
 				</Resizable.Pane>
 			{/if}
