@@ -1,4 +1,4 @@
-<!-- src/lib/components/AuthModal.svelte -->
+<!-- src/lib/components/auth/AuthModal.svelte -->
 <script lang="ts">
   import { fade } from 'svelte/transition';
   import { goto } from '$app/navigation';
@@ -39,7 +39,6 @@
         </svg>
       </button>
       
-      <!-- Customize your login form here -->
       <LoginForm onGoogleSignIn={handleGoogleSignIn} isProcessing={isProcessing} />
     </div>
   </div>
