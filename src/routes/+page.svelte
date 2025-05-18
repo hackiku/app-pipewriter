@@ -1,14 +1,12 @@
-<script lang="ts">
-	import Button from "$lib/components/ui/button/button.svelte";
+<!-- src/routes/+page.svelte -->
 
+<script lang="ts">
+	import LoginForm from "$lib/components/login-form.svelte";
 	import { Moon } from "@lucide/svelte"
 
 </script>
-<div class="w-screen h-screen bg-neutral-950 text-white">
-	<h1>Welcome to SvelteKit</h1>
-	<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<div class="w-screen h-screen bg- text-white">
 
-	<Button class="flex gap-6">
-		<Moon /><span>Coddioo </span>
-	</Button>
+	<LoginForm />
+
 </div>

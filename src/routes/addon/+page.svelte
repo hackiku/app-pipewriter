@@ -1,3 +1,5 @@
+<!-- src/routes/addon/+page.svelte -->
+ 
 <script lang="ts">
 	import AddOn from "$lib/features/addon/AddOn.svelte"
 </script>
