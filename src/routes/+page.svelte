@@ -1,7 +1,7 @@
 <!-- src/routes/+page.svelte -->
 
 <script lang="ts">
-	import LoginForm from "$lib/components/login-form.svelte";
+	import LoginForm from "$lib/components/auth/LoginForm.svelte";
 	import { Moon } from "@lucide/svelte"
 
 </script>

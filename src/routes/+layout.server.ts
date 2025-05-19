@@ -1,76 +1,72 @@
 // src/routes/+layout.server.ts
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
-import { adminAuth, adminFirestore } from '$lib/server/firebase-admin';
+import { adminFirestore } from '$lib/server/firebase-admin';
 
-// Trial duration in days
+// Trial duration in days - this was missing
 const TRIAL_PERIOD_DAYS = 10;
 
-// export const load = (async ({ locals }) => {
+export const load: LayoutServerLoad = async ({ locals, url }) => {
+	// Public routes - no auth needed
+	const publicRoutes = ['/', '/login', '/signup', '/about'];
+	const isPublicRoute = publicRoutes.some(route => url.pathname === route);
 
-export const load: LayoutServerLoad = async ({ cookies, url }) => {
-	// Default state - unauthenticated, no features
-	let user = null;
-	let isPremium = false;
-	let trialActive = false;
-	let trialDaysLeft = 0;
-	let features = getDefaultFeatures();
+	// If not authenticated and not on a public route, redirect
+	if (!locals.authenticated && !isPublicRoute) {
+		throw redirect(303, '/?auth=required');
+	}
 
-	// Get the session cookie
-	const sessionCookie = cookies.get('__session');
-
-	if (sessionCookie) {
+	// If authenticated, load additional user data
+	if (locals.authenticated && locals.user) {
 		try {
-			// Verify the session cookie
-			const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true);
-			const uid = decodedClaims.uid;
+			const uid = locals.user.uid;
 
-			// Get user data from Auth service
-			const userRecord = await adminAuth.getUser(uid);
-
-			// Get user data from Firestore (for premium status, trial info)
+			// Get user data from Firestore
 			const userDoc = await adminFirestore.collection('users').doc(uid).get();
 			const userData = userDoc.data() || {};
 
-			// Set user information
-			user = {
-				uid,
-				email: userRecord.email,
-				displayName: userRecord.displayName,
-				photoURL: userRecord.photoURL
-			};
-
 			// Check premium status
-			isPremium = userData.premium === true;
+			const isPremium = userData.premium === true;
 
-			// If not premium, check trial status
+			// Trial status (if not premium)
+			let trialActive = false;
+			let trialDaysLeft = 0;
+			let trialStartDate = null;
+
 			if (!isPremium) {
 				const trialInfo = await checkTrialStatus(uid, userData);
 				trialActive = trialInfo.active;
 				trialDaysLeft = trialInfo.daysLeft;
+				trialStartDate = userData.trialStartDate ? userData.trialStartDate.toDate() : new Date();
 			}
 
-			// Get available features based on status
-			features = getFeatureFlags(isPremium, trialActive);
+			// Get feature flags
+			const features = getFeatureFlags(isPremium, trialActive);
+
+			// Return all data needed by the UI - provide complete data for both contexts
+			return {
+				user: locals.user,
+				isPremium,
+				trialActive,
+				trialDaysLeft,
+				trialStartDate,
+				features,
+				// Extra fields for maxProjects and canExport for new trial context
+				maxProjects: isPremium ? 999 : (trialActive ? 10 : 3),
+				canExport: isPremium || trialActive
+			};
 		} catch (error) {
-			// Invalid session token
-			console.error('Session cookie verification failed:', error);
-			cookies.delete('__session');
+			console.error('Error loading user data:', error);
 		}
 	}
 
-	// If accessing addon page without authentication, redirect to auth
-	if (url.pathname === '/addon' && !user) {
-		throw redirect(303, '/?auth=required');
-	}
-
-	// Return user data and features to the client
+	// Default return for public routes or error cases
 	return {
-		user,
-		isPremium,
-		trialActive,
-		trialDaysLeft,
-		features
+		user: locals.user,
+		isPremium: false,
+		trialActive: false,
+		trialDaysLeft: 0,
+		features: getDefaultFeatures()
 	};
 };
 
@@ -108,7 +104,9 @@ function getDefaultFeatures() {
 		allowedElements: ['basic'],
 		allowAiFeatures: false,
 		allowColorCustomization: false,
-		allowStyleGuide: false
+		allowStyleGuide: false,
+		maxProjects: 3,
+		canExport: false
 	};
 }
 
@@ -119,7 +117,9 @@ function getFeatureFlags(isPremium, trialActive) {
 			allowedElements: ['basic', 'premium', 'pro'],
 			allowAiFeatures: true,
 			allowColorCustomization: true,
-			allowStyleGuide: true
+			allowStyleGuide: true,
+			maxProjects: 999,
+			canExport: true
 		};
 	}
 
@@ -128,7 +128,9 @@ function getFeatureFlags(isPremium, trialActive) {
 			allowedElements: ['basic', 'premium'],
 			allowAiFeatures: true,
 			allowColorCustomization: true,
-			allowStyleGuide: true
+			allowStyleGuide: true,
+			maxProjects: 10,
+			canExport: true
 		};
 	}
 

@@ -3,7 +3,7 @@
   import { fade } from 'svelte/transition';
   import { goto } from '$app/navigation';
   import { signIn, getError } from '$lib/services/firebase/auth.svelte';
-  import LoginForm from '$lib/components/login-form.svelte';
+  import LoginForm from '$lib/components/auth/LoginForm.svelte';
   
   let isProcessing = $state(false);
   

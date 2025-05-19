@@ -16,6 +16,7 @@
 	import { getGoogleService } from "$lib/services/google/client";
 	// import { getGoogleService } from "$lib/server/google/client";
 	import type { GoogleAppsService } from "$lib/services/google/client";
+	import TrialBanner from "$lib/components/trial/TrialBanner.svelte";
 	
 	// Component state with Runes
 	let zenMode = $state(false);
@@ -78,6 +79,8 @@
 	<section class="flex-none px-2">
 		<TopBar />
 	</section>
+	<hr />
+	<TrialBanner />
 	<hr />
 
 	<div class="flex-1 overflow-hidden">
