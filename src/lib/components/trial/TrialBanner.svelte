@@ -1,46 +1,64 @@
+<!-- src/lib/components/trial/TrialBanner.svelte -->
 <script lang="ts">
   import { useTrialFeatures } from '$lib/context/trial.svelte';
   import { Button } from '$lib/components/ui/button';
+  import UpgradeDrawer from '$lib/features/pricing/UpgradeDrawer.svelte';
   
+  // Get trial features
   const trialFeatures = useTrialFeatures();
   
-  // Derived values
-  let trialStatus = $derived(trialFeatures.getTrialStatus());
-  let daysText = $derived(
-    trialStatus.daysLeft === 1 
-      ? '1 day' 
-      : `${trialStatus.daysLeft} days`
-  );
+  // Get simple, non-derived status values
+  const isPremium = trialFeatures.trialInfo.isPremium;
+  const isActive = trialFeatures.trialInfo.active;
+  const daysLeft = trialFeatures.trialInfo.daysLeft;
   
-  function handleUpgrade() {
-    alert('Taking you to upgrade page...');
-    // Will implement later
+  // Compute expired status
+  const isExpired = !isActive && daysLeft === 0 && !isPremium;
+  
+  // Format days text
+  function getDaysText() {
+    return daysLeft === 1 ? '1 day' : `${daysLeft} days`;
+  }
+  
+  // Drawer state
+  let isDrawerOpen = $state(false);
+  
+  function openDrawer() {
+    isDrawerOpen = true;
+  }
+  
+  function handleOpenChange(open: boolean) {
+    isDrawerOpen = open;
   }
 </script>
 
-{#if trialStatus.isPremium}
+<!-- Upgrade Drawer -->
+<UpgradeDrawer isOpen={isDrawerOpen} onOpenChange={handleOpenChange} />
+
+<!-- Banner UI -->
+{#if isPremium}
   <!-- Premium user - show subtle thank you message -->
   <div class="bg-primary/5 text-primary p-2 text-center text-xs">
     <span>🌟 Premium activated - Thank you for supporting Pipewriter!</span>
   </div>
-{:else if trialStatus.active}
+{:else if isActive}
   <div class="bg-primary/10 text-primary p-2 rounded-none">
     <div class="flex justify-between items-center">
       <div>
-        <p class="text-xs font-medium">Trial Active: {daysText} remaining</p>
+        <p class="text-xs font-medium">Trial Active: {getDaysText()} remaining</p>
       </div>
-      <Button variant="outline" size="sm" class="h-7 text-xs" onclick={handleUpgrade}>
+      <Button variant="outline" size="sm" class="h-7 text-xs" onclick={openDrawer}>
         Upgrade
       </Button>
     </div>
   </div>
-{:else if trialStatus.trialExpired}
+{:else if isExpired}
   <div class="bg-destructive/10 text-destructive p-2 rounded-none">
     <div class="flex justify-between items-center">
       <div>
         <p class="text-xs font-medium">Trial Expired - Some features are limited</p>
       </div>
-      <Button variant="outline" size="sm" class="h-7 text-xs border-destructive" onclick={handleUpgrade}>
+      <Button variant="outline" size="sm" class="h-7 text-xs border-destructive" onclick={openDrawer}>
         Upgrade Now
       </Button>
     </div>
