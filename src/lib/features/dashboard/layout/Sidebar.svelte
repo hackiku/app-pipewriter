@@ -1,6 +1,6 @@
 <!-- src/lib/features/dashboard/layout/Sidebar.svelte -->
 <script lang="ts">
-  import { Home, LayoutTemplate, FileText, Settings, HelpCircle, PenLine } from 'lucide-svelte';
+  import { Home, LayoutTemplate, FileText, Settings, HelpCircle, PenLine, ShoppingCart } from '@lucide/svelte';
   import { page } from '$app/stores';
   import * as Tooltip from '$lib/components/ui/tooltip';
   import { cn } from '$lib/utils';
@@ -11,29 +11,35 @@
   }>();
   
   // Navigation items
-  const navItems = [
-    { 
-      href: '/dashboard', 
-      icon: Home, 
-      text: 'Dashboard'
-    },
-    { 
-      href: '/dashboard/projects', 
-      icon: FileText, 
-      text: 'Projects'
-    },
-    { 
-      href: '/dashboard/templates', 
-      icon: LayoutTemplate, 
-      text: 'Templates'
-    },
-    { 
-      href: '/dashboard/editor', 
-      icon: PenLine, 
-      text: 'Editor'
-    }
-  ];
-  
+// Navigation items
+const navItems = [
+  { 
+    href: '/dashboard', 
+    icon: Home, 
+    text: 'Dashboard'
+  },
+  { 
+    href: '/dashboard/projects', 
+    icon: FileText, 
+    text: 'Projects'
+  },
+  { 
+    href: '/dashboard/templates', 
+    icon: LayoutTemplate, 
+    text: 'Templates'
+  },
+  { 
+    href: '/dashboard/store', 
+    icon: ShoppingCart, 
+    text: 'Store'
+  },
+  { 
+    href: '/dashboard/editor', 
+    icon: PenLine, 
+    text: 'Editor'
+  }
+];
+
   // Footer items (always at bottom)
   const footerItems = [
     { 
