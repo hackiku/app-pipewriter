@@ -1,34 +1,36 @@
-<!-- $lib/iframe/layout/user/UserAvatar.svelte -->
+<!-- $lib/features/addon/layout/user/UserAvatar.svelte -->
 <script lang="ts">
   import { fade } from 'svelte/transition';
   import ProfileCard from './ProfileCard.svelte';
-  import { UserCircle } from 'lucide-svelte';
+  import { useTrialFeatures } from '$lib/context/trial.svelte';
   import * as Avatar from "$lib/components/ui/avatar/index.js";
   import { getUser } from '$lib/services/firebase/auth.svelte';
   
   // Local state
   let showProfile = $state(false);
   
-  // Props
-  const props = $props<{
-    size?: 'sm' | 'md' | 'lg';
-  }>();
+  // Get trial features to determine subscription status
+  const trialFeatures = useTrialFeatures();
   
-  // Computed size properties
-  let dimensions = $derived(() => {
-    switch (props.size || 'md') {
-      case 'sm': return 'w-8 h-8';
-      case 'lg': return 'w-12 h-12';
-      default: return 'w-10 h-10';
-    }
-  });
-  
-  function toggleProfile() {
-    showProfile = !showProfile;
+  // Get subscription status
+  function getSubscriptionStatus() {
+    if (trialFeatures.trialInfo.isPremium) return "Pro";
+    if (trialFeatures.trialInfo.active) return "Trial";
+    return "Free";
   }
   
-  // Compute initials for the avatar
-  let initials = $derived(() => {
+  // Badge color based on status
+  function getBadgeColor() {
+    const status = getSubscriptionStatus();
+    switch (status) {
+      case "Pro": return "bg-primary text-primary-foreground";
+      case "Trial": return "bg-amber-500 text-white";
+      default: return "bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300";
+    }
+  }
+  
+  // Generate initials for fallback
+  function getInitials() {
     const user = getUser();
     if (!user) return '';
     
@@ -46,19 +48,36 @@
     }
     
     return '';
-  });
+  }
+  
+  function toggleProfile() {
+    showProfile = !showProfile;
+  }
 </script>
 
 <div class="relative">
-  <button 
-    class="w-9 h-9 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center"
+  <button
+    class="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
     onclick={toggleProfile}
     aria-label="Toggle profile menu"
   >
-    {#if getUser() && getUser()?.photoURL}
-      <img src={getUser().photoURL} alt="User" class="w-full h-full rounded-full" />
-    {:else}
-      <UserCircle class="w-5 h-5 text-gray-500 dark:text-gray-400" />
+    <Avatar.Root class="h-9 w-9">
+      {#if getUser() && getUser()?.photoURL}
+        <Avatar.Image 
+          src={getUser().photoURL} 
+          alt="User avatar" 
+        />
+      {/if}
+      <Avatar.Fallback class="bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
+        {getInitials()}
+      </Avatar.Fallback>
+    </Avatar.Root>
+    
+    <!-- Status Badge -->
+    {#if getUser()}
+      <div class="absolute -top-1 -right-1 rounded-full text-[0.6rem] font-bold px-1 min-w-5 h-5 flex items-center justify-center {getBadgeColor()}">
+        {getSubscriptionStatus()}
+      </div>
     {/if}
   </button>
   

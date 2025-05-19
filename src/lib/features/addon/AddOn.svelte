@@ -106,17 +106,13 @@
 					class={activeTab || showAboutModal ? "z-0" : ""}
 				/>
 				<Resizable.Pane defaultSize={30} minSize={0}>
-					<div class="m-2 p-4 border rounded-xl">
-						<!-- <TableWrapper /> -->
+					<!-- <div class="m-2 p-4 border rounded-xl">
 						<TableTab />
-					</div>
-					<!-- <Table /> -->
+					</div> -->
 				</Resizable.Pane>
 			{/if}
 		</Resizable.PaneGroup>
 	</div>
-
-	<!-- <Table /> -->
 
 	<div class="mb-2 px-2">
 		<Tabs context={serviceContext} />
