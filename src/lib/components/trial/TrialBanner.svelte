@@ -3,12 +3,12 @@
   import { useTrialFeatures } from '$lib/context/trial.svelte';
   import { Button } from '$lib/components/ui/button';
   import UpgradeDrawer from '$lib/features/pricing/UpgradeDrawer.svelte';
-  
+  import SimpleUpgradeModal from '$lib/features/pricing/SimpleUpgradeModal.svelte';
   // Get trial features
   const trialFeatures = useTrialFeatures();
   
   // Get simple, non-derived status values
-  const isPremium = trialFeatures.trialInfo.isPremium;
+  const isPremium = trialFeatures.trialInfo.isPro;
   const isActive = trialFeatures.trialInfo.active;
   const daysLeft = trialFeatures.trialInfo.daysLeft;
   
@@ -33,13 +33,13 @@
 </script>
 
 <!-- Upgrade Drawer -->
-<UpgradeDrawer isOpen={isDrawerOpen} onOpenChange={handleOpenChange} />
-
+<!-- <UpgradeDrawer isOpen={isDrawerOpen} onOpenChange={handleOpenChange} /> -->
+<SimpleUpgradeModal isOpen={isDrawerOpen} onOpenChange={handleOpenChange} />
 <!-- Banner UI -->
 {#if isPremium}
   <!-- Premium user - show subtle thank you message -->
   <div class="bg-primary/5 text-primary p-2 text-center text-xs">
-    <span>🌟 Premium activated - Thank you for supporting Pipewriter!</span>
+    <span>🌟 Pro activated - Thxx!</span>
   </div>
 {:else if isActive}
   <div class="bg-primary/10 text-primary p-2 rounded-none">
@@ -56,7 +56,7 @@
   <div class="bg-destructive/10 text-destructive p-2 rounded-none">
     <div class="flex justify-between items-center">
       <div>
-        <p class="text-xs font-medium">Trial Expired - Some features are limited</p>
+        <p class="text-xs font-medium">Trial Expired</p>
       </div>
       <Button variant="outline" size="sm" class="h-7 text-xs border-destructive" onclick={openDrawer}>
         Upgrade Now

@@ -3,26 +3,24 @@
   import { ModeWatcher } from 'mode-watcher';
   import { setContext } from 'svelte';
   import { page } from '$app/state';
+	import { dev } from '$app/environment';
   import AuthModal from '$lib/components/auth/AuthModal.svelte';
-  import { createFeaturesContext } from '$lib/context/features.svelte';
   import { createTrialContext } from '$lib/context/trial.svelte';
+  import DevPanel from "$lib/components/dev/DevPanel.svelte";
 
   // Props for getting data from the server
   const { data, children } = $props();
   
-  // Create contexts first, without any immediate reactivity
-  const featuresContext = createFeaturesContext();
   const trialContext = createTrialContext();
   
   // Set the contexts
-  setContext('features', featuresContext);
   setContext('trialFeatures', trialContext);
   
   // Initialize contexts in a separate effect to avoid immediate reactivity loops
   $effect(() => {
     if (data?.features) {
       // First initialize the legacy context
-      featuresContext.initFeatures(data);
+      // featuresContext.initFeatures(data);
       
       // Then initialize the new trial context
       trialContext.initFeatures({
@@ -30,7 +28,7 @@
         trialActive: data.trialActive,
         trialDaysLeft: data.trialDaysLeft,
         trialStartDate: data.trialStartDate,
-        isPremium: data.isPremium
+        isPro: data.isPro
       });
     }
   });
@@ -48,3 +46,5 @@
 {/if}
 
 {@render children?.()}
+
+<DevPanel />

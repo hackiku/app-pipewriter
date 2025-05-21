@@ -12,7 +12,7 @@ export async function POST({ locals }) {
 
 		// Server-side operation using adminFirestore
 		await adminFirestore.collection('users').doc(uid).update({
-			premium: true
+			pro: true
 		});
 
 		return json({ success: true });

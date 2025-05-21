@@ -14,7 +14,7 @@
   
   // Get subscription status
   function getSubscriptionStatus() {
-    if (trialFeatures.trialInfo.isPremium) return "Pro";
+    if (trialFeatures.trialInfo.isPro) return "Pro";
     if (trialFeatures.trialInfo.active) return "Trial";
     return "Free";
   }

@@ -51,7 +51,7 @@
   <div class="flex _flex-col rounded-lg border bg-card p-6 shadow-sm">
     
 		<div class="flex-1">
-      <h3 class="text-md font-semibold">Free</h3>
+      <h3 class="text-md font-semibold">Freessss</h3>
       <div class="mt-2 text-2xl font-bold">$0</div>
 
       <ul class="mt-6 space-y-2.5 text-sm">

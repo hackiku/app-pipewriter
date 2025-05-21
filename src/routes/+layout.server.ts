@@ -25,15 +25,15 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 			const userDoc = await adminFirestore.collection('users').doc(uid).get();
 			const userData = userDoc.data() || {};
 
-			// Check premium status
-			const isPremium = userData.premium === true;
+			// Check pro status
+			const isPro = userData.pro === true;
 
-			// Trial status (if not premium)
+			// Trial status (if not pro)
 			let trialActive = false;
 			let trialDaysLeft = 0;
 			let trialStartDate = null;
 
-			if (!isPremium) {
+			if (!isPro) {
 				const trialInfo = await checkTrialStatus(uid, userData);
 				trialActive = trialInfo.active;
 				trialDaysLeft = trialInfo.daysLeft;
@@ -41,19 +41,19 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 			}
 
 			// Get feature flags
-			const features = getFeatureFlags(isPremium, trialActive);
+			const features = getFeatureFlags(isPro, trialActive);
 
 			// Return all data needed by the UI - provide complete data for both contexts
 			return {
 				user: locals.user,
-				isPremium,
+				isPro,
 				trialActive,
 				trialDaysLeft,
 				trialStartDate,
 				features,
 				// Extra fields for maxProjects and canExport for new trial context
-				maxProjects: isPremium ? 999 : (trialActive ? 10 : 3),
-				canExport: isPremium || trialActive
+				maxProjects: isPro ? 999 : (trialActive ? 10 : 3),
+				canExport: isPro || trialActive
 			};
 		} catch (error) {
 			console.error('Error loading user data:', error);
@@ -63,7 +63,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 	// Default return for public routes or error cases
 	return {
 		user: locals.user,
-		isPremium: false,
+		isPro: false,
 		trialActive: false,
 		trialDaysLeft: 0,
 		features: getDefaultFeatures()
@@ -111,10 +111,10 @@ function getDefaultFeatures() {
 }
 
 // Get feature flags based on user status
-function getFeatureFlags(isPremium, trialActive) {
-	if (isPremium) {
+function getFeatureFlags(isPro, trialActive) {
+	if (isPro) {
 		return {
-			allowedElements: ['basic', 'premium', 'pro'],
+			allowedElements: ['free', 'trial', 'pro'],
 			allowAiFeatures: true,
 			allowColorCustomization: true,
 			allowStyleGuide: true,
@@ -125,7 +125,7 @@ function getFeatureFlags(isPremium, trialActive) {
 
 	if (trialActive) {
 		return {
-			allowedElements: ['basic', 'premium'],
+			allowedElements: ['free', 'trial', 'pro'],
 			allowAiFeatures: true,
 			allowColorCustomization: true,
 			allowStyleGuide: true,
