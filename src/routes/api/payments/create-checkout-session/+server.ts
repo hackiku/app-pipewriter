@@ -1,4 +1,4 @@
-// src/routes/api/payment/create-checkout/+server.ts
+// src/routes/api/payments/create-checkout-session/+server.ts
 import { json } from '@sveltejs/kit';
 import { adminAuth, adminFirestore } from '$lib/server/firebase-admin';
 import Stripe from 'stripe';
