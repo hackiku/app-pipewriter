@@ -18,14 +18,18 @@ export async function POST({ request, locals }) {
 		const uid = locals.user.uid;
 
 		// Calculate new trial start date based on requested days
-		// To set the start date, we count back from today
 		const trialStartDate = new Date();
-		trialStartDate.setDate(trialStartDate.getDate() - (days > 0 ? 0 : 1)); // If days is 0, set to yesterday to expire trial
+
+		// If days is 0, set to yesterday to expire trial
+		// Otherwise, set to today
+		if (days <= 0) {
+			trialStartDate.setDate(trialStartDate.getDate() - 99); // Far in the past
+		}
 
 		// Update user in Firestore
 		await adminFirestore.collection('users').doc(uid).set({
 			trialStartDate,
-			pro: false 
+			pro: false // Ensure pro is false when setting a trial
 		}, { merge: true });
 
 		return json({ success: true, days });

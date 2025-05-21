@@ -2,7 +2,7 @@
 <script lang="ts">
   import * as Dialog from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
-  import { Sparkles } from 'lucide-svelte';
+  import { Crown } from 'lucide-svelte';
   import { useTrialFeatures } from '$lib/context/trial.svelte';
   
   // Props
@@ -94,28 +94,28 @@
 <Dialog.Root open={isOpen} onOpenChange={handleOpenChange}>
   <Dialog.Content class="sm:max-w-[400px]">
     <Dialog.Header>
-      <Dialog.Title>{trialStatus.isPro ? 'Manage Subscription' : 'Upgrade to Pro'}</Dialog.Title>
+      <Dialog.Title>{trialStatus.isPremium ? 'Manage Subscription' : 'Upgrade to Premium'}</Dialog.Title>
       <Dialog.Description>
         {#if trialStatus.active}
           You have {trialStatus.daysLeft} days left in your trial.
-        {:else if trialStatus.isPro}
-          You're currently on the Pro plan.
+        {:else if trialStatus.isPremium}
+          You're currently on the Premium plan.
         {:else}
-          Get access to all pro features.
+          Get access to all premium features.
         {/if}
       </Dialog.Description>
     </Dialog.Header>
     
     <div class="py-4">
-      {#if trialStatus.isPro}
-        <!-- Pro user view -->
+      {#if trialStatus.isPremium}
+        <!-- Premium user view -->
         <div class="flex flex-col items-center justify-center space-y-4 mb-4">
           <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <Sparkles class="h-6 w-6 text-primary" />
+            <Crown class="h-6 w-6 text-primary" />
           </div>
           <p class="text-center text-sm">
-            You're currently on the <span class="font-medium">Pro</span> plan.
-            Enjoy all pro features!
+            You're currently on the <span class="font-medium">Premium</span> plan.
+            Enjoy all premium features!
           </p>
         </div>
         
@@ -133,7 +133,7 @@
         <!-- Free/Trial user view -->
         <div class="space-y-4">
           <div class="flex items-center justify-between border-b pb-2">
-            <span class="font-medium">Pro Plan</span>
+            <span class="font-medium">Premium Plan</span>
             <span class="font-bold">$9/month</span>
           </div>
           
@@ -142,7 +142,7 @@
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
               </svg>
-              <span>Access to all pro elements</span>
+              <span>Access to all premium elements</span>
             </li>
             <li class="flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" viewBox="0 0 20 20" fill="currentColor">

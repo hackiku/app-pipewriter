@@ -1,13 +1,13 @@
 <!-- $lib/features/addon/layout/user/ProfileCard.svelte -->
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import { X, Mail, LogOut, CheckCircle, Clock, Crown } from "@lucide/svelte";
+  import { X, Mail, LogOut, CheckCircle, Clock, Sparkles } from "@lucide/svelte";
   import { getUser, signIn, signOut } from '$lib/services/firebase/auth.svelte';
   import { Button } from '$lib/components/ui/button';
   import * as Card from '$lib/components/ui/card';
   import * as Avatar from "$lib/components/ui/avatar/index.js";
   import { useTrialFeatures } from '$lib/context/trial.svelte';
-  import UpgradeDrawer from '$lib/features/pricing/UpgradeDrawer.svelte';
+  import SimpleUpgradeModal from '$lib/components/pricing/SimpleUpgradeModal.svelte';
   
   // Props
   const props = $props<{
@@ -18,14 +18,14 @@
   // State
   let isLoggingOut = $state(false);
   let isSigningIn = $state(false);
-  let showUpgradeDrawer = $state(false);
+  let showUpgradeModal = $state(false);
   
   // Get trial features context
   const trialFeatures = useTrialFeatures();
   
-  // Get subscription status info using functions instead of $derived
+  // Get subscription status info using trialInfo directly
   function getSubscriptionStatus() {
-    if (trialFeatures.trialInfo.isPremium) return "Premium";
+    if (trialFeatures.trialInfo.isPro) return "Pro";
     if (trialFeatures.trialInfo.active) return "Trial";
     return "Free";
   }
@@ -34,8 +34,8 @@
     return trialFeatures.trialInfo.active;
   }
   
-  function isPremium() {
-    return trialFeatures.trialInfo.isPremium;
+  function isPro() {
+    return trialFeatures.trialInfo.isPro;
   }
   
   function getDaysLeft() {
@@ -93,21 +93,22 @@
     event.stopPropagation();
   }
   
-  function openUpgradeDrawer() {
-    showUpgradeDrawer = true;
+  function openUpgradeModal() {
+    showUpgradeModal = true;
     // Close the profile card when opening the upgrade drawer
     props.onToggleProfileCard();
   }
   
   function handleOpenChange(open: boolean) {
-    showUpgradeDrawer = open;
+    showUpgradeModal = open;
   }
 </script>
 
-<!-- Upgrade Drawer -->
-<UpgradeDrawer isOpen={showUpgradeDrawer} onOpenChange={handleOpenChange} />
+<!-- Upgrade Modal -->
+<SimpleUpgradeModal isOpen={showUpgradeModal} onOpenChange={handleOpenChange} />
 
 {#if props.showProfileCard}
+  <!-- svelte-ignore a11y_interactive_supports_focus -->
   <div 
     class="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm"
     onclick={closeCard}
@@ -116,7 +117,8 @@
     aria-modal="true"
   >
     <!-- Profile Card content -->
-    <div
+		
+    <button
       class="fixed right-2 top-16 w-80 max-w-[90vw]"
       in:fade={{ duration: 200 }}
       out:fade={{ duration: 200 }}
@@ -139,7 +141,7 @@
           <!-- User info -->
           {#if getUser()}
             <div class="space-y-3 mb-4">
-              <div class="flex items-center gap-3 p-3 bg-muted/50 rounded-md">
+              <div class="flex flex-col items-start gap-3 p-3 bg-muted/50 rounded-xl">
                 <Avatar.Root class="h-10 w-10">
                   {#if getUser().photoURL}
                     <Avatar.Image 
@@ -153,7 +155,7 @@
                 </Avatar.Root>
                 
                 <div class="overflow-hidden">
-                  <div class="font-medium truncate">{getUser().displayName || 'User'}</div>
+                  <div class="text-left mb-1 font-medium truncate">{getUser().displayName || 'User'}</div>
                   {#if getUser().email}
                     <div class="text-xs text-muted-foreground flex items-center">
                       <Mail class="h-3 w-3 mr-1 flex-shrink-0" />
@@ -164,14 +166,14 @@
               </div>
               
               <!-- Subscription Information -->
-              <div class="p-3 rounded-md border">
+              <div class="p-3 rounded-xl border">
                 <div class="flex items-center justify-between mb-2">
                   <h3 class="text-sm font-medium">Subscription</h3>
                   
-                  {#if isPremium()}
+                  {#if isPro()}
                     <div class="text-xs font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded-full flex items-center">
-                      <Crown class="h-3 w-3 mr-1" />
-                      Premium
+                      <Sparkles class="h-3 w-3 mr-1" />
+                      Pro
                     </div>
                   {:else if isActive()}
                     <div class="text-xs font-medium bg-amber-500 text-white px-2 py-0.5 rounded-full flex items-center">
@@ -186,14 +188,14 @@
                 </div>
                 
                 <div class="space-y-3">
-                  {#if isPremium()}
+                  {#if isPro()}
                     <div class="flex items-center text-sm gap-2">
                       <CheckCircle class="h-4 w-4 text-primary shrink-0" />
-                      <span class="text-xs">All premium features</span>
+                      <span class="text-xs">All pro features</span>
                     </div>
                     <div class="flex items-center text-sm gap-2">
                       <CheckCircle class="h-4 w-4 text-primary shrink-0" />
-                      <span class="text-xs">Premium elements</span>
+                      <span class="text-xs">Pro elements</span>
                     </div>
                     <div class="flex items-center text-sm gap-2">
                       <CheckCircle class="h-4 w-4 text-primary shrink-0" />
@@ -207,21 +209,21 @@
                       variant="default" 
                       size="sm" 
                       class="w-full mt-2 text-xs h-8" 
-                      onclick={openUpgradeDrawer}
+                      onclick={openUpgradeModal}
                     >
-                      Upgrade to Premium
+                      Upgrade to Pro
                     </Button>
                   {:else}
                     <p class="text-xs text-muted-foreground">
-                      Your trial has ended. Upgrade to access premium features.
+                      Your trial has ended. Upgrade to access pro features.
                     </p>
                     <Button 
                       variant="default" 
                       size="sm" 
                       class="w-full mt-2 text-xs h-8" 
-                      onclick={openUpgradeDrawer}
+                      onclick={openUpgradeModal}
                     >
-                      Upgrade to Premium
+                      Upgrade to Pro
                     </Button>
                   {/if}
                 </div>
@@ -239,7 +241,7 @@
             </div>
           {:else}
             <div class="space-y-3 mb-4">
-              <div class="p-3 bg-muted/50 rounded-md text-center">
+              <div class="p-3 bg-muted/50 rounded-xl text-center">
                 <p class="text-sm text-muted-foreground">Sign in to access your account</p>
               </div>
               
@@ -261,6 +263,6 @@
           </p>
         </Card.Footer>
       </Card.Root>
-    </div>
+    </button>
   </div>
 {/if}

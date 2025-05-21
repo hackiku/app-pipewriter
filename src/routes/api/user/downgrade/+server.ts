@@ -10,9 +10,9 @@ export async function POST({ locals }) {
 	try {
 		const uid = locals.user.uid;
 
-		// Server-side operation using adminFirestore
+		// Server-side operation using adminFirestore - use "pro" field
 		await adminFirestore.collection('users').doc(uid).update({
-			premium: false
+			pro: false
 		});
 
 		return json({ success: true });
