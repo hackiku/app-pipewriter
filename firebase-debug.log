@@ -27690,3 +27690,12 @@ Issues? Report them at https://github.com/firebase/firebase-tools/issues and att
 [debug] [2025-05-21T22:07:36.467Z] >>> [apiv2][body] POST http://127.0.0.1:5001/functions/projects/pipewriter/trigger_multicast {"eventId":"4c7fcab0-8e88-4813-8cc5-2d2d351190a5","eventType":"providers/firebase.auth/eventTypes/user.create","resource":{"name":"projects/pipewriter","service":"firebaseauth.googleapis.com"},"params":{},"timestamp":"2025-05-21T22:07:36.467Z","data":{"uid":"CvVPgpIh20YTzJsNRYhpIRKhOn9Z","email":"peach.chicken.871@example.com","emailVerified":true,"displayName":"Peach Chicken","metadata":{"creationTime":"2025-05-21T22:07:36.467Z","lastSignInTime":"2025-05-21T22:07:36.467Z"},"customClaims":{},"providerData":[{"providerId":"google.com","rawId":"8735505395932617889173296593350978858413","federatedId":"8735505395932617889173296593350978858413","displayName":"Peach Chicken","email":"peach.chicken.871@example.com","screenName":"chicken_peach"}]}}
 [debug] [2025-05-21T22:07:36.473Z] <<< [apiv2][status] POST http://127.0.0.1:5001/functions/projects/pipewriter/trigger_multicast 200
 [debug] [2025-05-21T22:07:36.474Z] <<< [apiv2][body] POST http://127.0.0.1:5001/functions/projects/pipewriter/trigger_multicast {"status":"multicast_acknowledged"}
+[debug] [2025-05-21T23:33:41.090Z] May 22, 2025 1:33:41 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketChannelHandler initChannel
+INFO: Connected to new websocket client
+ {"metadata":{"emulator":{"name":"firestore"},"message":"May 22, 2025 1:33:41 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketChannelHandler initChannel\nINFO: Connected to new websocket client\n"}}
+[debug] [2025-05-21T23:33:41.096Z] May 22, 2025 1:33:41 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected non-HTTP/2 connection.
+ {"metadata":{"emulator":{"name":"firestore"},"message":"May 22, 2025 1:33:41 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead\nINFO: Detected non-HTTP/2 connection.\n"}}
+[debug] [2025-05-21T23:33:41.216Z] May 22, 2025 1:33:41 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected HTTP/2 connection.
+ {"metadata":{"emulator":{"name":"firestore"},"message":"May 22, 2025 1:33:41 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead\nINFO: Detected HTTP/2 connection.\n"}}

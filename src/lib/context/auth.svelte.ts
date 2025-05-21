@@ -1,4 +1,4 @@
-// src/lib/services/firebase/auth.svelte.ts
+// src/lib/context/auth.svelte.ts
 import { getFirebaseService } from '$lib/services/firebase/client';
 import { browser } from '$app/environment';
 import { invalidateAll } from '$app/navigation';
