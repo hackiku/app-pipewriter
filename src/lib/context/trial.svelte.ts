@@ -1,4 +1,4 @@
-// lib/context/trial.svelte.ts
+// src/lib/context/trial.svelte.ts
 import { getContext, setContext } from 'svelte';
 import { browser } from '$app/environment';
 
@@ -29,36 +29,67 @@ export function createTrialContext() {
 		isPro: false
 	});
 
-	// Initialize from server data - FIXED to avoid circular reference
-	function initFeatures(serverData) {
+	// ENHANCED: Initialize from server data with better reactivity
+	function initFeatures(serverData: any) {
 		if (!browser) return;
 
-		// Update properties individually instead of reassigning the whole object
+		console.log('Initializing trial features with server data:', serverData);
+
+		// Update features object properties individually to maintain reactivity
 		if (serverData.features) {
-			// Update features individually
-			for (const [key, value] of Object.entries(serverData.features)) {
-				// Using $effect.root to avoid reactivity loops
-				features[key] = value;
-			}
+			features.allowedElements = serverData.features.allowedElements || ['basic'];
+			features.allowAiFeatures = serverData.features.allowAiFeatures || false;
+			features.allowColorCustomization = serverData.features.allowColorCustomization || false;
+			features.allowStyleGuide = serverData.features.allowStyleGuide || false;
+			features.maxProjects = serverData.features.maxProjects || 3;
+			features.canExport = serverData.features.canExport || false;
 		}
 
-		// Update trial info individually
+		// Update trial info individually to maintain reactivity
 		trialInfo.active = serverData.trialActive || false;
 		trialInfo.daysLeft = serverData.trialDaysLeft || 0;
 		trialInfo.startDate = serverData.trialStartDate || null;
 		trialInfo.isPro = serverData.isPro || false;
+
+		console.log('Trial context initialized:', {
+			isPro: trialInfo.isPro,
+			active: trialInfo.active,
+			daysLeft: trialInfo.daysLeft,
+			features: features
+		});
 	}
 
-	// Feature check functions 
+	// ENHANCED: Feature check functions with better logic
 	function canUseFeature(featureName: keyof FeatureFlags): boolean {
+		// Pro users can use everything
 		if (trialInfo.isPro) return true;
-		if (!trialInfo.active) return false;
 
-		return Boolean(features[featureName]);
+		// Active trial users can use trial features
+		if (trialInfo.active) {
+			return Boolean(features[featureName]);
+		}
+
+		// Free users get basic features only
+		const freeFeatures: (keyof FeatureFlags)[] = ['maxProjects'];
+		return freeFeatures.includes(featureName) ? Boolean(features[featureName]) : false;
 	}
 
-	function canUseElement(category: string): boolean {
-		return features.allowedElements.includes(category);
+	function canUseElement(elementTier: string): boolean {
+		// Pro users can use all elements
+		if (trialInfo.isPro) return true;
+
+		// Trial users can use free and trial elements
+		if (trialInfo.active) return elementTier === 'free' || elementTier === 'trial';
+
+		// Free users can only use free elements
+		return elementTier === 'free';
+	}
+
+	// ENHANCED: Get user tier for element filtering
+	function getUserTier(): 'free' | 'trial' | 'pro' {
+		if (trialInfo.isPro) return 'pro';
+		if (trialInfo.active) return 'trial';
+		return 'free';
 	}
 
 	function getTrialStatus() {
@@ -66,25 +97,45 @@ export function createTrialContext() {
 			active: trialInfo.active,
 			daysLeft: trialInfo.daysLeft,
 			isPro: trialInfo.isPro,
-			trialExpired: !trialInfo.active && trialInfo.daysLeft === 0 && !trialInfo.isPro
+			isPremium: trialInfo.isPro, // Legacy compatibility
+			trialExpired: !trialInfo.active && trialInfo.daysLeft === 0 && !trialInfo.isPro,
+			userTier: getUserTier()
 		};
 	}
 
+	// ENHANCED: Debug function for development
+	function debugTrialState() {
+		console.log('=== TRIAL DEBUG STATE ===');
+		console.log('trialInfo:', trialInfo);
+		console.log('features:', features);
+		console.log('canUseAI:', canUseFeature('allowAiFeatures'));
+		console.log('canUseColors:', canUseFeature('allowColorCustomization'));
+		console.log('canExport:', canUseFeature('canExport'));
+		console.log('userTier:', getUserTier());
+		console.log('========================');
+	}
+
 	return {
+		// Reactive state
 		features,
 		trialInfo,
+
+		// Methods
 		initFeatures,
 		canUseFeature,
 		canUseElement,
-		getTrialStatus
+		getUserTier,
+		getTrialStatus,
+		debugTrialState
 	};
 }
 
-// Helper to get trial context
+// Helper to get trial context with better error handling
 export function useTrialFeatures() {
 	const context = getContext<ReturnType<typeof createTrialContext>>('trialFeatures');
 
 	if (!context) {
+		console.error('useTrialFeatures must be used within a component with TrialContext');
 		throw new Error('useTrialFeatures must be used within a component with TrialContext');
 	}
 

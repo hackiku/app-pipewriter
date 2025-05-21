@@ -1,4 +1,4 @@
-<!-- src/lib/features/pricing/StripeCheckout.svelte -->
+<!-- src/lib/components/pricing/StripeCheckout.svelte -->
 <script lang="ts">
   import { Button } from '$lib/components/ui/button';
   import { getUser } from '$lib/services/firebase/auth.svelte';
