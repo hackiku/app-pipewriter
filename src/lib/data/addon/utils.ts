@@ -128,16 +128,23 @@ class ElementManager {
 	}
 
 	getElementsByCategory(theme: ElementTheme, userTier: 'free' | 'trial' | 'pro' = 'free') {
-		const elements = this.getElementsByTheme(theme)
-			.filter(element => {
-				const elementTier = element.metadata?.tier || 'free';
-				if (userTier === 'pro') return true; // Pro users access everything
-				if (userTier === 'trial') return elementTier !== 'pro'; // Trial users get free + trial
-				return elementTier === 'free'; // Free users only get free elements
-			});
+		// Get all elements for the theme regardless of tier
+		const elements = this.getElementsByTheme(theme);
 
-		// Rest of grouping logic remains the same
-		const result = elements.reduce((grouped, element) => {
+		// Add a "locked" property to elements based on user's tier
+		const elementsWithLockStatus = elements.map(element => {
+			const elementTier = element.metadata?.tier || 'free';
+			const isLocked = (userTier === 'free' && elementTier !== 'free') ||
+				(userTier === 'trial' && elementTier === 'pro');
+
+			return {
+				...element,
+				isLocked
+			};
+		});
+
+		// Group by category
+		const result = elementsWithLockStatus.reduce((grouped, element) => {
 			if (!grouped[element.category]) {
 				grouped[element.category] = [];
 			}
@@ -147,6 +154,7 @@ class ElementManager {
 
 		return result;
 	}
+
 	
 	getAllCategories() {
 		const categories = new Set<string>();

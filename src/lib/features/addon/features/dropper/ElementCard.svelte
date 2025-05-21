@@ -10,19 +10,22 @@
   const trialFeatures = useTrialFeatures();
 
   // Props
-  const props = $props<{
-    element: Element;
-    onSelect: (id: string) => void;
-    theme: ElementTheme;
-    disabled?: boolean;
-    isSelected?: boolean;
-  }>();
+	const props = $props<{
+		element: Element;
+		onSelect: (id: string) => void;
+		theme: ElementTheme;
+		disabled?: boolean;
+		isSelected?: boolean;
+		isLocked?: boolean;
+	}>();
+
+	const isLocked = props.isLocked;
 
   // Fix: Use a regular function to determine lock status (not $derived)
   function checkIfElementLocked() {
     const elementTier = props.element.metadata?.tier || 'free';
     
-    if (trialFeatures.trialInfo.isPremium) return false;
+    if (trialFeatures.trialInfo.isPro) return false;
     if (trialFeatures.trialInfo.active) return elementTier === 'pro';
     return elementTier !== 'free';
   }
@@ -66,7 +69,7 @@
   
   // Handle click on the element card
   async function handleClick() {
-    if (props.disabled || isProcessing || checkIfElementLocked()) return;
+    if (props.disabled || isProcessing || isLocked) return;
     
     isProcessing = true;
     
@@ -159,7 +162,7 @@
         </div>
       {/if}
       
-      {#if checkIfElementLocked()}
+      {#if isLocked}
         <!-- Locked Element Overlay -->
         <div class="absolute inset-0 flex flex-col items-center justify-center bg-black/30 dark:bg-white/20">
           <Lock class="text-white dark:text-gray-100 mb-1" size={20} />

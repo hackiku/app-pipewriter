@@ -131,7 +131,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 			supports: {
 				darkMode: true,
 				customText: true
-			}
+			},
+			tier: 'pro'
 		}
 	},
 
@@ -145,7 +146,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 			supports: {
 				darkMode: true,
 				customText: true
-			}
+			},
+			tier: 'free'
 		}
 	},
 	'list-2': {
@@ -157,7 +159,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 			supports: {
 				darkMode: true,
 				customText: true
-			}
+			},
+			tier: 'free'
 		}
 	},
 	'list-3': {
@@ -170,7 +173,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 			supports: {
 				darkMode: true,
 				customText: true
-			}
+			},
+			tier: 'pro'
 		}
 	},
 
@@ -188,7 +192,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 				darkMode: true,
 				customText: true,
 				customColors: true
-			}
+			},
+			tier: 'free'
 		}
 	},
 	'button-secondary-left': {
@@ -204,7 +209,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 				darkMode: true,
 				customText: true,
 				customColors: true
-			}
+			},
+			tier: 'pro'
 		}
 	},
 	'buttons-2-left': {
@@ -220,7 +226,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 				darkMode: true,
 				customText: true,
 				customColors: true
-			}
+			},
+			tier: 'pro'
 		}
 	},
 	'button-primary-center': {
@@ -236,7 +243,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 				darkMode: true,
 				customText: true,
 				customColors: true
-			}
+			},
+			tier: 'free'
 		}
 	},
 	'button-secondary-center': {
@@ -252,7 +260,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 				darkMode: true,
 				customText: true,
 				customColors: true
-			}
+			},
+			tier: 'free'
 		}
 	},
 	'buttons-2-center': {
@@ -268,7 +277,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 				darkMode: true,
 				customText: true,
 				customColors: true
-			}
+			},
+			tier: 'pro'
 		}
 	},
 
@@ -282,7 +292,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 			supports: {
 				darkMode: true,
 				customText: true
-			}
+			},
+			tier: 'free'
 		}
 	},
 	'cards-3': {
@@ -294,7 +305,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 			supports: {
 				darkMode: true,
 				customText: true
-			}
+			},
+			tier: 'free'
 		}
 	},
 	'cards-4': {
@@ -306,7 +318,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 			supports: {
 				darkMode: true,
 				customText: true
-			}
+			},
+			tier: 'pro'
 		}
 	},
 	'cards-2x2': {
@@ -319,7 +332,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 			supports: {
 				darkMode: true,
 				customText: true
-			}
+			},
+			tier: 'free'
 		}
 	},
 	'cards-6': {
@@ -332,7 +346,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 			supports: {
 				darkMode: true,
 				customText: true
-			}
+			},
+			tier: 'free'
 		}
 	},
 	'pricing-2': {
@@ -346,7 +361,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 				darkMode: true,
 				customText: true,
 				customColors: true
-			}
+			},
+			tier: 'free'
 		}
 	},
 
@@ -358,7 +374,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 		metadata: {
 			supports: {
 				darkMode: false
-			}
+			},
+			tier: 'free'
 		}
 	}
 };

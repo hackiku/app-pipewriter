@@ -1,4 +1,4 @@
-<!-- $lib/iframe/features/dropper/DropperGrid.svelte -->
+ <!-- $lib/iframe/features/dropper/DropperGrid.svelte -->
 <script lang="ts">
   import { getContext } from "svelte";
   import ElementCard from "./ElementCard.svelte";
@@ -86,13 +86,14 @@
         <!-- <div class="grid {getGridClasses().grid} {getGridClasses().gap} {getGridClasses().padding}"> -->
         <div class="grid grid-cols-3 gap-2">
           {#each categoryElements as element (element.id)}
-            <ElementCard
-              element={element}
-              onSelect={() => handleElementSelect(element.id)}
-              theme={props.theme}
-              disabled={props.isProcessing}
-              isSelected={false}
-            />
+						<ElementCard
+							element={element}
+							onSelect={() => handleElementSelect(element.id)}
+							theme={props.theme}
+							disabled={props.isProcessing}
+							isSelected={false}
+							isLocked={element.isLocked}
+						/>
           {/each}
         </div>
       </section>

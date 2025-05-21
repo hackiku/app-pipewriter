@@ -4,7 +4,7 @@ import type { LayoutServerLoad } from './$types';
 import { adminFirestore } from '$lib/server/firebase-admin';
 
 // Trial duration in days - this was missing
-const TRIAL_PERIOD_DAYS = 0;
+const TRIAL_PERIOD_DAYS = 3;
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
 	// Public routes - no auth needed
