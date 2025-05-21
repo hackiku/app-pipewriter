@@ -26,7 +26,7 @@ export function createTrialContext() {
 		active: false,
 		daysLeft: 0,
 		startDate: null,
-		isPremium: false
+		isPro: false
 	});
 
 	// Initialize from server data - FIXED to avoid circular reference
@@ -46,12 +46,12 @@ export function createTrialContext() {
 		trialInfo.active = serverData.trialActive || false;
 		trialInfo.daysLeft = serverData.trialDaysLeft || 0;
 		trialInfo.startDate = serverData.trialStartDate || null;
-		trialInfo.isPremium = serverData.isPremium || false;
+		trialInfo.isPro = serverData.isPro || false;
 	}
 
 	// Feature check functions 
 	function canUseFeature(featureName: keyof FeatureFlags): boolean {
-		if (trialInfo.isPremium) return true;
+		if (trialInfo.isPro) return true;
 		if (!trialInfo.active) return false;
 
 		return Boolean(features[featureName]);
@@ -65,8 +65,8 @@ export function createTrialContext() {
 		return {
 			active: trialInfo.active,
 			daysLeft: trialInfo.daysLeft,
-			isPremium: trialInfo.isPremium,
-			trialExpired: !trialInfo.active && trialInfo.daysLeft === 0 && !trialInfo.isPremium
+			isPro: trialInfo.isPro,
+			trialExpired: !trialInfo.active && trialInfo.daysLeft === 0 && !trialInfo.isPro
 		};
 	}
 

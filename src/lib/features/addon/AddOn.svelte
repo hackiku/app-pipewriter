@@ -88,8 +88,8 @@
 			direction="vertical"
 			class="h-full {activeTab ? 'z-0' : 'z-10'}"
 		>
-			<!-- <Resizable.Pane defaultSize={55} minSize={30} maxSize={80}> -->
-			<Resizable.Pane defaultSize={25} minSize={30} maxSize={80}>
+			<Resizable.Pane defaultSize={55} minSize={30} maxSize={80}>
+			<!-- <Resizable.Pane defaultSize={25} minSize={30} maxSize={80}> -->
 				<!-- Only render Dropper if googleService is available -->
 				{#if googleService}
 					<Dropper context={serviceContext} />

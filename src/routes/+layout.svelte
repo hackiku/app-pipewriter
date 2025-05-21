@@ -1,6 +1,6 @@
 <script lang="ts">
   import "../app.css";
-  import { ModeWatcher } from "mode-watcher";
+  import { ModeWatcher } from 'mode-watcher';
   import { setContext } from 'svelte';
   import { page } from '$app/state';
   import AuthModal from '$lib/components/auth/AuthModal.svelte';

@@ -1,6 +1,6 @@
 <!-- $lib/iframe/features/dropper/HoverCursor.svelte -->
 <script lang="ts">
-  import { Plus } from 'lucide-svelte';
+  import { Plus } from '@lucide/svelte';
   import { fade } from 'svelte/transition';
   import { cn } from "$lib/utils";
 

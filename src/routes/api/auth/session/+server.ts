@@ -35,13 +35,14 @@ export async function POST({ request, cookies }) {
 		};
 
 		// Set the cookie
-cookies.set('__session', sessionCookie, {
-  maxAge: SESSION_EXPIRES_IN / 1000,
-  httpOnly: true,
-  secure: !dev,
-  path: '/',
-  sameSite: 'strict' // Change from 'strict' to 'none' for iframe support
-});
+		cookies.set('__session', sessionCookie, {
+			maxAge: SESSION_EXPIRES_IN / 1000,
+			httpOnly: true,
+			// secure: !dev,
+			secure: true,
+			path: '/',
+			sameSite: 'none' // Change from 'strict' to 'none' for iframe support
+		});
 
 		console.log('Session created successfully');
 

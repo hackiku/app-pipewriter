@@ -1,7 +1,7 @@
 <!-- $lib/features/addon/layout/user/ProfileCard.svelte -->
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import { X, Mail, LogOut, CheckCircle, Clock, Crown } from "lucide-svelte";
+  import { X, Mail, LogOut, CheckCircle, Clock, Crown } from "@lucide/svelte";
   import { getUser, signIn, signOut } from '$lib/services/firebase/auth.svelte';
   import { Button } from '$lib/components/ui/button';
   import * as Card from '$lib/components/ui/card';

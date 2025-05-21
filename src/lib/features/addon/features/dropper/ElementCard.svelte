@@ -2,9 +2,12 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
   import { cn } from "$lib/utils";
-  import { Plus, X, AlertCircle } from 'lucide-svelte';
+  import { Plus, X, AlertCircle, Lock } from '@lucide/svelte';
   import type { Element, ElementTheme } from '$lib/data/addon/types';
   import { onMount, onDestroy } from 'svelte';
+
+  import { useTrialFeatures } from '$lib/context/trial.svelte';
+  const trialFeatures = useTrialFeatures();
 
   // Props
   const props = $props<{
@@ -15,6 +18,15 @@
     isSelected?: boolean;
   }>();
 
+  // Fix: Use a regular function to determine lock status (not $derived)
+  function checkIfElementLocked() {
+    const elementTier = props.element.metadata?.tier || 'free';
+    
+    if (trialFeatures.trialInfo.isPremium) return false;
+    if (trialFeatures.trialInfo.active) return elementTier === 'pro';
+    return elementTier !== 'free';
+  }
+  
   // Local state - minimal reactivity
   let isProcessing = $state(false);
   let imageError = $state(false);
@@ -54,7 +66,7 @@
   
   // Handle click on the element card
   async function handleClick() {
-    if (props.disabled || isProcessing) return;
+    if (props.disabled || isProcessing || checkIfElementLocked()) return;
     
     isProcessing = true;
     
@@ -117,8 +129,8 @@
     variant="ghost"
     class={getButtonClass()}
     onclick={handleClick}
-    disabled={props.disabled}
-    title={props.element.description}
+    disabled={props.disabled || isProcessing || checkIfElementLocked()}
+    title={checkIfElementLocked() ? "Upgrade to access this element" : props.element.description}
   >
     <div class="relative w-full h-full __aspect-video">
       {#if imageError}
@@ -127,19 +139,41 @@
           <span class="text-xs text-neutral-500">{props.element.id}</span>
         </div>
       {:else}
+        <!-- Element Image -->
         <img
           src={getSvgUrl()}
           alt={props.element.alt}
-          class="w-full h-full object-cover group-hover:opacity-40"
+          class="w-full h-full object-cover {checkIfElementLocked() ? 'opacity-40 grayscale' : 'group-hover:opacity-40'}"
           onerror={handleImageError}
         />
+
+        <!-- Tier Badge - Using your smaller sizing -->
+        <div class="absolute top-0.5 right-0.5 z-10">
+          <div class="text-[0.4rem] px-1 rounded-md font-medium opacity-80 {
+            (props.element.metadata?.tier === 'pro') 
+              ? 'bg-primary/80 text-white' 
+              : 'bg-neutral-200/80 dark:bg-neutral-700/80 text-neutral-700 dark:text-neutral-200'
+          }">
+            {props.element.metadata?.tier === 'pro' ? 'Pro' : 'Free'}
+          </div>
+        </div>
       {/if}
       
-      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-        <Plus class="text-neutral-500 dark:text-black" size={30} />
-      </div>
+      {#if checkIfElementLocked()}
+        <!-- Locked Element Overlay -->
+        <div class="absolute inset-0 flex flex-col items-center justify-center bg-black/30 dark:bg-white/20">
+          <Lock class="text-white dark:text-gray-100 mb-1" size={20} />
+          <span class="text-white dark:text-gray-100 text-xs font-medium">Pro</span>
+        </div>
+      {:else}
+        <!-- Normal Hover Effect for Unlocked Elements -->
+        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <Plus class="text-neutral-500 dark:text-black" size={30} />
+        </div>
+      {/if}
 
       {#if isProcessing}
+        <!-- Processing State Overlay -->
         <div class="absolute inset-0 flex items-center justify-center bg-black/50 dark:bg-white/50">
           <X class="text-white dark:text-black animate-spin" size={24} />
         </div>

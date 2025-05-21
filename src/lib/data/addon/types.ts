@@ -18,13 +18,13 @@ export interface ElementMetadata {
 	cols?: number;
 	rows?: number;
 	variant?: string;
+	tier?: 'free' | 'trial' | 'pro';
 	supports?: {
 		darkMode?: boolean;
 		customColors?: boolean;
 		customText?: boolean;
 	}
 }
-
 export interface ElementDefinition {
 	id: string;
 	category: string;

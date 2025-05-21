@@ -127,8 +127,16 @@ class ElementManager {
 			.filter(element => element.theme === theme);
 	}
 
-	getElementsByCategory(theme: ElementTheme) {
-		const elements = this.getElementsByTheme(theme);
+	getElementsByCategory(theme: ElementTheme, userTier: 'free' | 'trial' | 'pro' = 'free') {
+		const elements = this.getElementsByTheme(theme)
+			.filter(element => {
+				const elementTier = element.metadata?.tier || 'free';
+				if (userTier === 'pro') return true; // Pro users access everything
+				if (userTier === 'trial') return elementTier !== 'pro'; // Trial users get free + trial
+				return elementTier === 'free'; // Free users only get free elements
+			});
+
+		// Rest of grouping logic remains the same
 		const result = elements.reduce((grouped, element) => {
 			if (!grouped[element.category]) {
 				grouped[element.category] = [];
@@ -137,10 +145,9 @@ class ElementManager {
 			return grouped;
 		}, {} as Record<string, Element[]>);
 
-		console.log(`Found ${elements.length} elements in ${Object.keys(result).length} categories for theme '${theme}'`);
 		return result;
 	}
-
+	
 	getAllCategories() {
 		const categories = new Set<string>();
 		this.elementsCache.forEach(element => {

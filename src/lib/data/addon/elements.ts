@@ -12,7 +12,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 			supports: {
 				darkMode: true,
 				customColors: true
-			}
+			},
+			tier: 'free'
 		}
 	},
 	'background-empty': {
@@ -23,7 +24,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 			supports: {
 				darkMode: true,
 				customColors: true
-			}
+			},
+			tier: 'free'
 		}
 	},
 	'background-color': {
@@ -34,7 +36,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 			supports: {
 				darkMode: true,
 				customColors: true
-			}
+			},
+			tier: 'free'
 		}
 	},
 
@@ -51,7 +54,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 			supports: {
 				darkMode: true,
 				customText: true
-			}
+			},
+			tier: 'free'
 		}
 	},
 	'zz-left': {
@@ -68,7 +72,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 			supports: {
 				darkMode: true,
 				customText: true
-			}
+			},
+			tier: 'free'
 		}
 	},
 	'zz-right': {
@@ -85,7 +90,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 			supports: {
 				darkMode: true,
 				customText: true
-			}
+			},
+			tier: 'free'
 		}
 	},
 
@@ -99,7 +105,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 			supports: {
 				darkMode: true,
 				customText: true
-			}
+			},
+			tier: 'free'
 		}
 	},
 	'blurbs-4': {
@@ -111,7 +118,8 @@ export const elementsDb: Record<string, ElementDefinition> = {
 			supports: {
 				darkMode: true,
 				customText: true
-			}
+			},
+			tier: 'pro'
 		}
 	},
 	'blurbs-vertical-3': {

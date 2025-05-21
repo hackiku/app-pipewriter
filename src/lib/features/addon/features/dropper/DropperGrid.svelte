@@ -5,6 +5,16 @@
   import { elementManager, getElementsByCategory } from '$lib/data/addon/utils';
   import type { ElementTheme, ElementCategory } from '$lib/data/addon/types';
   
+	import { useTrialFeatures } from '$lib/context/trial.svelte';
+
+	const trialFeatures = useTrialFeatures();
+
+	function getUserTier() {
+  if (trialFeatures.trialInfo.isPro) return 'pro';
+  if (trialFeatures.trialInfo.active) return 'trial';
+  return 'free';
+}
+
   // Props
   const props = $props<{
     isProcessing: boolean;
@@ -33,20 +43,19 @@
   // Load categories on theme change but use manual state tracking to prevent loops
   let lastTheme = $state<ElementTheme | null>(null);
   
-  $effect(() => {
-    // Only update categories when theme changes
-    if (lastTheme === props.theme) return;
-    
-    console.log(`DropperGrid: Loading categories for theme ${props.theme}, grid: ${props.gridColumns}, showInfo: ${uiState.showInfo}`);
-    const categories = elementManager.getElementsByCategory(props.theme);
-    
-    // Update state after a microtask to prevent immediate dependent updates
-    setTimeout(() => {
-      categoriesCache = categories;
-      lastTheme = props.theme;
-      console.log("Categories loaded:", Object.keys(categoriesCache).length);
-    }, 0);
-  });
+	$effect(() => {
+		if (lastTheme === props.theme) return;
+		
+		const userTier = getUserTier();
+		console.log(`Loading categories for theme ${props.theme}, tier: ${userTier}`);
+		const categories = elementManager.getElementsByCategory(props.theme, userTier);
+		
+		setTimeout(() => {
+			categoriesCache = categories;
+			lastTheme = props.theme;
+			console.log("Categories loaded:", Object.keys(categoriesCache).length);
+		}, 0);
+	});
   
   // Handle element selection
   function handleElementSelect(elementId: string) {
