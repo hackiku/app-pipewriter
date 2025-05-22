@@ -1,6 +1,6 @@
 <!-- $lib/iframe/features/dropper/DropperBar.svelte -->
 <script lang="ts">
-	import { Link2, X, Plus } from '@lucide/svelte';
+	import { Link2, PaintBucket, X, Plus } from '@lucide/svelte';
 	import ChainActions from './ChainActions.svelte';
 	import type { ElementTheme } from '$lib/data/addon/types';
 
@@ -82,13 +82,13 @@
 	></div>
 
 	<!-- Control Bar -->
-	<div class="absolute bottom-0 left-0 right-0 z-20 px-5 pb-0">
+	<div class="absolute bottom-2 -left-1 right-0 z-20 px-5 pb-0">
 		<div class="flex items-center justify-between">
 			<!-- Left Side Controls -->
-			<div class="flex items-center gap-2">
+			<div class="flex items-center gap-1.5">
 				<!-- Chain Mode Toggle Button -->
 				<button
-					class="-mb-1 h-10 w-8 rounded-t-full border transition-all duration-150 active:scale-95
+					class="h-7 w-7 rounded-full border transition-all duration-150 active:scale-95
                  {props.chainMode
 						? 'border-border bg-primary text-primary-foreground shadow-sm'
 						: 'border-border bg-accent/40 hover:border-primary/60 hover:shadow-sm dark:hover:border-primary/80'}"
@@ -99,24 +99,30 @@
 						: 'Enter chain mode - queue elements before inserting'}
 				>
 					<Link2
-						size={12}
+						size={14}
 						class="mx-auto {props.chainMode
 							? 'text-primary-foreground'
 							: 'text-muted-foreground hover:text-foreground'}"
 					/>
 					<span class="sr-only">{props.chainMode ? 'Exit chain mode' : 'Enter chain mode'}</span>
 				</button>
-
+				
 				<!-- Theme Toggle Button -->
 				<button
-					class="h-6 w-6 rounded-full border-2 border-border/60
-                 transition-all duration-150
-                 hover:border-primary/60 hover:shadow-sm active:scale-95 dark:hover:border-primary/80"
-					style={`background-color: ${currentTheme.color}`}
-					disabled={props.isProcessing}
-					onclick={props.onToggleTheme}
-					title={`Switch to ${nextTheme.label} theme`}
+				class="h-7 w-7 rounded-full border-2 border-border/60
+				transition-all duration-150
+				hover:border-primary/60 hover:shadow-sm active:scale-95 dark:hover:border-primary/80"
+				style={`background-color: ${currentTheme.color}`}
+				disabled={props.isProcessing}
+				onclick={props.onToggleTheme}
+				title={`Switch to ${nextTheme.label} theme`}
 				>
+				<PaintBucket
+					size={14}
+					class="mx-auto {props.chainMode
+						? 'text-primary-foreground'
+						: 'text-muted-foreground hover:text-foreground'}"
+				/>
 					<span class="sr-only">Switch to {nextTheme.label} theme</span>
 				</button>
 

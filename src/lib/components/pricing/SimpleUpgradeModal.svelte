@@ -35,7 +35,7 @@
     }
   }
   
-  // For demo purpose, we'll use simple functions to update the premium status
+  // For demo purpose, we'll use simple functions to update the pro status
   async function handleUpgrade() {
     isProcessing = true;
     errorMessage = "";
@@ -94,12 +94,12 @@
 <Dialog.Root open={isOpen} onOpenChange={handleOpenChange}>
   <Dialog.Content class="sm:max-w-[400px]">
     <Dialog.Header>
-      <Dialog.Title>{trialStatus.isPremium ? 'Manage Subscription' : 'Upgrade to Premium'}</Dialog.Title>
+      <Dialog.Title>{trialStatus.isPro ? 'Manage Subscription' : 'Upgrade to Pro'}</Dialog.Title>
       <Dialog.Description>
         {#if trialStatus.active}
           You have {trialStatus.daysLeft} days left in your trial.
-        {:else if trialStatus.isPremium}
-          You're currently on the Premium plan.
+        {:else if trialStatus.isPro}
+          You're currently on the Pro plan.
         {:else}
           Get access to all premium features.
         {/if}
@@ -114,7 +114,7 @@
             <Crown class="h-6 w-6 text-primary" />
           </div>
           <p class="text-center text-sm">
-            You're currently on the <span class="font-medium">Premium</span> plan.
+            You're currently on the <span class="font-medium">Pro</span> plan.
             Enjoy all premium features!
           </p>
         </div>
@@ -133,8 +133,8 @@
         <!-- Free/Trial user view -->
         <div class="space-y-4">
           <div class="flex items-center justify-between border-b pb-2">
-            <span class="font-medium">Premium Plan</span>
-            <span class="font-bold">$9/month</span>
+            <span class="font-medium">Pro Tester</span>
+            <span class="font-bold">$9 /mo</span>
           </div>
           
           <ul class="space-y-2 text-sm">
@@ -142,13 +142,13 @@
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
               </svg>
-              <span>Access to all premium elements</span>
+              <span>All premium elements</span>
             </li>
             <li class="flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
               </svg>
-              <span>Custom color themes</span>
+              <span>Full styles & themes</span>
             </li>
             <li class="flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" viewBox="0 0 20 20" fill="currentColor">
@@ -165,7 +165,7 @@
           {/if}
         </div>
         
-        <div class="mt-4">
+        <div class="mt-6">
           <Button
             class="w-full"
             onclick={handleUpgrade}
@@ -177,9 +177,9 @@
       {/if}
     </div>
     
-    <Dialog.Footer class="flex flex-col gap-2 sm:flex-row">
+    <Dialog.Footer class="flex flex-col max-w-4/5 gap-2 __sm:flex-row">
       <Dialog.Close asChild>
-        <Button variant="outline" class="w-full sm:w-auto">Cancel</Button>
+        <Button variant="outline" class="w-44 __sm:w-auto">Cancel</Button>
       </Dialog.Close>
       <p class="text-xs text-center sm:text-right text-muted-foreground">
         Questions? Email <a href="mailto:support@pipewriter.io" class="text-primary hover:underline">support@pipewriter.io</a>
