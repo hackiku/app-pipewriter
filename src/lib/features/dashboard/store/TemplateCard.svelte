@@ -6,8 +6,8 @@
   import { ShoppingCart, Heart, Star, Download, TrendingUp } from 'lucide-svelte';
   import { cn } from '$lib/utils';
   
-  // Props
-  const props = $props<{
+  // Props - proper Runes syntax
+  const { template, onPurchase } = $props<{
     template: any;
     onPurchase: (id: string) => void;
   }>();
@@ -30,7 +30,7 @@
     isLoading = true;
     
     try {
-      await props.onPurchase(props.template.id);
+      await onPurchase(template.id);
     } finally {
       isLoading = false;
     }
@@ -38,11 +38,25 @@
   
   // Format download count
   function formatDownloads(count: number): string {
+    if (!count || count === 0) return '0';
     if (count >= 1000) {
       return `${(count / 1000).toFixed(1)}k`;
     }
     return count.toString();
   }
+  
+  // Safe template tags access - EXTRA SAFE VERSION
+  const templateTags = $derived(() => {
+    const tags = template?.tags;
+    if (Array.isArray(tags)) {
+      return tags;
+    }
+    // Handle case where tags might be an object with array property
+    if (tags && typeof tags === 'object' && Array.isArray(tags[0])) {
+      return tags[0];
+    }
+    return [];
+  });
 </script>
 
 <Card.Root 
@@ -58,8 +72,8 @@
     
     <!-- Template thumbnail -->
     <img 
-      src={props.template.thumbnailUrl || '/placeholder-template.jpg'} 
-      alt={props.template.name}
+      src={template?.thumbnailUrl || '/placeholder-template.jpg'} 
+      alt={template?.name || 'Template'}
       class="object-cover h-full w-full transition-all duration-500 {isHovered ? 'scale-105' : 'scale-100'} {imageLoaded ? 'opacity-100' : 'opacity-0'}"
       onload={() => imageLoaded = true}
       loading="lazy"
@@ -67,15 +81,15 @@
     
     <!-- Overlay badges -->
     <div class="absolute top-3 left-3 flex items-center gap-2">
-      {#if props.template.popular}
+      {#if template?.popular}
         <Badge class="bg-orange-500 text-white border-none text-xs">
           <TrendingUp class="h-3 w-3 mr-1" />
           Popular
         </Badge>
       {/if}
-      {#if props.template.originalPrice && props.template.originalPrice > props.template.price}
+      {#if template?.originalPrice && template.originalPrice > template.price}
         <Badge class="bg-green-500 text-white border-none text-xs">
-          Save ${props.template.originalPrice - props.template.price}
+          Save ${template.originalPrice - template.price}
         </Badge>
       {/if}
     </div>
@@ -93,10 +107,10 @@
     </button>
     
     <!-- Rating overlay -->
-    {#if props.template.rating}
+    {#if template?.rating}
       <div class="absolute bottom-3 left-3 flex items-center gap-1 bg-background/90 backdrop-blur-sm px-2 py-1 rounded-full">
         <Star class="h-3 w-3 fill-yellow-400 text-yellow-400" />
-        <span class="text-xs font-medium">{props.template.rating.toFixed(1)}</span>
+        <span class="text-xs font-medium">{template.rating.toFixed(1)}</span>
       </div>
     {/if}
   </div>
@@ -105,46 +119,46 @@
     <!-- Template header -->
     <div class="mb-3">
       <div class="flex items-start justify-between mb-2">
-        <h3 class="text-lg font-semibold line-clamp-2 flex-1">{props.template.name}</h3>
+        <h3 class="text-lg font-semibold line-clamp-2 flex-1">{template?.name || 'Template'}</h3>
       </div>
       
       <div class="flex items-center gap-2 mb-2">
-        <Badge variant="secondary" class="text-xs">{props.template.category}</Badge>
+        <Badge variant="secondary" class="text-xs">{template?.category || 'Template'}</Badge>
         <span class="text-xs text-muted-foreground">•</span>
-        <span class="text-xs text-muted-foreground">{props.template.difficulty}</span>
+        <span class="text-xs text-muted-foreground">{template?.difficulty || 'beginner'}</span>
       </div>
       
       <p class="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-        {props.template.description}
+        {template?.description || 'No description available'}
       </p>
     </div>
     
-    <!-- Template tags -->
+    <!-- Template tags - FIXED: Safe access to tags -->
     <div class="flex flex-wrap gap-1 mb-4">
-      {#each props.template.tags.slice(0, 3) as tag}
+      {#each templateTags() as tag}
         <span class="text-xs px-2 py-0.5 bg-muted/60 rounded-full text-muted-foreground">
           {tag}
         </span>
       {/each}
-      {#if props.template.tags.length > 3}
+      {#if templateTags.length > 3}
         <span class="text-xs px-2 py-0.5 bg-muted/60 rounded-full text-muted-foreground">
-          +{props.template.tags.length - 3}
+          +{templateTags.length - 3}
         </span>
       {/if}
     </div>
     
     <!-- Template stats -->
-    {#if props.template.downloadCount || props.template.wordCount}
+    {#if template?.downloadCount || template?.wordCount}
       <div class="flex items-center gap-4 mb-4 text-xs text-muted-foreground">
-        {#if props.template.downloadCount}
+        {#if template.downloadCount}
           <div class="flex items-center gap-1">
             <Download class="h-3 w-3" />
-            <span>{formatDownloads(props.template.downloadCount)}</span>
+            <span>{formatDownloads(template.downloadCount)}</span>
           </div>
         {/if}
-        {#if props.template.wordCount}
+        {#if template.wordCount}
           <div class="flex items-center gap-1">
-            <span>{props.template.wordCount}</span>
+            <span>{template.wordCount}</span>
           </div>
         {/if}
       </div>
@@ -153,13 +167,13 @@
     <!-- Price and purchase -->
     <div class="mt-auto pt-2 flex items-center justify-between">
       <div class="flex flex-col">
-        {#if props.template.originalPrice && props.template.originalPrice > props.template.price}
+        {#if template?.originalPrice && template.originalPrice > template.price}
           <div class="text-xs text-muted-foreground line-through">
-            ${props.template.originalPrice}
+            ${template.originalPrice}
           </div>
         {/if}
         <div class="text-xl font-bold text-foreground">
-          ${props.template.price}
+          ${template?.price || 0}
         </div>
       </div>
       

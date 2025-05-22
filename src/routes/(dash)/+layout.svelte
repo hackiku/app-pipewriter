@@ -2,29 +2,28 @@
 <script lang="ts">
   import * as Resizable from "$lib/components/ui/resizable";
   import { getUser } from '$lib/services/firebase/auth.svelte';
-  import Header from '$lib/features/dashboard/layout/Header.svelte';
+  // import Header from '$lib/features/dashboard/layout/Header.svelte';
   import Sidebar from '$lib/features/dashboard/layout/Sidebar.svelte';
   import { ModeWatcher } from "mode-watcher";
   import { setContext } from 'svelte';
-  import { page } from '$app/state';
+  import { page } from '$app/stores'; // FIXED: Use stores, not state
   import AuthModal from '$lib/components/auth/AuthModal.svelte';
-  // import { createFeaturesContext } from '$lib/context/features.svelte';
   import { createTrialContext } from '$lib/context/trial.svelte';
 
-  // Props for getting data and children
+  // Props for getting data and children - proper Runes syntax
   const { data, children } = $props();
   
-  // Create and set up the features context
+  // Create and set up the trial context
   const trialContext = createTrialContext();
-  setContext('trial', trialContext);
+  setContext('trialFeatures', trialContext);
   
   // Sidebar state
   let isCollapsed = $state(false);
-  let defaultSidebarSize = $state(18); // 18% of screen width by default
-  let collapseThreshold = $state(10); // Threshold at which sidebar collapses (in %)
+  let defaultSidebarSize = $state(18);
+  let collapseThreshold = $state(10);
   
   // Handler for sidebar resize
-  function handleSidebarResize(sizes) {
+  function handleSidebarResize(sizes: number[]) {
     const sidebarSize = sizes[0];
     isCollapsed = sidebarSize < collapseThreshold;
   }
@@ -38,7 +37,7 @@
   
   // Show auth modal when auth parameter is present and user is not authenticated
   let showAuthModal = $derived(
-    page.url.searchParams.get('auth') === 'required' && !data?.user
+    $page.url.searchParams.get('auth') === 'required' && !data?.user
   );
 
   // Log authentication status changes
@@ -58,7 +57,7 @@
 {/if}
 
 <div class="flex h-screen flex-col overflow-hidden bg-background text-foreground">
-  <Header />
+  <!-- <Header /> -->
 
   <Resizable.PaneGroup 
     direction="horizontal"

@@ -1,75 +1,83 @@
-// src/routes/(dash)/store/+page.server.ts
+// src/routes/(dash)/dashboard/store/+page.server.ts
 
 import { adminFirestore } from '$lib/server/firebase-admin';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	try {
-		// Get all templates from the store collection
-		const templatesSnapshot = await adminFirestore
-			.collection('store')
-			.where('active', '==', true)
-			.orderBy('featured', 'desc')
-			.orderBy('popular', 'desc')
-			.orderBy('downloadCount', 'desc')
-			.get();
+	console.log('🛒 Loading store page...');
 
-		const templates = templatesSnapshot.docs.map(doc => ({
+	try {
+		// EXACT same query as your working verify script
+		const storeSnapshot = await adminFirestore.collection('store').get();
+
+		if (storeSnapshot.empty) {
+			console.log('📦 Store is empty');
+			return {
+				templates: [],
+				categories: [{ id: 'all', name: 'All Templates' }],
+				analytics: null,
+				userTier: 'trial'
+			};
+		}
+
+		// EXACT same processing as verify script
+		const allDocs = storeSnapshot.docs.map(doc => ({
 			id: doc.id,
-			...doc.data(),
-			// Convert Firestore timestamps to JSON-serializable dates
-			createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || null,
-			updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || null,
-			lastDownload: doc.data().lastDownload?.toDate?.()?.toISOString() || null,
+			...doc.data()
 		}));
 
-		// Get unique categories from templates
+		const templates = allDocs
+			.filter(doc => doc.id !== '_analytics')
+			.map(template => ({
+				id: template.id,
+				name: template.name || 'Untitled',
+				description: template.description || 'No description',
+				price: template.price || 0,
+				category: template.category || 'Template',
+				tags: Array.isArray(template.tags) ? template.tags : [],
+				downloadCount: template.downloadCount || 0,
+				rating: template.rating || 0,
+				popular: Boolean(template.popular),
+				featured: Boolean(template.featured),
+				active: template.active !== false
+			}));
+
+		// Get analytics doc and make it serializable
+		const analyticsDoc = allDocs.find(doc => doc.id === '_analytics');
+		const analytics = analyticsDoc ? {
+			totalTemplates: analyticsDoc.totalTemplates || 0,
+			totalDownloads: analyticsDoc.totalDownloads || 0,
+			averageRating: analyticsDoc.averageRating || 0,
+			// Convert Firestore timestamp to string
+			lastUpdated: analyticsDoc.lastUpdated?.toDate?.()?.toISOString() || null
+		} : null;
+
+		// Simple categories - just get unique values
 		const categories = [
 			{ id: 'all', name: 'All Templates' },
-			...Array.from(new Set(templates.map(t => t.category)))
-				.map(category => ({
-					id: category.toLowerCase().replace(/\s+/g, '-'),
-					name: category
-				}))
+			{ id: 'landing-pages', name: 'Landing Pages' },
+			{ id: 'email-marketing', name: 'Email Marketing' },
+			{ id: 'feature-pages', name: 'Feature Pages' }
 		];
 
-		// Get store analytics if available
-		let storeAnalytics = null;
-		try {
-			const analyticsDoc = await adminFirestore
-				.collection('store')
-				.doc('_analytics')
-				.get();
-
-			if (analyticsDoc.exists) {
-				storeAnalytics = {
-					...analyticsDoc.data(),
-					lastUpdated: analyticsDoc.data()?.lastUpdated?.toDate?.()?.toISOString() || null
-				};
-			}
-		} catch (analyticsError) {
-			console.log('No analytics data available');
-		}
+		console.log(`✅ Loaded ${templates.length} templates successfully`);
 
 		return {
 			templates,
 			categories,
-			storeAnalytics,
-			// Pass user data for purchase permissions
-			user: locals.user || null,
-			isPro: locals.authenticated ? true : false // You'll want to get this from your user data
+			analytics: analytics,
+			userTier: 'trial' // Simple default
 		};
 
 	} catch (error) {
-		console.error('Error loading store data:', error);
+		console.error('❌ Store loading failed:', error.message);
 
-		// Return empty data on error
 		return {
 			templates: [],
 			categories: [{ id: 'all', name: 'All Templates' }],
-			storeAnalytics: null,
-			user: locals.user || null,
-			isPro: false
+			analytics: null,
+			userTier: 'trial',
+			error: error.message
 		};
 	}
 };

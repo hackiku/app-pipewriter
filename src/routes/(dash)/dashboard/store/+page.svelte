@@ -1,141 +1,110 @@
-<!-- src/routes/(dash)/store/+page.svelte -->
+<!-- src/routes/(dash)/dashboard/store/+page.svelte -->
 <script lang="ts">
-  import FeaturedTemplate from '$lib/features/dashboard/store/FeaturedTemplate.svelte';
   import CategoryFilter from '$lib/features/dashboard/store/CategoryFilter.svelte';
   import TemplateGrid from '$lib/features/dashboard/store/TemplateGrid.svelte';
   import { Badge } from '$lib/components/ui/badge';
-  import { TrendingUp, Package, Star } from 'lucide-svelte';
+  import { Package, ShoppingBag } from 'lucide-svelte';
   
-  // Get the data from the load function
+  // Get data - destructure safely
   const { data } = $props();
   
-  // State
+  // Simple state - no derived, no complex calculations
   let loading = $state(false);
-  
-  // Active category
   let activeCategory = $state('all');
+  let filteredTemplates = $state([]);
   
-  // Derived state for filtered templates
-  let filteredTemplates = $derived(() => {
-    if (!data.templates) return [];
+  // Log what we got
+  console.log('Store page data:', data);
+  
+  // Simple function to filter templates
+  function updateFilteredTemplates() {
+    if (!data?.templates) {
+      filteredTemplates = [];
+      return;
+    }
     
-    return activeCategory === 'all' 
-      ? data.templates.filter(t => !t.featured) 
-      : data.templates.filter(t => !t.featured && 
-          t.category.toLowerCase().replace(/\s+/g, '-') === activeCategory.toLowerCase()
-        );
-  });
-  
-  // Featured template
-  let featuredTemplate = $derived(() => {
-    return data.templates?.find(t => t.featured) || null;
-  });
-  
-  // Category change handler
-  function handleCategoryChange(category: string) {
-    activeCategory = category;
+    if (activeCategory === 'all') {
+      filteredTemplates = data.templates.filter(t => !t.featured);
+    } else {
+      filteredTemplates = data.templates.filter(t => 
+        !t.featured && 
+        t.category?.toLowerCase().replace(/\s+/g, '-') === activeCategory
+      );
+    }
   }
   
-  // Purchase handler
+  // Update when category changes
+  function handleCategoryChange(category: string) {
+    activeCategory = category;
+    updateFilteredTemplates();
+  }
+  
+  // Simple purchase handler
   async function handlePurchase(templateId: string) {
     loading = true;
-    console.log('Purchasing template:', templateId);
+    console.log('Purchase:', templateId);
     
     try {
-      // TODO: Implement Stripe checkout
-      // For now, just log the purchase attempt
-      const template = data.templates.find(t => t.id === templateId);
-      console.log('Would purchase:', template?.name, 'for $' + template?.price);
-      
-      // You can add Stripe checkout logic here
-      // const response = await fetch('/api/checkout', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ templateId, priceId: template.priceId })
-      // });
-      
+      const template = data.templates?.find(t => t.id === templateId);
+      if (template) {
+        alert(`Purchase: ${template.name} - $${template.price}`);
+      }
     } catch (error) {
-      console.error('Purchase failed:', error);
+      console.error('Purchase error:', error);
     } finally {
       loading = false;
     }
   }
   
-  // Calculate total templates count
-  let totalTemplates = $derived(() => {
-    return data.templates?.filter(t => !t.featured).length || 0;
-  });
+  // Simple stats - no derived
+  const totalTemplates = data?.templates?.length || 0;
+  const totalDownloads = data?.analytics?.totalDownloads || 0;
   
-  // Calculate average price
-  let averagePrice = $derived(() => {
-    if (!data.templates?.length) return 0;
-    const prices = data.templates.filter(t => !t.featured).map(t => t.price);
-    return Math.round(prices.reduce((sum, price) => sum + price, 0) / prices.length);
-  });
+  // Update filtered templates on mount
+  updateFilteredTemplates();
 </script>
 
 <svelte:head>
   <title>Template Store - Pipewriter</title>
-  <meta name="description" content="Professional templates to supercharge your writing workflow. Create compelling documents in a fraction of the time." />
 </svelte:head>
 
 <div class="space-y-8">
-  <!-- Header Section -->
-  <div class="space-y-6">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-4xl font-bold tracking-tight mb-3">Template Store</h1>
-        <p class="text-muted-foreground max-w-2xl text-lg">
-          Professional templates to supercharge your writing workflow. Create compelling documents in a fraction of the time.
-        </p>
-      </div>
-      
-      <!-- Store Stats -->
-      {#if data.storeAnalytics}
-        <div class="hidden lg:flex items-center gap-6 text-sm text-muted-foreground">
-          <div class="flex items-center gap-2">
-            <Package class="h-4 w-4" />
-            <span>{totalTemplates} templates</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <TrendingUp class="h-4 w-4" />
-            <span>{data.storeAnalytics.totalDownloads?.toLocaleString()} downloads</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <Star class="h-4 w-4" />
-            <span>{data.storeAnalytics.averageRating}/5.0 avg rating</span>
-          </div>
-        </div>
+  <!-- Simple Header -->
+  <div>
+    <h1 class="text-4xl font-bold mb-3">Template Store</h1>
+    <p class="text-muted-foreground text-lg">
+      Professional templates to supercharge your writing workflow.
+    </p>
+    
+    <!-- Simple stats -->
+    <div class="flex gap-4 mt-4">
+      <Badge variant="outline">{totalTemplates} templates</Badge>
+      <Badge variant="outline">{totalDownloads} downloads</Badge>
+      {#if data?.userTier}
+        <Badge>{data.userTier}</Badge>
       {/if}
     </div>
-    
-    <!-- Mobile Stats -->
-    {#if data.storeAnalytics}
-      <div class="lg:hidden flex items-center gap-4 text-sm text-muted-foreground">
-        <Badge variant="outline" class="gap-1">
-          <Package class="h-3 w-3" />
-          {totalTemplates} templates
-        </Badge>
-        <Badge variant="outline" class="gap-1">
-          <TrendingUp class="h-3 w-3" />
-          {data.storeAnalytics.totalDownloads?.toLocaleString()} downloads
-        </Badge>
-      </div>
-    {/if}
   </div>
   
-  <!-- Loading State -->
+  <!-- Error display -->
+  {#if data?.error}
+    <div class="p-4 bg-red-100 text-red-800 rounded">
+      Error: {data.error}
+    </div>
+  {/if}
+  
+  <!-- Loading overlay -->
   {#if loading}
-    <div class="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
-      <div class="flex flex-col items-center space-y-4">
-        <div class="h-8 w-8 border-2 border-t-transparent border-primary rounded-full animate-spin"></div>
-        <p class="text-sm text-muted-foreground">Processing purchase...</p>
+    <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+      <div class="bg-white p-6 rounded">
+        <div class="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p>Processing purchase...</p>
       </div>
     </div>
   {/if}
   
-  <!-- Category Filters -->
-  {#if data.categories}
+  <!-- Categories -->
+  {#if data?.categories}
     <CategoryFilter 
       categories={data.categories} 
       activeCategory={activeCategory}
@@ -143,59 +112,47 @@
     />
   {/if}
   
-  <!-- Featured Template -->
-  {#if featuredTemplate}
-    <div class="mb-12">
-      <div class="mb-4">
-        <h2 class="text-2xl font-semibold mb-2">Featured Template</h2>
-        <p class="text-muted-foreground">Our most popular template bundle with everything you need to get started.</p>
-      </div>
-      <FeaturedTemplate 
-        template={featuredTemplate} 
-        onPurchase={handlePurchase} 
-      />
-    </div>
-  {/if}
-  
-  <!-- Regular Templates Grid -->
+  <!-- Templates -->
   {#if filteredTemplates.length > 0}
-    <div class="space-y-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-2xl font-semibold">
-            {activeCategory === 'all' ? 'All Templates' : data.categories.find(c => c.id === activeCategory)?.name}
-          </h2>
-          <p class="text-muted-foreground mt-1">
-            {filteredTemplates.length} template{filteredTemplates.length !== 1 ? 's' : ''} available
-            {#if averagePrice > 0}
-              • Starting from ${Math.min(...filteredTemplates.map(t => t.price))}
-            {/if}
-          </p>
-        </div>
-      </div>
+    <div>
+      <h2 class="text-2xl font-semibold mb-4">
+        {activeCategory === 'all' ? 'All Templates' : 
+         data?.categories?.find(c => c.id === activeCategory)?.name || 'Templates'}
+      </h2>
+      <p class="text-muted-foreground mb-6">
+        {filteredTemplates.length} template{filteredTemplates.length !== 1 ? 's' : ''} available
+      </p>
       
       <TemplateGrid 
         templates={filteredTemplates} 
         onPurchase={handlePurchase} 
       />
     </div>
-  {:else if data.templates?.length === 0}
-    <!-- Empty state -->
-    <div class="flex flex-col items-center justify-center py-16 text-center">
-      <Package class="h-16 w-16 text-muted-foreground/50 mb-4" />
-      <h3 class="text-xl font-medium mb-2">No templates available</h3>
-      <p class="text-muted-foreground max-w-md">
-        We're still building our template library. Check back soon for professional templates to boost your workflow.
-      </p>
+  {:else if totalTemplates === 0}
+    <!-- No templates at all -->
+    <div class="text-center py-16">
+      <ShoppingBag class="h-16 w-16 text-gray-400 mx-auto mb-4" />
+      <h3 class="text-xl font-medium mb-2">No templates found</h3>
+      <p class="text-gray-600 mb-6">Run the seed script to add sample templates.</p>
+      <button 
+        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        onclick={() => window.location.reload()}
+      >
+        Refresh Page
+      </button>
     </div>
   {:else}
     <!-- No results for filter -->
-    <div class="flex flex-col items-center justify-center py-16 text-center">
-      <Package class="h-16 w-16 text-muted-foreground/50 mb-4" />
-      <h3 class="text-xl font-medium mb-2">No templates found</h3>
-      <p class="text-muted-foreground max-w-md">
-        No templates match your current filter. Try selecting a different category or browse all templates.
-      </p>
+    <div class="text-center py-16">
+      <Package class="h-16 w-16 text-gray-400 mx-auto mb-4" />
+      <h3 class="text-xl font-medium mb-2">No templates in this category</h3>
+      <p class="text-gray-600 mb-6">Try a different category.</p>
+      <button 
+        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        onclick={() => handleCategoryChange('all')}
+      >
+        Show All Templates
+      </button>
     </div>
   {/if}
 </div>

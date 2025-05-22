@@ -1,44 +1,43 @@
 <!-- src/lib/features/dashboard/layout/Sidebar.svelte -->
 <script lang="ts">
-  import { Home, LayoutTemplate, FileText, Settings, HelpCircle, PenLine, ShoppingCart } from '@lucide/svelte';
+  import { Home, LayoutTemplate, FileText, Settings, HelpCircle, PenLine, ShoppingCart } from 'lucide-svelte';
   import { page } from '$app/stores';
   import * as Tooltip from '$lib/components/ui/tooltip';
   import { cn } from '$lib/utils';
   
   // Props
-  const props = $props<{
+  const { isCollapsed } = $props<{
     isCollapsed: boolean;
   }>();
   
   // Navigation items
-// Navigation items
-const navItems = [
-  { 
-    href: '/dashboard', 
-    icon: Home, 
-    text: 'Dashboard'
-  },
-  { 
-    href: '/dashboard/projects', 
-    icon: FileText, 
-    text: 'Projects'
-  },
-  { 
-    href: '/dashboard/templates', 
-    icon: LayoutTemplate, 
-    text: 'Templates'
-  },
-  { 
-    href: '/dashboard/store', 
-    icon: ShoppingCart, 
-    text: 'Store'
-  },
-  { 
-    href: '/dashboard/editor', 
-    icon: PenLine, 
-    text: 'Editor'
-  }
-];
+  const navItems = [
+    { 
+      href: '/dashboard', 
+      icon: Home, 
+      text: 'Dashboard'
+    },
+    { 
+      href: '/dashboard/projects', 
+      icon: FileText, 
+      text: 'Projects'
+    },
+    { 
+      href: '/dashboard/templates', 
+      icon: LayoutTemplate, 
+      text: 'Templates'
+    },
+    { 
+      href: '/dashboard/store', 
+      icon: ShoppingCart, 
+      text: 'Store'
+    },
+    { 
+      href: '/dashboard/editor', 
+      icon: PenLine, 
+      text: 'Editor'
+    }
+  ];
 
   // Footer items (always at bottom)
   const footerItems = [
@@ -58,16 +57,29 @@ const navItems = [
   function isActive(href: string) {
     return $page.url.pathname === href;
   }
+  
+  // Helper to render icon based on type
+  function renderIcon(IconComponent: any, className: string) {
+    // FIXED: Replace svelte:component with conditional rendering
+    if (IconComponent === Home) return `<Home class="${className}" />`;
+    if (IconComponent === FileText) return `<FileText class="${className}" />`;
+    if (IconComponent === LayoutTemplate) return `<LayoutTemplate class="${className}" />`;
+    if (IconComponent === ShoppingCart) return `<ShoppingCart class="${className}" />`;
+    if (IconComponent === PenLine) return `<PenLine class="${className}" />`;
+    if (IconComponent === Settings) return `<Settings class="${className}" />`;
+    if (IconComponent === HelpCircle) return `<HelpCircle class="${className}" />`;
+    return '';
+  }
 </script>
 
 <div 
   class={cn(
     "flex h-full flex-col px-2 py-4 transition-all duration-300",
-    props.isCollapsed ? "items-center" : "px-3"
+    isCollapsed ? "items-center" : "px-3"
   )}
 >
   <!-- Logo space if needed -->
-  <div class={cn("mb-8", props.isCollapsed ? "h-6 w-6" : "px-2")}>
+  <div class={cn("mb-8", isCollapsed ? "h-6 w-6" : "px-2")}>
     <!-- Logo can go here if needed -->
   </div>
 
@@ -75,7 +87,7 @@ const navItems = [
   <Tooltip.Provider delayDuration={0}>
     <nav class="space-y-1">
       {#each navItems as item}
-        {#if props.isCollapsed}
+        {#if isCollapsed}
           <Tooltip.Root>
             <Tooltip.Trigger asChild let:builder>
               <a
@@ -88,7 +100,18 @@ const navItems = [
                 )}
                 builders={[builder]}
               >
-                <svelte:component this={item.icon} class="h-5 w-5" />
+                <!-- FIXED: Direct icon rendering instead of svelte:component -->
+                {#if item.icon === Home}
+                  <Home class="h-5 w-5" />
+                {:else if item.icon === FileText}
+                  <FileText class="h-5 w-5" />
+                {:else if item.icon === LayoutTemplate}
+                  <LayoutTemplate class="h-5 w-5" />
+                {:else if item.icon === ShoppingCart}
+                  <ShoppingCart class="h-5 w-5" />
+                {:else if item.icon === PenLine}
+                  <PenLine class="h-5 w-5" />
+                {/if}
               </a>
             </Tooltip.Trigger>
             <Tooltip.Content side="right">
@@ -105,7 +128,18 @@ const navItems = [
                 : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             )}
           >
-            <svelte:component this={item.icon} class="h-5 w-5" />
+            <!-- FIXED: Direct icon rendering instead of svelte:component -->
+            {#if item.icon === Home}
+              <Home class="h-5 w-5" />
+            {:else if item.icon === FileText}
+              <FileText class="h-5 w-5" />
+            {:else if item.icon === LayoutTemplate}
+              <LayoutTemplate class="h-5 w-5" />
+            {:else if item.icon === ShoppingCart}
+              <ShoppingCart class="h-5 w-5" />
+            {:else if item.icon === PenLine}
+              <PenLine class="h-5 w-5" />
+            {/if}
             <span>{item.text}</span>
           </a>
         {/if}
@@ -115,7 +149,7 @@ const navItems = [
     <!-- Footer Navigation - push to bottom -->
     <div class="mt-auto pt-8 space-y-1">
       {#each footerItems as item}
-        {#if props.isCollapsed}
+        {#if isCollapsed}
           <Tooltip.Root>
             <Tooltip.Trigger asChild let:builder>
               <a
@@ -128,7 +162,12 @@ const navItems = [
                 )}
                 builders={[builder]}
               >
-                <svelte:component this={item.icon} class="h-5 w-5" />
+                <!-- FIXED: Direct icon rendering instead of svelte:component -->
+                {#if item.icon === Settings}
+                  <Settings class="h-5 w-5" />
+                {:else if item.icon === HelpCircle}
+                  <HelpCircle class="h-5 w-5" />
+                {/if}
               </a>
             </Tooltip.Trigger>
             <Tooltip.Content side="right">
@@ -145,7 +184,12 @@ const navItems = [
                 : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             )}
           >
-            <svelte:component this={item.icon} class="h-5 w-5" />
+            <!-- FIXED: Direct icon rendering instead of svelte:component -->
+            {#if item.icon === Settings}
+              <Settings class="h-5 w-5" />
+            {:else if item.icon === HelpCircle}
+              <HelpCircle class="h-5 w-5" />
+            {/if}
             <span>{item.text}</span>
           </a>
         {/if}
