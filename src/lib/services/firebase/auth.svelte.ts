@@ -1,5 +1,5 @@
 // src/lib/services/firebase/auth.svelte.ts
-import { getFirebaseService } from '$lib/services/firebase/client';
+import { getFirebaseService } from './client';
 import { browser } from '$app/environment';
 import { invalidateAll } from '$app/navigation';
 import type { User } from 'firebase/auth';
@@ -19,7 +19,7 @@ if (browser) {
 			error = null;
 			console.log("Auth state changed:", user ? "Signed in" : "Signed out");
 
-			// If we have a user, create a session
+			// If we have a user, create a session and provision them
 			if (firebaseUser) {
 				try {
 					// Get the ID token
@@ -41,6 +41,26 @@ if (browser) {
 					}
 
 					console.log('Session created successfully');
+
+					// Auto-provision user in Firestore
+					try {
+						const provisionResponse = await fetch('/api/auth/provision-user', {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json'
+							}
+						});
+
+						if (provisionResponse.ok) {
+							const provisionData = await provisionResponse.json();
+							console.log('User provisioned:', provisionData.message);
+						} else {
+							console.warn('User provisioning failed, but auth succeeded');
+						}
+					} catch (provisionError) {
+						console.warn('User provisioning error:', provisionError);
+						// Don't fail the whole auth flow if provisioning fails
+					}
 
 					// Force reload of all server data
 					await invalidateAll();

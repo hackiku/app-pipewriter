@@ -17,7 +17,8 @@ export async function provisionNewUser(authUser: UserProvisioningData) {
 	// Check if user already exists in Firestore
 	const existingDoc = await userRef.get();
 
-	if (existingDoc.exists()) {
+	// FIXED: Use .exists property, not .exists() method
+	if (existingDoc.exists) {
 		// User exists, just update login timestamp and basic info
 		await userRef.update({
 			lastLoginDate: new Date(),
@@ -68,7 +69,8 @@ export async function provisionNewUser(authUser: UserProvisioningData) {
 export async function getUserTierStatus(uid: string) {
 	const userDoc = await adminFirestore.collection('users').doc(uid).get();
 
-	if (!userDoc.exists()) {
+	// FIXED: Use .exists property
+	if (!userDoc.exists) {
 		return { tier: 'free', daysLeft: 0, isPro: false };
 	}
 
@@ -84,7 +86,7 @@ export async function getUserTierStatus(uid: string) {
 		return { tier: 'free', daysLeft: 0, isPro: false };
 	}
 
-	const TRIAL_DURATION_DAYS = 10;
+	const TRIAL_DURATION_DAYS = 14;
 	const now = new Date();
 	const diffTime = now.getTime() - trialStartDate.getTime();
 	const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
