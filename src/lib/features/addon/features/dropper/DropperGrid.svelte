@@ -79,12 +79,6 @@
 			</p>
 		</div>
 	{:else}
-		{#if props.chainMode}
-			<div class="absolute bottom-10 mb-2 ml-2 flex items-center gap-2">
-				<div class="h-1.5 w-1.5 animate-pulse rounded-full bg-primary"></div>
-				<p class="text-xs font-medium text-primary">Chain Mode - Click to sssadd to queue</p>
-			</div>
-		{/if}
 
 		{#each Object.entries(categoriesCache) as [category, categoryElements]}
 			<section>

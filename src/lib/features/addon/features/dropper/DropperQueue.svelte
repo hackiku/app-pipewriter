@@ -46,11 +46,9 @@
 	</h3>
 
 	<!-- Queue Content -->
-	<div class="flex-1 p-4">
+	<div class="flex-1 p-4 space-y-3">
 		<!-- Draggable Pad Container -->
-		<div
-			class="flex h-full flex-col rounded-2xl border-2 border-dashed border-muted bg-muted/20 p-4"
-		>
+		<div class="flex h-24 flex-col rounded-2xl border-2 border-dashed border-muted bg-muted/20 p-4">
 			{#if props.queuedElements.length === 0}
 				<!-- Empty State -->
 				<div class="flex flex-1 items-center justify-center text-center">
@@ -112,31 +110,31 @@
 				</div>
 			{/if}
 		</div>
-	</div>
-	<!-- Action Buttons -->
-	<div
-		class="flex flex-none items-center justify-end gap-2 border-t border-dashed border-muted-foreground/20"
-	>
-		<Button
-			variant="outline"
-			size="sm"
-			onclick={props.onDiscardQueue}
-			disabled={props.isProcessing || props.queuedElements.length === 0}
-			class="h-7 text-xs"
+		<!-- Action Buttons -->
+		<div
+			class="flex flex-none items-center justify-end gap-2 border-t border-dashed border-muted-foreground/20"
 		>
-			<XCircle size={12} class="mr-1" />
-			Discard
-		</Button>
+			<Button
+				variant="outline"
+				size="sm"
+				onclick={props.onDiscardQueue}
+				disabled={props.isProcessing || props.queuedElements.length === 0}
+				class="h-7 text-xs"
+			>
+				<XCircle size={12} class="mr-1" />
+				Discard
+			</Button>
 
-		<Button
-			size="sm"
-			onclick={props.onApplyQueue}
-			disabled={props.isProcessing || props.queuedElements.length === 0}
-			class="h-7 text-xs"
-		>
-			<Play size={12} class="mr-1" />
-			Apply Queue ({props.queuedElements.length})
-		</Button>
+			<Button
+				size="sm"
+				onclick={props.onApplyQueue}
+				disabled={props.isProcessing || props.queuedElements.length === 0}
+				class="h-7 text-xs"
+			>
+				<Play size={12} class="mr-1" />
+				Apply Queue ({props.queuedElements.length})
+			</Button>
+		</div>
 	</div>
 </div>
 
