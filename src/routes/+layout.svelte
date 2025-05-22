@@ -1,10 +1,7 @@
-<!-- src/routes/+layout.svelte -->
 <script lang="ts">
   import "../app.css";
   import { ModeWatcher } from 'mode-watcher';
   import { setContext } from 'svelte';
-  import { page } from '$app/state';
-  import AuthModal from '$lib/components/auth/AuthModal.svelte';
   import { createTrialContext } from '$lib/context/trial.svelte';
 
   // Props for getting data from the server
@@ -15,7 +12,7 @@
   // Set the contexts
   setContext('trialFeatures', trialContext);
   
-  // Initialize contexts with server data only (much simpler!)
+  // Initialize contexts with server data
   $effect(() => {
     if (data?.features) {
       trialContext.initFeatures({
@@ -27,17 +24,8 @@
       });
     }
   });
-  
-  // Show auth modal when needed
-  let showAuthModal = $derived(
-    page.url.searchParams.get('auth') === 'required' && !data?.user
-  );
 </script>
 
 <ModeWatcher />
-
-{#if showAuthModal}
-  <AuthModal />
-{/if}
 
 {@render children?.()}

@@ -7,13 +7,13 @@ import { adminFirestore } from '$lib/server/firebase-admin';
 const TRIAL_PERIOD_DAYS = 14;
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
-	// Public routes - no auth needed
+	// Public routes - no auth needed (removed the redirect logic here)
 	const publicRoutes = ['/', '/login', '/signup', '/about'];
 	const isPublicRoute = publicRoutes.some(route => url.pathname === route);
 
-	// If not authenticated and not on a public route, redirect
-	if (!locals.authenticated && !isPublicRoute) {
-		throw redirect(303, '/?auth=required');
+	// For /addon route specifically, redirect to home if not authenticated
+	if (url.pathname.startsWith('/addon') && !locals.authenticated) {
+		throw redirect(303, '/');
 	}
 
 	// If authenticated, load additional user data
@@ -28,7 +28,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 			// FIXED: Use .exists property, not .exists() method
 			if (!userDoc.exists) {
 				console.log(`Creating missing user document for ${uid}`);
-				
+
 				const newUserData = {
 					uid: locals.user.uid,
 					email: locals.user.email,
@@ -44,7 +44,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 					lastLoginDate: new Date(),
 					signupSource: 'server-fallback'
 				};
-				
+
 				await adminFirestore.collection('users').doc(uid).set(newUserData);
 				userData = newUserData;
 			}

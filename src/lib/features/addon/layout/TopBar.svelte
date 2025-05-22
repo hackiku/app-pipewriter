@@ -2,7 +2,7 @@
 <script lang="ts">
   import { toggleMode } from "mode-watcher";
   import { getContext } from "svelte";
-  import { Info, Sun, Moon, Minimize2 } from 'lucide-svelte';
+  import { Info, Sun, Moon, Minimize2 } from '@lucide/svelte';
   import { fade } from 'svelte/transition';
   import { Button } from "$lib/components/ui/button";
 
