@@ -1,5 +1,5 @@
 // scripts/test-firebase-setup.ts
-import { adminFirestore } from '../src/lib/server/firebase-admin.ts';
+import { adminFirestore } from '../src/lib/server/firebase-admin';
 
 async function testFirebaseSetup() {
 	console.log('🧪 Testing Firebase setup with Bun...');
