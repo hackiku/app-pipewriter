@@ -148,21 +148,6 @@
 </script>
 
 <div class="relative">
-	{#if checkIfElementLocked()}
-		<div
-			class="absolute inset-0 z-30 flex h-full w-full items-end
-                    justify-end border-b border-neutral-100 dark:border-neutral-900 bg-gradient-to-t
-                    from-neutral-100 dark:from-neutral-900 from-0% via-neutral-200/40 dark:via-neutral-900/80
-                    via-40% to-background/10 to-70% p-1.5"
-		>
-			<div class="flex items-center gap-1 opacity-50 text-muted-foreground">
-				<Lock class="w-3.5 h-3.5" />
-				<!-- <span class="text-[0.6em] font-medium text-foreground/50">Pro</span> -->
-			</div>
-		</div>
-	{/if}
-
-		
 	<Button
 		variant="ghost"
 		class={getButtonClass()}
@@ -185,8 +170,8 @@
 					onerror={handleImageError}
 				/>
 
-				<!-- Pro Star Icon (top-right, subtle) -->
-				<!-- {#if isPro}
+				<!-- Pro Star Icon (top-right, subtle)
+				{#if isPro}
 					<div class="absolute right-1 top-1">
 						<Star size={10} class="fill-amber-400/60 text-amber-400/60" />
 					</div>
@@ -222,28 +207,28 @@
 				</div>
 			{/if}
 
-			{#if checkIfElementLocked()}
-				<!-- <div
-					class="absolute inset-0
-                    flex items-end justify-end bg-gradient-to-t
-                    from-neutral-100 from-10% via-card/30
-                    via-70% to-background to-100% p-1"
-				>
-					<div class="flex items-center gap-1">
-						<Lock class="text-foreground/50" size={8} />
-						<span class="text-xs font-medium text-foreground/50">Pro</span>
-					</div>
-				</div> -->
-			{:else if !props.chainMode}
+			{#if !props.chainMode && !checkIfElementLocked()}
 				<!-- Normal Hover Effect for Unlocked Elements (only when not in chain mode) -->
 				<div
 					class="bg-gradient-radial absolute inset-0 flex items-center
-                    justify-center from-background/70 from-20%
+                    justify-center from-background/30 from-20%
                     via-background/10 via-50% to-transparent to-100%
                     opacity-0 transition-opacity group-hover:opacity-100"
 				>
-					<div class="bg-background-muted/10 rounded-full p-4">
+					<div class="rounded-full border border-border/50 bg-background/90 p-2 backdrop-blur-sm">
 						<Plus class="text-foreground/80" size={20} />
+					</div>
+				</div>
+			{:else if !props.chainMode && checkIfElementLocked()}
+				<!-- Locked Element Hover Effect - Shows "Get Pro" -->
+				<div
+					class="bg-gradient-radial absolute inset-0 flex items-center
+                    justify-center from-background/30 from-20%
+                    via-background/10 via-50% to-transparent to-100%
+                    opacity-0 transition-opacity group-hover:opacity-100"
+				>
+					<div class="rounded-full border border-border/50 bg-background/90 px-2 py-1 backdrop-blur-sm">
+						<span class="text-xs font-medium text-foreground/80">Get Pro</span>
 					</div>
 				</div>
 			{/if}
@@ -262,6 +247,20 @@
 			{/if}
 		</div>
 	</Button>
+
+	<!-- External Locked Overlay - fades from bottom without affecting hover -->
+	{#if checkIfElementLocked()}
+		<div
+			class="pointer-events-none absolute inset-0 z-10 
+			       bg-gradient-to-t from-background via-background/60 to-transparent 
+			       from-0% via-25% to-70%
+			       border-b border-background"
+		>
+			<div class="absolute bottom-1 right-1 flex items-center gap-1 opacity-70">
+				<Lock class="h-3 w-3 text-muted-foreground" />
+			</div>
+		</div>
+	{/if}
 </div>
 
 <style>
