@@ -8,14 +8,15 @@
   import { setContext } from 'svelte';
   import { page } from '$app/state';
   import AuthModal from '$lib/components/auth/AuthModal.svelte';
-  import { createFeaturesContext } from '$lib/context/features.svelte';
+  // import { createFeaturesContext } from '$lib/context/features.svelte';
+  import { createTrialContext } from '$lib/context/trial.svelte';
 
   // Props for getting data and children
   const { data, children } = $props();
   
   // Create and set up the features context
-  const featuresContext = createFeaturesContext();
-  setContext('features', featuresContext);
+  const trialContext = createTrialContext();
+  setContext('trial', trialContext);
   
   // Sidebar state
   let isCollapsed = $state(false);
@@ -31,7 +32,7 @@
   // Initialize features whenever data changes
   $effect(() => {
     if (data?.features) {
-      featuresContext.initFeatures(data.features);
+      trialContext.initFeatures(data.features);
     }
   });
   
