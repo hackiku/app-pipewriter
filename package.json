@@ -40,7 +40,17 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
-		"lint": "prettier --check ."
+		"lint": "prettier --check .",
+		"emulators": "firebase emulators:start",
+		"emulators:ui": "firebase emulators:start --only hosting,firestore,auth,functions --import=./emulator-data",
+		"emulators:export": "firebase emulators:export ./emulator-data",
+		"emulators:clear": "firebase emulators:exec --only firestore 'echo Clearing data...'",
+		"seed": "bun run scripts/seed-emulator.ts",
+		"seed:elements": "bun run scripts/seed-elements-only.ts",
+		"test:firebase": "bun run scripts/test-firebase-setup.ts",
+		"db:reset": "npm run emulators:clear && npm run seed",
+		"dev:fresh": "npm run emulators:clear && npm run seed && npm run dev",
+		"start:dev": "concurrently \"firebase emulators:start\" \"wait-on http://localhost:5000 && bun run seed\""
 	},
 	"type": "module",
 	"dependencies": {

@@ -235,10 +235,10 @@ async function seedEmulator() {
 
 	console.log('🎉 Emulator seeding completed!');
 	console.log('');
-	console.log('👀 View your data at: http://localhost:4000');
-	console.log('   - Elements: http://localhost:4000/firestore/data/elements');
-	console.log('   - Users: http://localhost:4000/firestore/data/users');
-	console.log('   - Projects: http://localhost:4000/firestore/data/projects');
+	console.log('👀 View your data at: http://localhost:5000');
+	console.log('   - Elements: http://localhost:5000/firestore/data/elements');
+	console.log('   - Users: http://localhost:5000/firestore/data/users');
+	console.log('   - Projects: http://localhost:5000/firestore/data/projects');
 	console.log('');
 
 	process.exit(0);
