@@ -3,8 +3,9 @@
   import * as Card from '$lib/components/ui/card';
   import { Button } from '$lib/components/ui/button';
   import { Badge } from '$lib/components/ui/badge';
-  import { ShoppingCart, Heart, Star, Download, TrendingUp } from 'lucide-svelte';
+  import { ShoppingCart, Heart, Star, Download, TrendingUp, Eye } from 'lucide-svelte';
   import { cn } from '$lib/utils';
+  import { goto } from '$app/navigation';
   
   // Props - proper Runes syntax
   const { template, onPurchase } = $props<{
@@ -36,6 +37,12 @@
     }
   }
   
+  // View template detail
+  function viewTemplate(event: Event) {
+    event.stopPropagation();
+    goto(`/dashboard/store/${template.id}`);
+  }
+  
   // Format download count
   function formatDownloads(count: number): string {
     if (!count || count === 0) return '0';
@@ -60,9 +67,10 @@
 </script>
 
 <Card.Root 
-  class="overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg bg-card border h-full flex flex-col group"
+  class="overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg bg-card border h-full flex flex-col group cursor-pointer"
   onmouseenter={() => isHovered = true}
   onmouseleave={() => isHovered = false}
+  onclick={viewTemplate}
 >
   <div class="relative overflow-hidden" style="aspect-ratio: 4/3;">
     <!-- Loading placeholder -->
@@ -164,7 +172,7 @@
       </div>
     {/if}
     
-    <!-- Price and purchase -->
+    <!-- Price and actions -->
     <div class="mt-auto pt-2 flex items-center justify-between">
       <div class="flex flex-col">
         {#if template?.originalPrice && template.originalPrice > template.price}
@@ -177,21 +185,32 @@
         </div>
       </div>
       
-      <Button 
-        variant="default"
-        size="sm"
-        class="gap-2 min-w-[100px]" 
-        onclick={handlePurchase}
-        disabled={isLoading}
-      >
-        {#if isLoading}
-          <div class="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-          <span>Processing...</span>
-        {:else}
-          <ShoppingCart class="h-4 w-4" />
-          <span>Purchase</span>
-        {/if}
-      </Button>
+      <div class="flex gap-2">
+        <Button 
+          variant="outline"
+          size="sm"
+          class="gap-1" 
+          onclick={viewTemplate}
+        >
+          <Eye class="h-3 w-3" />
+          <span class="hidden sm:inline">View</span>
+        </Button>
+        
+        <Button 
+          variant="default"
+          size="sm"
+          class="gap-2" 
+          onclick={handlePurchase}
+          disabled={isLoading}
+        >
+          {#if isLoading}
+            <div class="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+          {:else}
+            <ShoppingCart class="h-3 w-3" />
+          {/if}
+          <span class="hidden sm:inline">Buy</span>
+        </Button>
+      </div>
     </div>
   </Card.Content>
 </Card.Root>
