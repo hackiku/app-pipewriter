@@ -1,5 +1,5 @@
 // scripts/seed-emulator.ts
-import { adminFirestore, adminAuth } from '../src/lib/server/firebase-admin.js';
+import { adminFirestore, adminAuth } from '../src/lib/server/firebase-admin.ts';
 import { elementsDb } from '../src/lib/data/addon/elements.js';
 
 // Helper to check if emulators are running
