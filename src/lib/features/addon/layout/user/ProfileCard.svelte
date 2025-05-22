@@ -1,10 +1,9 @@
 <!-- $lib/features/addon/layout/user/ProfileCard.svelte -->
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import { X, Mail, LogOut, CheckCircle, Clock, Sparkles } from "@lucide/svelte";
-  import { getUser, signIn, signOut } from '$lib/services/firebase/auth.svelte';
+  import { X, Mail, CheckCircle, Clock, Sparkles } from "@lucide/svelte";
+  import { getUser } from '$lib/services/firebase/auth.svelte';
   import { Button } from '$lib/components/ui/button';
-  import * as Card from '$lib/components/ui/card';
   import * as Avatar from "$lib/components/ui/avatar/index.js";
   import { useTrialFeatures } from '$lib/context/trial.svelte';
   import SimpleUpgradeModal from '$lib/components/pricing/SimpleUpgradeModal.svelte';
@@ -16,26 +15,17 @@
   }>();
   
   // State
-  let isLoggingOut = $state(false);
-  let isSigningIn = $state(false);
   let showUpgradeModal = $state(false);
   
   // Get trial features context
   const trialFeatures = useTrialFeatures();
   
-  // Get subscription status info using trialInfo directly
-  function getSubscriptionStatus() {
-    if (trialFeatures.trialInfo.isPro) return "Pro";
-    if (trialFeatures.trialInfo.active) return "Trial";
-    return "Free";
+  function isPro() {
+    return trialFeatures.trialInfo.isPro;
   }
   
   function isActive() {
     return trialFeatures.trialInfo.active;
-  }
-  
-  function isPro() {
-    return trialFeatures.trialInfo.isPro;
   }
   
   function getDaysLeft() {
@@ -67,202 +57,115 @@
     props.onToggleProfileCard();
   }
   
-  async function handleLogin() {
-    isSigningIn = true;
-    try {
-      await signIn();
-    } catch (error) {
-      console.error('Login error:', error);
-    } finally {
-      isSigningIn = false;
-    }
-  }
-  
-  async function handleLogout() {
-    isLoggingOut = true;
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      isLoggingOut = false;
-    }
-  }
-  
-  function stopPropagation(event) {
-    event.stopPropagation();
-  }
-  
   function openUpgradeModal() {
-    showUpgradeModal = true;
-    // Close the profile card when opening the upgrade drawer
-    props.onToggleProfileCard();
+    closeCard(); // Close profile first
+    showUpgradeModal = true; // Then open upgrade modal
   }
   
-  function handleOpenChange(open: boolean) {
+  function handleUpgradeModalChange(open: boolean) {
     showUpgradeModal = open;
   }
 </script>
 
 <!-- Upgrade Modal -->
-<SimpleUpgradeModal isOpen={showUpgradeModal} onOpenChange={handleOpenChange} />
+<SimpleUpgradeModal isOpen={showUpgradeModal} onOpenChange={handleUpgradeModalChange} />
 
 {#if props.showProfileCard}
-  <!-- svelte-ignore a11y_interactive_supports_focus -->
+  <!-- Backdrop with proper ESC handling -->
   <div 
-    class="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm"
+    class="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4"
     onclick={closeCard}
-    onkeydown={(e) => e.key === "Escape" && closeCard()}
     role="dialog"
     aria-modal="true"
+    in:fade={{ duration: 200 }}
+    out:fade={{ duration: 200 }}
   >
-    <!-- Profile Card content -->
-		
-    <button
-      class="fixed right-2 top-16 w-80 max-w-[90vw]"
-      in:fade={{ duration: 200 }}
-      out:fade={{ duration: 200 }}
-      onclick={stopPropagation}
+    <!-- Modal Content -->
+    <div 
+      class="bg-background rounded-lg shadow-lg w-full max-w-sm relative"
+      onclick={(e) => e.stopPropagation()}
+      onkeydown={(e) => e.key === 'Escape' && closeCard()}
+      tabindex="-1"
     >
-      <Card.Root class="border-border">
-        <Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
-          <Card.Title>Profile</Card.Title>
+      <!-- Big X button top right -->
+      <button
+        class="absolute top-3 right-3 p-2 rounded-full hover:bg-muted transition-colors"
+        onclick={closeCard}
+        aria-label="Close profile"
+      >
+        <X class="h-5 w-5" />
+      </button>
+
+      <!-- Content -->
+      <div class="p-6 pt-8 space-y-6">
+        
+        {#if getUser()}
+          <!-- User Info -->
+          <div class="text-center space-y-3">
+            <!-- Avatar -->
+            <div class="flex justify-center">
+              <Avatar.Root class="h-16 w-16">
+                {#if getUser().photoURL}
+                  <Avatar.Image 
+                    src={getUser().photoURL} 
+                    alt={getUser().displayName || 'User'} 
+                  />
+                {/if}
+                <Avatar.Fallback class="bg-primary/10 text-primary text-lg">
+                  {getInitials()}
+                </Avatar.Fallback>
+              </Avatar.Root>
+            </div>
+
+            <!-- Name and Email -->
+            <div class="space-y-1">
+              <h2 class="text-lg font-semibold">
+                {getUser().displayName || 'User'}
+              </h2>
+              {#if getUser().email}
+                <div class="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Mail class="h-4 w-4" />
+                  <span class="truncate">{getUser().email}</span>
+                </div>
+              {/if}
+            </div>
+
+            <!-- Subscription Badge -->
+            <div class="flex justify-center">
+              {#if isPro()}
+                <div class="text-sm font-medium bg-primary text-primary-foreground px-3 py-1 rounded-full flex items-center gap-2">
+                  <Sparkles class="h-4 w-4" />
+                  Pro Plan
+                </div>
+              {:else if isActive()}
+                <div class="text-sm font-medium bg-amber-500 text-white px-3 py-1 rounded-full flex items-center gap-2">
+                  <Clock class="h-4 w-4" />
+                  Trial - {getDaysLeft()} {getDaysLeft() === 1 ? 'day' : 'days'} left
+                </div>
+              {:else}
+                <div class="text-sm font-medium bg-muted text-muted-foreground px-3 py-1 rounded-full">
+                  Free Plan
+                </div>
+              {/if}
+            </div>
+          </div>
+
+          <!-- Single Action Button -->
           <Button 
-            variant="ghost" 
-            size="icon" 
-            onclick={closeCard}
-            aria-label="Close profile"
+            class="w-full"
+            onclick={openUpgradeModal}
           >
-            <X class="h-4 w-4" />
+            {isPro() ? 'Manage Subscription' : 'Upgrade to Pro'}
           </Button>
-        </Card.Header>
-        
-        <Card.Content>
-          <!-- User info -->
-          {#if getUser()}
-            <div class="space-y-3 mb-4">
-              <div class="flex flex-col items-start gap-3 p-3 bg-muted/50 rounded-xl">
-                <Avatar.Root class="h-10 w-10">
-                  {#if getUser().photoURL}
-                    <Avatar.Image 
-                      src={getUser().photoURL} 
-                      alt={getUser().displayName || 'User'} 
-                    />
-                  {/if}
-                  <Avatar.Fallback class="bg-primary/10 text-primary">
-                    {getInitials()}
-                  </Avatar.Fallback>
-                </Avatar.Root>
-                
-                <div class="overflow-hidden">
-                  <div class="text-left mb-1 font-medium truncate">{getUser().displayName || 'User'}</div>
-                  {#if getUser().email}
-                    <div class="text-xs text-muted-foreground flex items-center">
-                      <Mail class="h-3 w-3 mr-1 flex-shrink-0" />
-                      <span class="truncate">{getUser().email}</span>
-                    </div>
-                  {/if}
-                </div>
-              </div>
-              
-              <!-- Subscription Information -->
-              <div class="p-3 rounded-xl border">
-                <div class="flex items-center justify-between mb-2">
-                  <h3 class="text-sm font-medium">Subscription</h3>
-                  
-                  {#if isPro()}
-                    <div class="text-xs font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded-full flex items-center">
-                      <Sparkles class="h-3 w-3 mr-1" />
-                      Pro
-                    </div>
-                  {:else if isActive()}
-                    <div class="text-xs font-medium bg-amber-500 text-white px-2 py-0.5 rounded-full flex items-center">
-                      <Clock class="h-3 w-3 mr-1" />
-                      Trial
-                    </div>
-                  {:else}
-                    <div class="text-xs font-medium bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
-                      Free
-                    </div>
-                  {/if}
-                </div>
-                
-                <div class="space-y-3">
-                  {#if isPro()}
-                    <div class="flex items-center text-sm gap-2">
-                      <CheckCircle class="h-4 w-4 text-primary shrink-0" />
-                      <span class="text-xs">All pro features</span>
-                    </div>
-                    <div class="flex items-center text-sm gap-2">
-                      <CheckCircle class="h-4 w-4 text-primary shrink-0" />
-                      <span class="text-xs">Pro elements</span>
-                    </div>
-                    <div class="flex items-center text-sm gap-2">
-                      <CheckCircle class="h-4 w-4 text-primary shrink-0" />
-                      <span class="text-xs">Color customization</span>
-                    </div>
-                  {:else if isActive()}
-                    <p class="text-xs text-muted-foreground">
-                      Trial active: <span class="font-medium text-foreground">{getDaysLeft()} {getDaysLeft() === 1 ? 'day' : 'days'}</span> remaining
-                    </p>
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      class="w-full mt-2 text-xs h-8" 
-                      onclick={openUpgradeModal}
-                    >
-                      Upgrade to Pro
-                    </Button>
-                  {:else}
-                    <p class="text-xs text-muted-foreground">
-                      Your trial has ended. Upgrade to access pro features.
-                    </p>
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      class="w-full mt-2 text-xs h-8" 
-                      onclick={openUpgradeModal}
-                    >
-                      Upgrade to Pro
-                    </Button>
-                  {/if}
-                </div>
-              </div>
-              
-              <Button 
-                variant="outline" 
-                class="w-full text-destructive hover:bg-destructive/10"
-                onclick={handleLogout}
-                disabled={isLoggingOut}
-              >
-                <LogOut class="h-4 w-4 mr-2" />
-                {isLoggingOut ? 'Signing out...' : 'Sign Out'}
-              </Button>
-            </div>
-          {:else}
-            <div class="space-y-3 mb-4">
-              <div class="p-3 bg-muted/50 rounded-xl text-center">
-                <p class="text-sm text-muted-foreground">Sign in to access your account</p>
-              </div>
-              
-              <Button 
-                variant="default"
-                class="w-full"
-                onclick={handleLogin}
-                disabled={isSigningIn}
-              >
-                {isSigningIn ? 'Signing in...' : 'Sign in with Google'}
-              </Button>
-            </div>
-          {/if}
-        </Card.Content>
-        
-        <Card.Footer class="text-center border-t pt-2">
-          <p class="text-xs text-muted-foreground">
-            Pipewriter v1.0.0
-          </p>
-        </Card.Footer>
-      </Card.Root>
-    </button>
+        {/if}
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 pb-4 text-center">
+        <p class="text-xs text-muted-foreground">
+          Pipewriter v1.0.0
+        </p>
+      </div>
+    </div>
   </div>
 {/if}
