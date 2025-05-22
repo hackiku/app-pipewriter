@@ -80,15 +80,15 @@
   ></div>
   
   <!-- Control Bar -->
-  <div class="absolute bottom-3 right-4 z-40">
+  <div class="absolute bottom-0 left-5 z-40">
       <div class="flex items-center gap-2">
 
         <!-- Chain Mode Toggle Button -->
         <button
-          class="h-6 w-6 rounded-full border-[0.15em] transition-all duration-150 active:scale-95
+          class="h-10 w-8 rounded-t-full border -mb-1 transition-all duration-150 active:scale-95
                  {props.chainMode 
-                   ? 'bg-primary border-primary text-primary-foreground shadow-sm' 
-                   : 'border-neutral-200 dark:border-neutral-500/50 hover:border-primary/60 dark:hover:border-primary/80 hover:shadow-sm'
+                   ? 'bg-primary border-border border-b-red-500 text-primary-foreground shadow-sm' 
+                   : 'bg-accent/40 border-border  hover:border-primary/60 dark:hover:border-primary/80 hover:shadow-sm'
                  }"
           disabled={props.isProcessing}
           onclick={props.onToggleChainMode}

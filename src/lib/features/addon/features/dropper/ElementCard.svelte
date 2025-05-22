@@ -174,15 +174,17 @@
       {/if}
       
       <!-- Chain Mode Selection Button (top-left) -->
-      {#if props.chainMode}
-        <div class="absolute pl-0.5 pt-0.5 pb-3 pr-2 gradient-from-tr to  top-0 left-0 bg-red-400/10">
+      {#if props.chainMode && !isPro}
+        <div class="absolute pl-0.5 pt-0.5 pb-3 pr-2 gradient-from-tr to top-0 left-0 bg-linear-to-r from-background from-100% to-red-200 to-100%">
           <div 
-            class="w-5 h-5 rounded-full border-2 border-primary/60 bg-background/90 flex items-center justify-center
+            class="w-5 h-5 rounded-full __rounded-tl-md __rounded-br-sm border-2 border-primary/60 bg-background/90 flex items-center justify-center
                    {props.chainPosition > 0 ? 'bg-foreground border-border' : 'bg-card border-blue-500'} 
                    transition-all duration-150"
           >
             {#if props.chainPosition > 0}
               <span class="text-xs font-medium text-background">{props.chainPosition}</span>
+						{:else}
+							<Plus class="h-1 w-1 opacity-50" />
             {/if}
           </div>
         </div>
