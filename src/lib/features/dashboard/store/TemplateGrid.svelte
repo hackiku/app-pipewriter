@@ -1,8 +1,7 @@
 <!-- src/lib/features/dashboard/store/TemplateGrid.svelte -->
 <script lang="ts">
   import TemplateCard from './TemplateCard.svelte';
-  import { Button } from '$lib/components/ui/button';
-  import { ArrowRight } from 'lucide-svelte';
+  import { Package } from 'lucide-svelte';
   
   // Props
   const props = $props<{
@@ -10,58 +9,59 @@
     onPurchase: (id: string) => void;
   }>();
   
-  // Pagination settings
-  let itemsPerPage = $state(6); // Show 6 templates per page
-  let currentPage = $state(1);
+  // Local state for animations
+  let gridRef = $state<HTMLElement>();
+  let isVisible = $state(false);
   
-  // Computed properties
-  let paginatedTemplates = $derived(
-    props.templates.slice(0, currentPage * itemsPerPage)
-  );
-  
-  let hasMoreTemplates = $derived(
-    paginatedTemplates.length < props.templates.length
-  );
-  
-  // Load more templates
-  function loadMore() {
-    currentPage++;
-  }
+  // Intersection observer for animations
+  $effect(() => {
+    if (gridRef && typeof window !== 'undefined') {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              isVisible = true;
+            }
+          });
+        },
+        { threshold: 0.1 }
+      );
+      
+      observer.observe(gridRef);
+      
+      return () => {
+        observer.disconnect();
+      };
+    }
+  });
 </script>
 
-<div>
-  {#if props.templates.length === 0}
-    <div class="text-center py-16 border border-dashed rounded-lg">
-      <h3 class="text-lg font-medium text-muted-foreground mb-3">No templates found</h3>
-      <p class="text-muted-foreground mb-4">Try selecting a different category or check back later.</p>
-      <Button variant="outline" onclick={() => props.onCategoryChange?.('all')}>
-        View all templates
-      </Button>
-    </div>
-  {:else}
-    <!-- Template Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8 mb-10">
-      {#each paginatedTemplates as template}
+{#if props.templates.length > 0}
+  <div 
+    bind:this={gridRef}
+    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+  >
+    {#each props.templates as template, index (template.id)}
+      <div 
+        class="opacity-0 translate-y-4 transition-all duration-500 ease-out"
+        class:opacity-100={isVisible}
+        class:translate-y-0={isVisible}
+        style="transition-delay: {index * 100}ms"
+      >
         <TemplateCard 
-          template={template} 
-          onPurchase={props.onPurchase} 
+          {template} 
+          onPurchase={props.onPurchase}
         />
-      {/each}
-    </div>
-    
-    <!-- Load More Button -->
-    {#if hasMoreTemplates}
-      <div class="flex justify-center mt-6 mb-10">
-        <Button 
-          variant="outline" 
-          size="lg"
-          class="gap-2" 
-          onclick={loadMore}
-        >
-          <span>Load more templates</span>
-          <ArrowRight class="h-4 w-4" />
-        </Button>
       </div>
-    {/if}
-  {/if}
-</div>
+    {/each}
+  </div>
+{:else}
+  <!-- Empty state for grid -->
+  <div class="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-muted rounded-lg">
+    <Package class="h-12 w-12 text-muted-foreground/50 mb-4" />
+    <h3 class="text-lg font-medium mb-2">No templates found</h3>
+    <p class="text-muted-foreground text-sm max-w-md">
+      No templates match your current selection. Try adjusting your filters or browse all categories.
+    </p>
+  </div>
+{/if}
