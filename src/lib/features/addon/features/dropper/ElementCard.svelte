@@ -173,42 +173,71 @@
         {/if}
       {/if}
       
-      <!-- Chain Mode Selection Button (top-left) -->
-      {#if props.chainMode && !isPro}
-        <div class="absolute pl-0.5 pt-0.5 pb-3 pr-2 gradient-from-tr to top-0 left-0 bg-linear-to-r from-background from-100% to-red-200 to-100%">
+      <!-- Chain Mode Selection Button with Radial Gradient Attention -->
+      {#if props.chainMode && !checkIfElementLocked()}
+        <div class="absolute top-0 left-0 pointer-events-none">
+          <!-- Radial gradient for attention - tasteful and breathable -->
+          <div class="absolute inset-0 w-12 h-12 
+                      bg-gradient-radial from-accent/20 via-accent/10 to-transparent
+                      from-30% via-60% to-100%"></div>
+        </div>
+        
+        <div class="absolute top-1 left-1 z-10">
           <div 
-            class="w-5 h-5 rounded-full __rounded-tl-md __rounded-br-sm border-2 border-primary/60 bg-background/90 flex items-center justify-center
-                   {props.chainPosition > 0 ? 'bg-foreground border-border' : 'bg-card border-blue-500'} 
-                   transition-all duration-150"
+            class="w-5 h-5 rounded-full border-2 bg-background/95 backdrop-blur-sm
+                   flex items-center justify-center pointer-events-auto
+                   {props.chainPosition > 0 
+                     ? 'bg-primary border-primary text-primary-foreground shadow-sm' 
+                     : 'bg-background border-primary/60 hover:border-primary hover:bg-primary/5'} 
+                   transition-all duration-150 hover:scale-105"
           >
             {#if props.chainPosition > 0}
-              <span class="text-xs font-medium text-background">{props.chainPosition}</span>
-						{:else}
-							<Plus class="h-1 w-1 opacity-50" />
+              <span class="text-xs font-medium">{props.chainPosition}</span>
+            {:else}
+              <Plus class="h-2.5 w-2.5 text-primary/70" />
             {/if}
           </div>
         </div>
       {/if}
       
       {#if checkIfElementLocked()}
-        <!-- Locked Element Overlay -->
-        <div class="absolute inset-0 flex flex-col items-center justify-center bg-black/30 dark:bg-white/20">
-          <Lock class="text-white dark:text-gray-100 mb-1" size={20} />
-          <span class="text-white dark:text-gray-100 text-xs font-medium">Pro</span>
+        <!-- Enhanced Locked Element Overlay with tasteful gradient -->
+        <div class="absolute inset-0 
+                    bg-gradient-to-t from-gray-500/50 via-card/30 to-background
+                    from-10% via-70% to-100%
+                    flex items-end justify-end pr-2 pb-1">
+          <div class="flex items-center gap-1">
+            <Lock class="text-foreground/50" size={10} />
+            <span class="text-xs font-medium text-foreground/50">Pro</span>
+          </div>
         </div>
       {:else if !props.chainMode}
         <!-- Normal Hover Effect for Unlocked Elements (only when not in chain mode) -->
-        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <Plus class="text-neutral-500 dark:text-black" size={30} />
+        <div class="absolute inset-0 flex items-center justify-center 
+                    opacity-0 group-hover:opacity-100 transition-opacity
+                    bg-gradient-radial from-background/30 via-background/10 to-transparent
+                    from-20% via-50% to-100%">
+          <div class="bg-background/90 backdrop-blur-sm rounded-full p-2 border border-border/50">
+            <Plus class="text-foreground/80" size={20} />
+          </div>
         </div>
       {/if}
 
       {#if isProcessing}
-        <!-- Processing State Overlay -->
-        <div class="absolute inset-0 flex items-center justify-center bg-black/50 dark:bg-white/50">
-          <div class="w-6 h-6 border-2 border-white dark:border-black border-t-transparent rounded-full animate-spin"></div>
+        <!-- Processing State Overlay with gradient backdrop -->
+        <div class="absolute inset-0 flex items-center justify-center 
+                    bg-gradient-radial from-background/80 via-background/60 to-background/40
+                    from-20% via-50% to-100% backdrop-blur-sm">
+          <div class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
         </div>
       {/if}
     </div>
   </Button>
 </div>
+
+<style>
+  /* Custom radial gradient utility */
+  .bg-gradient-radial {
+    background: radial-gradient(var(--tw-gradient-stops));
+  }
+</style>
