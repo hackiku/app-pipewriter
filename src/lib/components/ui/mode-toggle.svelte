@@ -5,7 +5,7 @@
   import { Sun, Moon } from "@lucide/svelte";
   import { fade } from 'svelte/transition';
 
-  // Local state for theme - you might want to get this from mode-watcher if it exposes current mode
+  // Local state for theme
   let isDarkMode = $state(false);
 
   function handleToggleMode() {
@@ -14,7 +14,7 @@
   }
 </script>
 
-<div class="relative w-9 h-9">
+<div class="relative w-7 h-7">
   {#key isDarkMode}
     <div
       in:fade={{ duration: 200 }}
@@ -22,9 +22,9 @@
       class="absolute inset-0"
     >
       <Button
-        variant="outline"
+        variant="ghost"
         size="icon"
-        class="rounded-md w-9 h-9"
+        class="rounded-full h-7 w-7 p-1.5 text-muted-foreground hover:text-foreground"
         onclick={handleToggleMode}
       >
         {#if isDarkMode}

@@ -1,21 +1,12 @@
-<!-- $lib/iframe/layout/TopBar.svelte -->
+<!-- $lib/features/addon/layout/TopBar.svelte -->
 <script lang="ts">
-  import { toggleMode } from "mode-watcher";
   import { getContext } from "svelte";
-  import { Info, Sun, Moon, Minimize2 } from '@lucide/svelte';
-  import { fade } from 'svelte/transition';
+  import { Info, Minimize2 } from '@lucide/svelte';
   import { Button } from "$lib/components/ui/button";
+  import ModeToggle from "$lib/components/ui/mode-toggle.svelte";
 
   // Get UI state from context
   const uiState = getContext('uiState');
-
-  // Local state for theme
-  let isDarkMode = $state(false);
-
-  function handleToggleMode() {
-    isDarkMode = !isDarkMode;
-    toggleMode();
-  }
 </script>
 
 <div class="flex items-center justify-between py-2">
@@ -40,28 +31,7 @@
       <Info class="h-4 w-4" />
     </Button>
     
-    <!-- Theme Toggle Button -->
-    <div class="relative w-7 h-7 mr-1">
-      {#key isDarkMode}
-        <div
-          in:fade={{ duration: 200 }}
-          out:fade={{ duration: 200 }}
-          class="absolute inset-0"
-        >
-          <Button
-            variant="ghost"
-            size="icon"
-            class="rounded-full h-7 w-7 p-1.5 text-muted-foreground"
-            onclick={handleToggleMode}
-          >
-            {#if isDarkMode}
-              <Moon class="h-4 w-4" />
-            {:else}
-              <Sun class="h-4 w-4" />
-            {/if}
-          </Button>
-        </div>
-      {/key}
-    </div>
+    <!-- Mode Toggle -->
+    <ModeToggle />
   </div>
 </div>
