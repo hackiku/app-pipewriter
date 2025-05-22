@@ -2,7 +2,7 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
   import { cn } from "$lib/utils";
-  import { Plus, X, AlertCircle, Lock } from '@lucide/svelte';
+  import { Plus, AlertCircle, Lock, Star } from '@lucide/svelte';
   import type { Element, ElementTheme } from '$lib/data/addon/types';
   import { onMount, onDestroy } from 'svelte';
 
@@ -10,16 +10,20 @@
   const trialFeatures = useTrialFeatures();
 
   // Props
-	const props = $props<{
-		element: Element;
-		onSelect: (id: string) => void;
-		theme: ElementTheme;
-		disabled?: boolean;
-		isSelected?: boolean;
-		isLocked?: boolean;
-	}>();
+  const props = $props<{
+    element: Element;
+    onSelect: (id: string) => void;
+    theme: ElementTheme;
+    disabled?: boolean;
+    isSelected?: boolean;
+    isLocked?: boolean;
+    chainMode?: boolean;
+    chainPosition?: number; // Position in chain (1, 2, 3, etc.) - 0 means not in chain
+    onChainToggle?: (id: string) => void;
+  }>();
 
-	const isLocked = props.isLocked;
+  const isLocked = props.isLocked;
+  const isPro = props.element.metadata?.tier === 'pro';
 
   // Fix: Use a regular function to determine lock status (not $derived)
   function checkIfElementLocked() {
@@ -47,7 +51,6 @@
         if (mutation.attributeName === 'class') {
           const newAppTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
           if (appTheme !== newAppTheme) {
-            console.log(`App theme changed from ${appTheme} to ${newAppTheme}`);
             appTheme = newAppTheme;
           }
         }
@@ -68,13 +71,23 @@
   });
   
   // Handle click on the element card
-  async function handleClick() {
-    if (props.disabled || isProcessing || isLocked) return;
+  async function handleClick(e: MouseEvent) {
+    if (props.disabled || isProcessing) return;
+    
+    // In chain mode, handle chain toggle instead of direct selection
+    if (props.chainMode && props.onChainToggle) {
+      e.preventDefault();
+      e.stopPropagation();
+      props.onChainToggle(props.element.id);
+      return;
+    }
+    
+    // Don't proceed if locked
+    if (isLocked) return;
     
     isProcessing = true;
     
     try {
-      // Call the select handler without capturing any reactive dependencies
       await props.onSelect(props.element.id);
     } finally {
       isProcessing = false;
@@ -103,20 +116,22 @@
 
   const baseButtonClasses = cn(
     "group relative w-full h-full p-0 rounded-lg overflow-hidden",
-    "transition-all duration-200 ease-out cursor-pointer",
-    "hover:-translate-y-1 hover:-translate-x-1 hover:rotate-[-2deg]",
-    "hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.7)]",
-    "dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.7)]",
-    "active:translate-y-0 active:translate-x-0 active:shadow-none"
+    "transition-all duration-200 ease-out cursor-pointer"
   );
 
   // Pure function to get button class - no reactive dependencies
   function getButtonClass() {
+    const isLockedElement = checkIfElementLocked();
+    
     return cn(
       baseButtonClasses,
-      cardStyles[props.theme], // Direct lookup by theme
+      cardStyles[props.theme],
+      // Keep hover animations for pro elements but gray them out
+      !isLockedElement && "hover:-translate-y-1 hover:-translate-x-1 hover:rotate-[-2deg] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.7)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.7)]",
+      !isLockedElement && "active:translate-y-0 active:translate-x-0 active:shadow-none",
       props.isSelected && "ring-2 ring-primary ring-offset-2",
       (props.disabled || isProcessing) && "opacity-90 cursor-not-allowed pointer-events-none",
+      isLockedElement && "opacity-60 grayscale"
     );
   }
   
@@ -132,10 +147,10 @@
     variant="ghost"
     class={getButtonClass()}
     onclick={handleClick}
-    disabled={props.disabled || isProcessing || checkIfElementLocked()}
+    disabled={props.disabled || isProcessing}
     title={checkIfElementLocked() ? "Upgrade to access this element" : props.element.description}
   >
-    <div class="relative w-full h-full __aspect-video">
+    <div class="relative w-full h-full">
       {#if imageError}
         <div class="flex flex-col items-center justify-center h-full p-2 text-center">
           <AlertCircle class="w-6 h-6 text-neutral-400 mb-1" />
@@ -146,20 +161,41 @@
         <img
           src={getSvgUrl()}
           alt={props.element.alt}
-          class="w-full h-full object-cover {checkIfElementLocked() ? 'opacity-40 grayscale' : 'group-hover:opacity-40'}"
+          class="w-full h-full object-cover group-hover:opacity-40 transition-opacity"
           onerror={handleImageError}
         />
 
+        <!-- Pro Star Icon (top-right, subtle) -->
+        {#if isPro}
+          <div class="absolute top-1 right-1">
+            <Star size={10} class="text-amber-400/60 fill-amber-400/60" />
+          </div>
+        {/if}
       {/if}
       
-      {#if isLocked}
+      <!-- Chain Mode Selection Button (top-left) -->
+      {#if props.chainMode}
+        <div class="absolute pl-0.5 pt-0.5 pb-3 pr-2 gradient-from-tr to  top-0 left-0 bg-red-400/10">
+          <div 
+            class="w-5 h-5 rounded-full border-2 border-primary/60 bg-background/90 flex items-center justify-center
+                   {props.chainPosition > 0 ? 'bg-foreground border-border' : 'bg-card border-blue-500'} 
+                   transition-all duration-150"
+          >
+            {#if props.chainPosition > 0}
+              <span class="text-xs font-medium text-background">{props.chainPosition}</span>
+            {/if}
+          </div>
+        </div>
+      {/if}
+      
+      {#if checkIfElementLocked()}
         <!-- Locked Element Overlay -->
         <div class="absolute inset-0 flex flex-col items-center justify-center bg-black/30 dark:bg-white/20">
           <Lock class="text-white dark:text-gray-100 mb-1" size={20} />
           <span class="text-white dark:text-gray-100 text-xs font-medium">Pro</span>
         </div>
-      {:else}
-        <!-- Normal Hover Effect for Unlocked Elements -->
+      {:else if !props.chainMode}
+        <!-- Normal Hover Effect for Unlocked Elements (only when not in chain mode) -->
         <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
           <Plus class="text-neutral-500 dark:text-black" size={30} />
         </div>
@@ -168,7 +204,7 @@
       {#if isProcessing}
         <!-- Processing State Overlay -->
         <div class="absolute inset-0 flex items-center justify-center bg-black/50 dark:bg-white/50">
-          <X class="text-white dark:text-black animate-spin" size={24} />
+          <div class="w-6 h-6 border-2 border-white dark:border-black border-t-transparent rounded-full animate-spin"></div>
         </div>
       {/if}
     </div>

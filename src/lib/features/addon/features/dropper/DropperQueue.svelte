@@ -41,14 +41,11 @@
 </script>
 
 <div class="flex h-full flex-col bg-background">
-	<h3 class="-mb-4 ml-4 text-sm font-thin text-foreground/30">
-		⛓️ {props.queuedElements.length} element{props.queuedElements.length !== 1 ? 's' : ''} queued
-	</h3>
 
 	<!-- Queue Content -->
-	<div class="flex-1 p-4 space-y-3">
+	<div class="flex-1 p-2 space-y-3">
 		<!-- Draggable Pad Container -->
-		<div class="flex h-24 flex-col rounded-2xl border-2 border-dashed border-muted bg-muted/20 p-4">
+		<div class="flex h-20 flex-col rounded-2xl border-2 border-dashed border-muted bg-muted/20 p-4">
 			{#if props.queuedElements.length === 0}
 				<!-- Empty State -->
 				<div class="flex flex-1 items-center justify-center text-center">
@@ -112,7 +109,7 @@
 		</div>
 		<!-- Action Buttons -->
 		<div
-			class="flex flex-none items-center justify-end gap-2 border-t border-dashed border-muted-foreground/20"
+			class="flex flex-none items-center justify-end gap-2"
 		>
 			<Button
 				variant="outline"
@@ -122,7 +119,7 @@
 				class="h-7 text-xs"
 			>
 				<XCircle size={12} class="mr-1" />
-				Discard
+				Clear
 			</Button>
 
 			<Button
@@ -132,7 +129,7 @@
 				class="h-7 text-xs"
 			>
 				<Play size={12} class="mr-1" />
-				Apply Queue ({props.queuedElements.length})
+				Drop ({props.queuedElements.length})
 			</Button>
 		</div>
 	</div>

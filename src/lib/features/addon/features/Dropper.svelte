@@ -26,35 +26,26 @@
   
   // Chain mode state
   let chainMode = $state(false);
-  let queuedElements = $state<string[]>([]);
+  let queuedElements = $state<string[]>([]); // Ordered array of element IDs
   
   // Initialize once on component mount
   console.log("Dropper component mounted, initial theme:", elementsTheme);
   
-  // Only use one status timeout to prevent multiple timers
-  let statusTimeoutId: number | null = null;
-  
-  function clearStatusTimeout() {
-    if (statusTimeoutId !== null) {
-      window.clearTimeout(statusTimeoutId);
-      statusTimeoutId = null;
-    }
+  // Status bar management
+  function handleStatusClose() {
+    status = null;
   }
   
-  function setStatusWithTimeout(newStatus: StatusUpdate | null, timeoutMs = 2000) {
-    // Clear any existing timeout
-    clearStatusTimeout();
-    
-    // Set the new status
-    status = newStatus;
-    
-    // Set a timeout to clear the status if it's not a processing status
-    if (newStatus && newStatus.type !== 'processing') {
-      statusTimeoutId = window.setTimeout(() => {
-        status = null;
-        statusTimeoutId = null;
-      }, timeoutMs);
+  function setStatusWithTimeout(newStatus: StatusUpdate | null, timeoutMs = 500) {
+    // Add elementId to status for better messaging
+    if (newStatus && newStatus.details) {
+      const elementIdMatch = newStatus.details.match(/(\w+-\w+(?:-\w+)*)/);
+      if (elementIdMatch) {
+        (newStatus as any).elementId = elementIdMatch[1];
+      }
     }
+    
+    status = newStatus;
   }
 
   // Element selection handler - now handles chain mode
@@ -76,8 +67,9 @@
     isProcessing = true;
     setStatusWithTimeout({
       type: "processing",
-      message: `Inserting ${elementId}...`,
-      details: `Theme: ${currentTheme}\nAttempting to fetch and insert element...`
+      message: `Inserting element...`,
+      details: `Inserting ${elementId} (${currentTheme})`,
+      elementId
     });
 
     try {
@@ -96,7 +88,8 @@
           type: "success",
           message: "Element inserted",
           details: `Successfully inserted ${elementId} (${currentTheme})`,
-          executionTime: response.executionTime
+          executionTime: response.executionTime,
+          elementId
         });
       } else {
         throw new Error(response.error || "Failed to insert element");
@@ -112,11 +105,40 @@
           elementId,
           theme: currentTheme,
           timestamp: new Date().toISOString()
-        }
+        },
+        elementId
       });
     } finally {
       isProcessing = false;
     }
+  }
+  
+  // Chain mode element toggle
+  function handleChainToggle(elementId: string) {
+    const currentIndex = queuedElements.indexOf(elementId);
+    
+    if (currentIndex >= 0) {
+      // Remove from chain
+      queuedElements = queuedElements.filter(id => id !== elementId);
+      console.log(`Removed ${elementId} from chain. Chain: [${queuedElements.join(', ')}]`);
+    } else {
+      // Add to chain
+      queuedElements = [...queuedElements, elementId];
+      console.log(`Added ${elementId} to chain. Chain: [${queuedElements.join(', ')}]`);
+    }
+    
+    setStatusWithTimeout({
+      type: "success",
+      message: currentIndex >= 0 ? `Removed from chain` : `Added to chain`,
+      details: `Chain now has ${queuedElements.length} elements`,
+      elementId
+    }, 1000);
+  }
+  
+  // Get chain position for an element (1-indexed, 0 if not in chain)
+  function getChainPosition(elementId: string): number {
+    const index = queuedElements.indexOf(elementId);
+    return index >= 0 ? index + 1 : 0;
   }
   
   // Queue management functions
@@ -128,7 +150,8 @@
       setStatusWithTimeout({
         type: "success",
         message: `Added to queue`,
-        details: `${elementId} added to queue (${queuedElements.length} total)`
+        details: `${elementId} added to queue (${queuedElements.length} total)`,
+        elementId
       }, 1000);
     }
   }
@@ -158,7 +181,8 @@
         setStatusWithTimeout({
           type: "processing",
           message: `Inserting element ${i + 1} of ${queuedElements.length}...`,
-          details: `Inserting ${elementId} (${currentTheme})`
+          details: `Inserting ${elementId} (${currentTheme})`,
+          elementId
         });
         
         const response = await insertElement(elementId, currentTheme);
@@ -225,7 +249,7 @@
     setStatusWithTimeout({
       type: "success",
       message: chainMode ? "Chain mode enabled" : "Chain mode disabled",
-      details: chainMode ? "Click elements to add to queue" : "Click elements to insert directly"
+      details: chainMode ? "Click elements to add to chain" : "Click elements to insert directly"
     }, 1500);
   }
   
@@ -241,11 +265,6 @@
     console.log(`Updating grid columns to: ${cols}`);
     gridColumns = cols;
   }
-  
-  // Clean up on destroy
-  function cleanup() {
-    clearStatusTimeout();
-  }
 
   // Export chain mode and queue state for parent component
   export const getChainModeState = () => ({
@@ -258,17 +277,10 @@
 <div class="relative h-full z-0 bg-neutral-100/50 dark:bg-neutral-800/50">
   <!-- Status Bar -->
   {#if status}
-	<div class="fixed top-3 w-full z-20">
-    <StatusBar status={status} />
-	</div>
-  {/if}
-  
-  <!-- Debug info in dev mode -->
-  <!-- {#if import.meta.env.DEV}
-    <div class="opacity-70 absolute top-0 right-0 p-1 text-[0.6em] rounded-sm bg-black/15 text-neutral-900/40 z-50">
-      {elementsTheme} | grid-{gridColumns} | chain: {chainMode ? 'on' : 'off'} | queue: {queuedElements.length}
+    <div class="fixed top-3 w-full z-20">
+      <StatusBar {status} onStatusClose={handleStatusClose} />
     </div>
-  {/if} -->
+  {/if}
   
   <!-- Main Container - No scrollbar visible but still scrollable -->
   <div class="h-full pb-8 pt-2 overflow-y-auto scrollbar-none">
@@ -278,7 +290,9 @@
       theme={elementsTheme}
       gridColumns={gridColumns}
       chainMode={chainMode}
+      {getChainPosition}
       onElementSelect={handleElementSelect}
+      onChainToggle={handleChainToggle}
     />
   </div>
 

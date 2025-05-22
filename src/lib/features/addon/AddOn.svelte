@@ -108,7 +108,7 @@
 			direction="vertical"
 			class="h-full {activeTab ? 'z-0' : 'z-10'}"
 		>
-			<Resizable.Pane defaultSize={chainModeState.chainMode ? 40 : 55} minSize={30} maxSize={80}>
+			<Resizable.Pane defaultSize={chainModeState.chainMode ? 55 : 55} minSize={30} maxSize={80}>
 				<!-- Only render Dropper if googleService is available -->
 				{#if googleService}
 					<Dropper bind:this={dropperRef} context={serviceContext} />
@@ -124,7 +124,7 @@
 					withHandle
 					class={activeTab || showAboutModal ? "z-0" : ""}
 				/>
-				<Resizable.Pane defaultSize={chainModeState.chainMode ? 35 : 30} minSize={0}>
+				<Resizable.Pane defaultSize={chainModeState.chainMode ? 35 : 35} minSize={0}>
 					<!-- {#if chainModeState.chainMode} -->
 					<!-- TODO: stopped displaying when chainmode on. display nothing when offm but load back the TableTab commented out ) -->
 					<!-- Show DropperQueue when chain mode is active -->
