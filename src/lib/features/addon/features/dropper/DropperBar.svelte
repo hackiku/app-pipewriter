@@ -1,6 +1,7 @@
 <!-- $lib/iframe/features/dropper/DropperBar.svelte -->
 <script lang="ts">
   import { Link2 } from '@lucide/svelte';
+	import ChainActions from './ChainActions.svelte'
   import type { ElementTheme } from '$lib/data/addon/types';
   
   // Props
@@ -80,9 +81,8 @@
   ></div>
   
   <!-- Control Bar -->
-  <div class="absolute bottom-0 left-5 z-40">
-      <div class="flex items-center gap-2">
-
+  <div class="absolute bottom-0 z-[100] left-5">
+		<div class="relative flex items-center gap-2 w-full">
         <!-- Chain Mode Toggle Button -->
         <button
           class="h-10 w-8 rounded-t-full border -mb-1 transition-all duration-150 active:scale-95
@@ -124,6 +124,8 @@
         >
           {currentGridSize.label}
         </button>
+
+				<div class="absolute right-2">asdasdasda</div>
       </div>
   </div>
 </div>
@@ -131,6 +133,6 @@
 <style>
   .dropper-container {
     position: relative;
-    z-index: 10;
+    /* z-index: 10; */
   }
 </style>

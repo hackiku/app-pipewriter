@@ -125,7 +125,7 @@
 					class={activeTab || showAboutModal ? "z-0" : ""}
 				/>
 				<Resizable.Pane defaultSize={chainModeState.chainMode ? 35 : 35} minSize={0}>
-					<!-- {#if chainModeState.chainMode} -->
+					{#if chainModeState.chainMode}
 					<!-- TODO: stopped displaying when chainmode on. display nothing when offm but load back the TableTab commented out ) -->
 					<!-- Show DropperQueue when chain mode is active -->
 						<DropperQueue 
@@ -136,7 +136,7 @@
 							onApplyQueue={handleApplyQueue}
 							onDiscardQueue={handleDiscardQueue}
 						/>
-					<!-- {/if} -->
+					{/if}
 				</Resizable.Pane>
 			{/if}
 		</Resizable.PaneGroup>

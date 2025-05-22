@@ -150,7 +150,7 @@
 <div class="relative">
 	{#if checkIfElementLocked()}
 		<div
-			class="absolute inset-0 z-[9999] flex h-full w-full items-end
+			class="absolute inset-0 z-30 flex h-full w-full items-end
                     justify-end border-b border-neutral-100 dark:border-neutral-900 bg-gradient-to-t
                     from-neutral-100 dark:from-neutral-900 from-0% via-neutral-200/40 dark:via-neutral-900/80
                     via-40% to-background/10 to-70% p-1.5"
