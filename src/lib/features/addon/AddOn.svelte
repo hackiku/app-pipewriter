@@ -8,13 +8,10 @@
 	import TopBar from "./layout/TopBar.svelte";
 	import BottomBar from "./layout/BottomBar.svelte";
 	import Dropper from "./features/Dropper.svelte";
-	// import { Table } from "./features/table/index";
-	// import Table from "./features/table/index";
-	// import TableWrapper from "./features/TableWrapper.svelte";
+	import DropperQueue from "./features/dropper/DropperQueue.svelte";
 	import TableTab from "./features/table/TableTab.svelte";
 	import Tabs from "./features/Tabs.svelte"; 
 	import { getGoogleService } from "$lib/services/google/client";
-	// import { getGoogleService } from "$lib/server/google/client";
 	import type { GoogleAppsService } from "$lib/services/google/client";
 	import TrialBanner from "$lib/components/trial/TrialBanner.svelte";
 	
@@ -27,6 +24,10 @@
 	// Google service client
 	let googleService = $state<any>(null);
 
+	// Dropper reference for accessing chain mode state
+	let dropperRef = $state<any>(null);
+	let chainModeState = $state({ chainMode: false, queuedElements: [], queueCount: 0 });
+
 	// Initialize Google service client
 	$effect(() => {
 		if (browser) {
@@ -36,6 +37,13 @@
 			} catch (error) {
 				console.error("Failed to initialize Google service:", error);
 			}
+		}
+	});
+
+	// Watch for chain mode changes from Dropper
+	$effect(() => {
+		if (dropperRef && typeof dropperRef.getChainModeState === 'function') {
+			chainModeState = dropperRef.getChainModeState();
 		}
 	});
 
@@ -73,6 +81,19 @@
 	function toggleAboutModal() {
 		showAboutModal = !showAboutModal;
 	}
+
+	// Handle queue actions - pass through to Dropper
+	function handleRemoveFromQueue(elementId: string) {
+		// This will be handled by the DropperQueue component which communicates back to Dropper
+	}
+
+	function handleApplyQueue() {
+		// This will be handled by the DropperQueue component which communicates back to Dropper  
+	}
+
+	function handleDiscardQueue() {
+		// This will be handled by the DropperQueue component which communicates back to Dropper
+	}
 </script>
 
 <main class="flex flex-col h-full overflow-hidden">
@@ -80,19 +101,17 @@
 		<TopBar />
 	</section>
 	<hr />
-	<TrialBanner />
-	<hr />
+
 
 	<div class="flex-1 overflow-hidden">
 		<Resizable.PaneGroup
 			direction="vertical"
 			class="h-full {activeTab ? 'z-0' : 'z-10'}"
 		>
-			<Resizable.Pane defaultSize={55} minSize={30} maxSize={80}>
-			<!-- <Resizable.Pane defaultSize={25} minSize={30} maxSize={80}> -->
+			<Resizable.Pane defaultSize={chainModeState.chainMode ? 40 : 55} minSize={30} maxSize={80}>
 				<!-- Only render Dropper if googleService is available -->
 				{#if googleService}
-					<Dropper context={serviceContext} />
+					<Dropper bind:this={dropperRef} context={serviceContext} />
 				{:else}
 					<div class="h-full flex items-center justify-center text-gray-400">
 						<p>Loading Dropper...</p>
@@ -105,10 +124,18 @@
 					withHandle
 					class={activeTab || showAboutModal ? "z-0" : ""}
 				/>
-				<Resizable.Pane defaultSize={30} minSize={0}>
-					<!-- <div class="m-2 p-4 border rounded-xl">
-						<TableTab />
-					</div> -->
+				<Resizable.Pane defaultSize={chainModeState.chainMode ? 35 : 30} minSize={0}>
+					{#if chainModeState.chainMode}
+						<!-- Show DropperQueue when chain mode is active -->
+						<DropperQueue 
+							queuedElements={chainModeState.queuedElements}
+							theme="light"
+							isProcessing={false}
+							onRemoveFromQueue={handleRemoveFromQueue}
+							onApplyQueue={handleApplyQueue}
+							onDiscardQueue={handleDiscardQueue}
+						/>
+					{/if}
 				</Resizable.Pane>
 			{/if}
 		</Resizable.PaneGroup>
@@ -117,6 +144,8 @@
 	<div class="mb-2 px-2">
 		<Tabs context={serviceContext} />
 	</div>
+
+	<TrialBanner />
 
 	<div class="px-2 border-t border-gray-200 dark:border-gray-700">
 		<BottomBar onToggleAboutModal={toggleAboutModal} />

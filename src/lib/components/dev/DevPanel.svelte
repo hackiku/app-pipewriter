@@ -3,7 +3,7 @@
   import { Button } from "$lib/components/ui/button";
   import * as Slider from "$lib/components/ui/slider";
   import * as Tabs from "$lib/components/ui/tabs";
-  import { Terminal, Sparkles, Clock, AlertTriangle, RefreshCw } from 'lucide-svelte';
+  import { Terminal, Sparkles, Clock, AlertTriangle, RefreshCw } from '@lucide/svelte';
   import { useTrialFeatures } from '$lib/context/trial.svelte';
   
   // Get trial context

@@ -24,6 +24,10 @@
   let gridColumns = $state(3); // Default to 3 columns
   let selectedElements: string[] = []; // No need for reactivity here
   
+  // Chain mode state
+  let chainMode = $state(false);
+  let queuedElements = $state<string[]>([]);
+  
   // Initialize once on component mount
   console.log("Dropper component mounted, initial theme:", elementsTheme);
   
@@ -53,9 +57,17 @@
     }
   }
 
-  // Element selection handler - avoid using reactive values inside
+  // Element selection handler - now handles chain mode
   async function handleElementSelect(event: CustomEvent<{ elementId: string }>) {
     const { elementId } = event.detail;
+    
+    if (chainMode) {
+      // In chain mode, add to queue instead of inserting directly
+      handleAddToQueue(elementId);
+      return;
+    }
+    
+    // Normal mode - insert directly
     const currentTheme = elementsTheme; // Capture current theme to prevent reactivity issues
     
     console.log(`Element selection handler received: ${elementId} with theme ${currentTheme}`);
@@ -107,6 +119,116 @@
     }
   }
   
+  // Queue management functions
+  function handleAddToQueue(elementId: string) {
+    if (!queuedElements.includes(elementId)) {
+      queuedElements = [...queuedElements, elementId];
+      console.log(`Added ${elementId} to queue. Queue length: ${queuedElements.length}`);
+      
+      setStatusWithTimeout({
+        type: "success",
+        message: `Added to queue`,
+        details: `${elementId} added to queue (${queuedElements.length} total)`
+      }, 1000);
+    }
+  }
+  
+  function handleRemoveFromQueue(elementId: string) {
+    queuedElements = queuedElements.filter(id => id !== elementId);
+    console.log(`Removed ${elementId} from queue. Queue length: ${queuedElements.length}`);
+  }
+  
+  async function handleApplyQueue() {
+    if (queuedElements.length === 0) return;
+    
+    const currentTheme = elementsTheme;
+    isProcessing = true;
+    
+    setStatusWithTimeout({
+      type: "processing",
+      message: `Inserting ${queuedElements.length} elements...`,
+      details: `Processing queue in ${currentTheme} theme`
+    });
+
+    try {
+      // Insert elements sequentially
+      for (let i = 0; i < queuedElements.length; i++) {
+        const elementId = queuedElements[i];
+        
+        setStatusWithTimeout({
+          type: "processing",
+          message: `Inserting element ${i + 1} of ${queuedElements.length}...`,
+          details: `Inserting ${elementId} (${currentTheme})`
+        });
+        
+        const response = await insertElement(elementId, currentTheme);
+        
+        if (!response.success) {
+          throw new Error(`Failed to insert ${elementId}: ${response.error}`);
+        }
+        
+        // Small delay between insertions to prevent overwhelming the API
+        if (i < queuedElements.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+      
+      setStatusWithTimeout({
+        type: "success",
+        message: "Queue applied successfully",
+        details: `Successfully inserted ${queuedElements.length} elements`,
+        executionTime: Date.now() // Rough timing
+      });
+      
+      // Clear queue after successful application
+      queuedElements = [];
+      
+    } catch (error) {
+      console.error("Failed to apply queue:", error);
+      setStatusWithTimeout({
+        type: "error",
+        message: "Failed to apply queue",
+        details: `Error applying queue: ${error instanceof Error ? error.message : "Unknown error"}`,
+        error: {
+          message: error instanceof Error ? error.message : "Unknown error",
+          queue: queuedElements,
+          theme: currentTheme,
+          timestamp: new Date().toISOString()
+        }
+      });
+    } finally {
+      isProcessing = false;
+    }
+  }
+  
+  function handleDiscardQueue() {
+    const count = queuedElements.length;
+    queuedElements = [];
+    
+    setStatusWithTimeout({
+      type: "success",
+      message: "Queue discarded",
+      details: `Removed ${count} elements from queue`
+    }, 1000);
+  }
+  
+  // Toggle chain mode
+  function toggleChainMode() {
+    chainMode = !chainMode;
+    console.log(`Chain mode ${chainMode ? 'enabled' : 'disabled'}`);
+    
+    // Clear queue when exiting chain mode
+    if (!chainMode && queuedElements.length > 0) {
+      handleDiscardQueue();
+    }
+    
+    setStatusWithTimeout({
+      type: "success",
+      message: chainMode ? "Chain mode enabled" : "Chain mode disabled",
+      details: chainMode ? "Click elements to add to queue" : "Click elements to insert directly"
+    }, 1500);
+  }
+  
   // Toggle theme function - keep this simple
   function toggleTheme() {
     const newTheme = elementsTheme === 'light' ? 'dark' : 'light';
@@ -124,18 +246,27 @@
   function cleanup() {
     clearStatusTimeout();
   }
+
+  // Export chain mode and queue state for parent component
+  export const getChainModeState = () => ({
+    chainMode,
+    queuedElements,
+    queueCount: queuedElements.length
+  });
 </script>
 
 <div class="relative h-full z-0 bg-neutral-100/50 dark:bg-neutral-800/50">
   <!-- Status Bar -->
   {#if status}
+	<div class="fixed top-3 w-full z-20">
     <StatusBar status={status} />
+	</div>
   {/if}
   
   <!-- Debug info in dev mode -->
   <!-- {#if import.meta.env.DEV}
     <div class="opacity-70 absolute top-0 right-0 p-1 text-[0.6em] rounded-sm bg-black/15 text-neutral-900/40 z-50">
-      {elementsTheme} | grid-{gridColumns} | info: {uiState.showInfo ? 'true' : 'false'}
+      {elementsTheme} | grid-{gridColumns} | chain: {chainMode ? 'on' : 'off'} | queue: {queuedElements.length}
     </div>
   {/if} -->
   
@@ -146,6 +277,7 @@
       context={context}
       theme={elementsTheme}
       gridColumns={gridColumns}
+      chainMode={chainMode}
       onElementSelect={handleElementSelect}
     />
   </div>
@@ -156,8 +288,10 @@
       isProcessing={isProcessing}
       theme={elementsTheme}
       selectedElements={selectedElements}
+      chainMode={chainMode}
       onToggleTheme={toggleTheme}
       onGridChange={updateGridColumns}
+      onToggleChainMode={toggleChainMode}
     />
   </div>
 </div>

@@ -1,6 +1,6 @@
 <!-- $lib/iframe/features/dropper/DropperBar.svelte -->
 <script lang="ts">
-  import { Link } from '@lucide/svelte';
+  import { Link2 } from '@lucide/svelte';
   import type { ElementTheme } from '$lib/data/addon/types';
   
   // Props
@@ -8,8 +8,10 @@
     isProcessing: boolean;
     theme: string;
     selectedElements: string[];
+    chainMode: boolean;
     onToggleTheme: () => void;
     onGridChange: (cols: number) => void;
+    onToggleChainMode: () => void;
   }>();
   
   // Grid size options (constant, won't change)
@@ -66,7 +68,8 @@
 </script>
 
 <div class="relative dropper-container">
-  <!-- Background Gradient -->
+	
+	<!-- Background Gradient -->
   <div 
     class="absolute bottom-0 left-0 right-0 h-16
            bg-gradient-to-t from-neutral-100 from-20% 
@@ -79,6 +82,21 @@
   <!-- Control Bar -->
   <div class="absolute bottom-3 right-4 z-40">
       <div class="flex items-center gap-2">
+
+        <!-- Chain Mode Toggle Button -->
+        <button
+          class="h-6 w-6 rounded-full border-[0.15em] transition-all duration-150 active:scale-95
+                 {props.chainMode 
+                   ? 'bg-primary border-primary text-primary-foreground shadow-sm' 
+                   : 'border-neutral-200 dark:border-neutral-500/50 hover:border-primary/60 dark:hover:border-primary/80 hover:shadow-sm'
+                 }"
+          disabled={props.isProcessing}
+          onclick={props.onToggleChainMode}
+          title={props.chainMode ? 'Exit chain mode' : 'Enter chain mode - queue elements before inserting'}
+        >
+          <Link2 size={12} class="mx-auto {props.chainMode ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}" />
+          <span class="sr-only">{props.chainMode ? 'Exit chain mode' : 'Enter chain mode'}</span>
+        </button>
 
         <!-- Theme Toggle Button -->
         <button

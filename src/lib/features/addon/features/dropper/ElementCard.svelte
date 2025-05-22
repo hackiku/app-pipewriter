@@ -150,16 +150,6 @@
           onerror={handleImageError}
         />
 
-        <!-- Tier Badge - Using your smaller sizing -->
-        <div class="absolute top-0.5 right-0.5 z-10">
-          <div class="text-[0.4rem] px-1 rounded-md font-medium opacity-80 {
-            (props.element.metadata?.tier === 'pro') 
-              ? 'bg-primary/80 text-white' 
-              : 'bg-neutral-200/80 dark:bg-neutral-700/80 text-neutral-700 dark:text-neutral-200'
-          }">
-            {props.element.metadata?.tier === 'pro' ? 'Pro' : 'Free'}
-          </div>
-        </div>
       {/if}
       
       {#if isLocked}
