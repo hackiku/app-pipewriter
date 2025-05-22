@@ -12,9 +12,9 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 	const isPublicRoute = publicRoutes.some(route => url.pathname === route);
 
 	// For /addon route specifically, redirect to home if not authenticated
-	if (url.pathname.startsWith('/addon') && !locals.authenticated) {
-		throw redirect(303, '/');
-	}
+	// if (url.pathname.startsWith('/addon') && !locals.authenticated) {
+	// 	throw redirect(303, '/');
+	// }
 
 	// If authenticated, load additional user data
 	if (locals.authenticated && locals.user) {

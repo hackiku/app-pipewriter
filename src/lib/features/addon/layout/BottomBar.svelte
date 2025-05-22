@@ -4,7 +4,7 @@
 	import { ExternalLink, HelpCircle, ChevronDown } from '@lucide/svelte';
   import { Button } from '$lib/components/ui/button';
   import AppAbout from './AppAbout.svelte';
-  import UserAvatar from './user/UserAvatar.svelte';
+  import UserAvatar from '$lib/components/user/UserAvatar.svelte';
   import { docLinks, DRIVE_FOLDER_URL } from '$lib/data/addon/templateDocs';
   
   // Props
@@ -101,11 +101,11 @@
     >
       <HelpCircle class="h-4 w-4" />
     </Button>
-    
+
     <UserAvatar />
   </div>
   
-  <!-- About Modal -->
+
   <AppAbout 
     showAboutModal={showAboutModal}
     onToggleAboutModal={toggleAboutModal}
