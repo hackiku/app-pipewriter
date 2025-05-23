@@ -1,7 +1,8 @@
 <!-- src/lib/features/addon/features/table/SizeControls.svelte -->
+
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
-  import { Loader2, Save } from "lucide-svelte";
+  import { Loader2, Save } from "@lucide/svelte";
 
   // Props
   const props = $props<{

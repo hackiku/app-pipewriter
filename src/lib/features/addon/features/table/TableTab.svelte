@@ -3,6 +3,7 @@
   import InteractiveTable from './InteractiveTable.svelte';
   import AlignmentButtonGrid from './AlignmentButtonGrid.svelte';
   import SizeControls from './SizeControls.svelte';
+  import { setTableAlignment, setCellAlignment, setTableProperties } from '$lib/services/google/table';
 
   // Props
   const props = $props<{
@@ -24,7 +25,7 @@
   let isProcessing = $state(false);
 
   // Size state
-  let columns = $state(3);
+  let columns = $state(2);
   let rows = $state(2);
   let columnWidth = $state(2.5);
   let rowHeight = $state(0.75);
@@ -37,7 +38,6 @@
     isProcessing = true;
     props.onProcessingStart?.();
 
-    const action = type === 'table' ? 'tableAlignHorizontal' : 'tableAlignVertical';
     const message = type === 'table' ? `Aligning table ${value}...` : `Aligning cell content ${value}...`;
 
     props.onStatusUpdate?.({
@@ -46,34 +46,23 @@
     });
 
     try {
-      // Call Google Apps Script
-      await new Promise((resolve, reject) => {
-        google.script.run
-          .withSuccessHandler((result: any) => {
-            if (result.success) {
-              // Update local state
-              if (type === 'table') {
-                tableAlignment = value as 'left' | 'center' | 'right';
-              } else {
-                cellAlignment = value as 'top' | 'middle' | 'bottom';
-              }
-              
-              props.onStatusUpdate?.({
-                type: 'success',
-                message: result.message,
-                executionTime: result.executionTime
-              });
-              resolve(result);
-            } else {
-              reject(new Error(result.error));
-            }
-          })
-          .withFailureHandler(reject)
-          .tableOps({
-            action,
-            payload: { alignment: value }
-          });
-      });
+      let response;
+      
+      if (type === 'table') {
+        response = await setTableAlignment(value as 'left' | 'center' | 'right', props.onStatusUpdate);
+        if (response.success) {
+          tableAlignment = value as 'left' | 'center' | 'right';
+        }
+      } else {
+        response = await setCellAlignment(value as 'top' | 'middle' | 'bottom', props.onStatusUpdate);
+        if (response.success) {
+          cellAlignment = value as 'top' | 'middle' | 'bottom';
+        }
+      }
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to apply alignment');
+      }
 
     } catch (error) {
       console.error('Alignment error:', error);
@@ -99,16 +88,30 @@
       message: 'Applying table changes...'
     });
 
-    // Simulate applying size changes
-    setTimeout(() => {
+    try {
+      const response = await setTableProperties({
+        columns,
+        rows,
+        columnWidth,
+        rowHeight,
+        cellPadding
+      }, props.onStatusUpdate);
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to apply table properties');
+      }
+
+    } catch (error) {
+      console.error('Apply error:', error);
       props.onStatusUpdate?.({
-        type: 'success',
-        message: 'Table properties applied',
-        executionTime: 500
+        type: 'error',
+        message: 'Failed to apply table properties',
+        error
       });
+    } finally {
       isProcessing = false;
       props.onProcessingEnd?.();
-    }, 500);
+    }
   }
 </script>
 

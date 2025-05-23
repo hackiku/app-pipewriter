@@ -32,7 +32,7 @@
 
   // Generate grid template columns based on column count
   function getGridCols() {
-    return `repeat(${props.columns}, 1fr)`;
+    return `repeat(${props.columns}, 0fr)`;
   }
 
   // Generate total cells

@@ -4,3 +4,4 @@ export * from './docs';
 export * from './colors';
 export * from './html';
 export * from './text';
+export * from './table';

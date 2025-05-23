@@ -9,7 +9,7 @@
     AlignCenterVertical, 
     AlignEndVertical,
     Loader2
-  } from "lucide-svelte";
+  } from "@lucide/svelte";
 
   // Props
   const props = $props<{
