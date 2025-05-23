@@ -14,10 +14,10 @@
 		ThumbsUp,
 		AlertCircle,
 	} from "lucide-svelte";
-	import { cn } from "$lib/utils";
+	// import { cn } from "$lib/utils";
 
 	// Import tab components
-	// import TableWrapper from "./TableWrapper.svelte";
+	import TableTab from "./table/TableTab.svelte";
 	import ColorTab from "./colors/ColorTab.svelte";
 	import TextTab from "./text/TextTab.svelte";
 	import AiTab from "./ai/AiTab.svelte";
@@ -44,12 +44,12 @@
 
 	// Tab definitions
 	const tabs = {
-		// table: {
-		// 	icon: Table,
-		// 	title: "Background Color",
-		// 	description: "Change document background color",
-		// 	component: TableWrapper,
-		// },
+		table: {
+			icon: Table,
+			title: "Background Color",
+			description: "Change document background color",
+			component: TableTab,
+		},
 		color: {
 			icon: Palette,
 			title: "Background Color",

@@ -1,116 +1,156 @@
-<!-- src/lib/features/addon/features/TableWrapper.svelte -->
+<!-- src/lib/features/addon/features/table/TableTab.svelte -->
 <script lang="ts">
-  import { Table2, Pipette, Save, Loader2 } from "lucide-svelte";
-  import { Button } from "$lib/components/ui/button";
-  import Interactive from "./interactive/index.svelte";
-  // import { resetState } from "./table/tableContext.svelte.ts";
-  // import { updateTableConfig, getAppsScriptConfig, getTableConfig } from "./table/tableContext.svelte.ts";
-  
-  // Get any props passed from parent
+  import InteractiveTable from './InteractiveTable.svelte';
+  import AlignmentButtonGrid from './AlignmentButtonGrid.svelte';
+  import SizeControls from './SizeControls.svelte';
+
+  // Props
   const props = $props<{
     context?: any;
-    onStatusUpdate?: (status: any) => void;
+    onStatusUpdate?: (status: {
+      type: 'processing' | 'success' | 'error';
+      message: string;
+      details?: string;
+      executionTime?: number;
+      error?: any;
+    }) => void;
     onProcessingStart?: () => void;
     onProcessingEnd?: () => void;
   }>();
-  
-  // Local processing state
+
+  // Internal state - no external context needed
+  let tableAlignment = $state<'left' | 'center' | 'right'>('center');
+  let cellAlignment = $state<'top' | 'middle' | 'bottom'>('middle');
   let isProcessing = $state(false);
-  
-  // Get current table properties from the document
-  function getTableProperties() {
-    console.log("Getting current table properties from document");
+
+  // Size state
+  let columns = $state(3);
+  let rows = $state(2);
+  let columnWidth = $state(2.5);
+  let rowHeight = $state(0.75);
+  let cellPadding = $state(0.08);
+
+  // Handle alignment changes
+  async function handleAlignmentChange(type: 'table' | 'cell', value: string) {
+    if (isProcessing) return;
+
     isProcessing = true;
-    
-    if (props.onProcessingStart) props.onProcessingStart();
-    if (props.onStatusUpdate) props.onStatusUpdate({
+    props.onProcessingStart?.();
+
+    const action = type === 'table' ? 'tableAlignHorizontal' : 'tableAlignVertical';
+    const message = type === 'table' ? `Aligning table ${value}...` : `Aligning cell content ${value}...`;
+
+    props.onStatusUpdate?.({
       type: 'processing',
-      message: 'Getting table properties...'
+      message
     });
-    
-    // Simulate API call to Google Apps Script
-    setTimeout(() => {
-      // Mock response from Google Docs API
-      updateTableConfig({
-        alignment: {
-          tableAlignment: "left",
-          cellVerticalAlignment: "top"
-        }
+
+    try {
+      // Call Google Apps Script
+      await new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler((result: any) => {
+            if (result.success) {
+              // Update local state
+              if (type === 'table') {
+                tableAlignment = value as 'left' | 'center' | 'right';
+              } else {
+                cellAlignment = value as 'top' | 'middle' | 'bottom';
+              }
+              
+              props.onStatusUpdate?.({
+                type: 'success',
+                message: result.message,
+                executionTime: result.executionTime
+              });
+              resolve(result);
+            } else {
+              reject(new Error(result.error));
+            }
+          })
+          .withFailureHandler(reject)
+          .tableOps({
+            action,
+            payload: { alignment: value }
+          });
       });
-      
-      // resetState();
-      console.log("Retrieved table properties");
+
+    } catch (error) {
+      console.error('Alignment error:', error);
+      props.onStatusUpdate?.({
+        type: 'error',
+        message: `Failed to ${type === 'table' ? 'align table' : 'align cell content'}`,
+        error
+      });
+    } finally {
       isProcessing = false;
-      
-      if (props.onProcessingEnd) props.onProcessingEnd();
-      if (props.onStatusUpdate) props.onStatusUpdate({
-        type: 'success',
-        message: 'Table properties retrieved'
-      });
-    }, 800);
+      props.onProcessingEnd?.();
+    }
   }
-  
-  // Apply changes to the actual table
-  function applyChanges() {
-    // Here we would call the Google Docs API to update the table
-    const appsScriptConfig = getAppsScriptConfig();
-    console.log("Applying table changes to Apps Script:", appsScriptConfig);
+
+  // Handle apply changes
+  async function handleApply() {
+    if (isProcessing) return;
+
     isProcessing = true;
-    
-    if (props.onProcessingStart) props.onProcessingStart();
-    if (props.onStatusUpdate) props.onStatusUpdate({
+    props.onProcessingStart?.();
+    props.onStatusUpdate?.({
       type: 'processing',
-      message: 'Applying table properties...'
+      message: 'Applying table changes...'
     });
-    
-    // Simulate API call
+
+    // Simulate applying size changes
     setTimeout(() => {
-      console.log("Table properties applied");
-      isProcessing = false;
-      
-      if (props.onProcessingEnd) props.onProcessingEnd();
-      if (props.onStatusUpdate) props.onStatusUpdate({
+      props.onStatusUpdate?.({
         type: 'success',
-        message: 'Table properties applied'
+        message: 'Table properties applied',
+        executionTime: 500
       });
-    }, 800);
+      isProcessing = false;
+      props.onProcessingEnd?.();
+    }, 500);
   }
 </script>
 
-<div class="w-full flex flex-col gap-4">
-  <!-- Interactive table component -->
-  <Interactive />
-  
-  <!-- Button row -->
-  <div class="flex justify-between items-center w-full">
-    <Button 
-      variant="secondary" 
-      onclick={getTableProperties}
-      class="flex items-center gap-2"
-      disabled={isProcessing}
-    >
-      {#if isProcessing}
-        <Loader2 class="h-4 w-4 animate-spin" />
-        <span>Getting...</span>
-      {:else}
-        <Pipette class="h-4 w-4" />
-        <span>Get</span>
-      {/if}
-    </Button>
+<div class="flex flex-col w-full gap-4">
+  <!-- Row 1: Interactive Table + Alignment Controls (50/50 split) -->
+  <div class="grid grid-cols-2 gap-4">
+    <!-- Left: Interactive Table Preview -->
+    <div>
+      <InteractiveTable 
+        {tableAlignment} 
+        {cellAlignment}
+        {columns}
+        {rows}
+      />
+    </div>
     
-    <Button 
-      variant="default" 
-      onclick={applyChanges}
-      class="flex items-center gap-2"
-      disabled={isProcessing}
-    >
-      {#if isProcessing}
-        <Loader2 class="h-4 w-4 animate-spin" />
-        <span>Applying...</span>
-      {:else}
-        <Save class="h-4 w-4" />
-        <span>Apply</span>
-      {/if}
-    </Button>
+    <!-- Right: Alignment Button Grid -->
+    <div>
+      <AlignmentButtonGrid
+        {tableAlignment}
+        {cellAlignment}
+        {isProcessing}
+        onAlignmentChange={handleAlignmentChange}
+      />
+    </div>
+  </div>
+
+  <!-- Row 2: Size Controls -->
+  <div>
+    <SizeControls
+      {columns}
+      {rows}
+      {columnWidth}
+      {rowHeight}
+      {cellPadding}
+      {isProcessing}
+      onColumnsChange={(value) => columns = value}
+      onRowsChange={(value) => rows = value}
+      onColumnWidthChange={(value) => columnWidth = value}
+      onRowHeightChange={(value) => rowHeight = value}
+      onCellPaddingChange={(value) => cellPadding = value}
+      onApply={handleApply}
+    />
   </div>
 </div>

@@ -9,8 +9,10 @@
 	import BottomBar from "./layout/BottomBar.svelte";
 	import Dropper from "./features/Dropper.svelte";
 	import DropperQueue from "./features/dropper/DropperQueue.svelte";
-	import TableTab from "./features/table/TableTab.svelte";
 	import Tabs from "./features/Tabs.svelte"; 
+	
+	import TableTab from "./features/table/TableTab.svelte";
+	
 	import { getGoogleService } from "$lib/services/google/client";
 	import type { GoogleAppsService } from "$lib/services/google/client";
 	import TrialBanner from "$lib/components/trial/TrialBanner.svelte";
@@ -125,6 +127,9 @@
 					class={activeTab || showAboutModal ? "z-0" : ""}
 				/>
 				<Resizable.Pane defaultSize={chainModeState.chainMode ? 35 : 35} minSize={0}>
+					<div class="m-2 p-4 border">
+						<TableTab />
+					</div>
 					{#if chainModeState.chainMode}
 					<!-- TODO: stopped displaying when chainmode on. display nothing when offm but load back the TableTab commented out ) -->
 					<!-- Show DropperQueue when chain mode is active -->

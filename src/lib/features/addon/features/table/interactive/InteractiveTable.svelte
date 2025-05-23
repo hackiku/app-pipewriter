@@ -14,7 +14,7 @@
     syncSelectedPositionWithConfig,
     resetState
   } from "../tableContext.svelte";
-  import { AlignStartVertical, AlignCenterVertical, AlignEndVertical, Delete } from "lucide-svelte";
+  import { AlignStartVertical, AlignCenterVertical, AlignEndVertical, Delete } from "@lucide/svelte";
   
   // Local statex
   let tableConfig = $derived(getTableConfig());

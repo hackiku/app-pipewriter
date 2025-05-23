@@ -1,7 +1,7 @@
 <!-- src/lib/features/dashboard/store/CategoryFilter.svelte -->
 <script lang="ts">
   import { Button } from '$lib/components/ui/button';
-  import { Filter, ChevronDown } from 'lucide-svelte';
+  import { Filter, ChevronDown } from '@lucide/svelte';
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
   import { cn } from '$lib/utils';
   
