@@ -3,7 +3,7 @@
   import CategoryFilter from '$lib/features/dashboard/store/CategoryFilter.svelte';
   import TemplateGrid from '$lib/features/dashboard/store/TemplateGrid.svelte';
   import { Badge } from '$lib/components/ui/badge';
-  import { Package, ShoppingBag } from 'lucide-svelte';
+  import { Package, ShoppingBag } from '@lucide/svelte';
   
   // Get data - destructure safely
   const { data } = $props();

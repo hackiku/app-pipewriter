@@ -126,7 +126,7 @@ export function signIn() {
 }
 
 // Simple sign out function
-export function signOut() {
+export async function signOut() {
 	if (!browser) return Promise.resolve(false);
 	error = null;
 

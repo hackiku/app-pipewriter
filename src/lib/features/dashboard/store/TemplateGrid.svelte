@@ -1,7 +1,7 @@
 <!-- src/lib/features/dashboard/store/TemplateGrid.svelte -->
 <script lang="ts">
   import TemplateCard from './TemplateCard.svelte';
-  import { Package } from 'lucide-svelte';
+  import { Package } from '@lucide/svelte';
   
   // Props
   const props = $props<{

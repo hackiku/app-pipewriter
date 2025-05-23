@@ -3,7 +3,7 @@
   import * as Card from '$lib/components/ui/card';
   import { Button } from '$lib/components/ui/button';
   import { Badge } from '$lib/components/ui/badge';
-  import { ShoppingCart, Heart, Star, Download, TrendingUp, Eye } from 'lucide-svelte';
+  import { ShoppingCart, Heart, Star, Download, TrendingUp, Eye } from '@lucide/svelte';
   import { cn } from '$lib/utils';
   import { goto } from '$app/navigation';
   
