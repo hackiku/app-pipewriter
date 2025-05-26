@@ -39,16 +39,16 @@
     const isSelected = currentValue === value;
     
     return cn(
-      "flex h-9 w-9 items-center justify-center transition-all",
+      "flex h-8 w-8 items-center justify-center transition-all",
       "border rounded-md",
       isSelected 
         ? "bg-primary/10 border-primary text-primary" 
-        : "bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700",
+        : "bg-card border-border hover:bg-accent",
       props.isProcessing && "opacity-50 cursor-not-allowed"
     );
   }
 
-  // Handle button click
+  // Handle button click - no status updates, just local state
   function handleClick(type: 'table' | 'cell', value: string) {
     if (!props.isProcessing) {
       props.onAlignmentChange(type, value);
@@ -64,6 +64,7 @@
     </h3>
     <div class="grid grid-cols-3 gap-2">
       {#each tableAlignments as align}
+        {@const IconComponent = align.icon}
         <button
           class={getButtonClass('table', align.value)}
           onclick={() => handleClick('table', align.value)}
@@ -71,9 +72,9 @@
           title={align.label}
         >
           {#if props.isProcessing && props.tableAlignment === align.value}
-            <Loader2 class="h-4 w-4 animate-spin" />
+            <Loader2 class="h-3 w-3 animate-spin" />
           {:else}
-            <svelte:component this={align.icon} class="h-4 w-4" />
+            <IconComponent class="h-3 w-3" />
           {/if}
         </button>
       {/each}
@@ -87,6 +88,7 @@
     </h3>
     <div class="grid grid-cols-3 gap-2">
       {#each cellAlignments as align}
+        {@const IconComponent = align.icon}
         <button
           class={getButtonClass('cell', align.value)}
           onclick={() => handleClick('cell', align.value)}
@@ -94,9 +96,9 @@
           title={align.label}
         >
           {#if props.isProcessing && props.cellAlignment === align.value}
-            <Loader2 class="h-4 w-4 animate-spin" />
+            <Loader2 class="h-3 w-3 animate-spin" />
           {:else}
-            <svelte:component this={align.icon} class="h-3 w-3" />
+            <IconComponent class="h-3 w-3" />
           {/if}
         </button>
       {/each}

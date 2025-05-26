@@ -46,8 +46,8 @@
 	const tabs = {
 		table: {
 			icon: Table,
-			title: "Background Color",
-			description: "Change document background color",
+			title: "Table Editor",
+			description: "Edit currently selected table",
 			component: TableTab,
 		},
 		color: {
@@ -163,7 +163,7 @@
 	{#if activeTab && activeTabData}
 		<div
 			class="absolute bottom-full w-full rounded-t-lg border border-neutral-300
-             dark:border-neutral-600 {BG_STYLE}"
+             dark:border-neutral-700 {BG_STYLE}"
 			transition:fade={{ duration: 200 }}
 		>
 			<!-- Tab Header -->
@@ -178,12 +178,12 @@
 			<!-- Tab Content -->
 			<div class="relative px-4 py-4">
 				{#if activeTab === "table"}
-					<!-- <TableWrapper
+					<TableTab
 						{context}
 						onStatusUpdate={handleStatus}
 						onProcessingStart={handleProcessingStart}
 						onProcessingEnd={handleProcessingEnd}
-					/> -->
+					/>
 
 				{:else if activeTab === "color"}
 				<!-- {#if activeTab === "color"} -->

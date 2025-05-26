@@ -24,60 +24,19 @@
   let cellAlignment = $state<'top' | 'middle' | 'bottom'>('middle');
   let isProcessing = $state(false);
 
-  // Size state
-  let columns = $state(2);
-  let rows = $state(2);
-  let columnWidth = $state(2.5);
-  let rowHeight = $state(0.75);
-  let cellPadding = $state(0.08);
+  // Only cell padding control - default to 0.00 inches
+  let cellPadding = $state(0.00);
 
-  // Handle alignment changes
-  async function handleAlignmentChange(type: 'table' | 'cell', value: string) {
-    if (isProcessing) return;
-
-    isProcessing = true;
-    props.onProcessingStart?.();
-
-    const message = type === 'table' ? `Aligning table ${value}...` : `Aligning cell content ${value}...`;
-
-    props.onStatusUpdate?.({
-      type: 'processing',
-      message
-    });
-
-    try {
-      let response;
-      
-      if (type === 'table') {
-        response = await setTableAlignment(value as 'left' | 'center' | 'right', props.onStatusUpdate);
-        if (response.success) {
-          tableAlignment = value as 'left' | 'center' | 'right';
-        }
-      } else {
-        response = await setCellAlignment(value as 'top' | 'middle' | 'bottom', props.onStatusUpdate);
-        if (response.success) {
-          cellAlignment = value as 'top' | 'middle' | 'bottom';
-        }
-      }
-
-      if (!response.success) {
-        throw new Error(response.error || 'Failed to apply alignment');
-      }
-
-    } catch (error) {
-      console.error('Alignment error:', error);
-      props.onStatusUpdate?.({
-        type: 'error',
-        message: `Failed to ${type === 'table' ? 'align table' : 'align cell content'}`,
-        error
-      });
-    } finally {
-      isProcessing = false;
-      props.onProcessingEnd?.();
+  // Handle alignment changes - no status updates, just local state
+  function handleAlignmentChange(type: 'table' | 'cell', value: string) {
+    if (type === 'table') {
+      tableAlignment = value as 'left' | 'center' | 'right';
+    } else {
+      cellAlignment = value as 'top' | 'middle' | 'bottom';
     }
   }
 
-  // Handle apply changes
+  // Handle apply changes - only trigger status here
   async function handleApply() {
     if (isProcessing) return;
 
@@ -85,21 +44,25 @@
     props.onProcessingStart?.();
     props.onStatusUpdate?.({
       type: 'processing',
-      message: 'Applying table changes...'
+      message: 'Applying table properties...'
     });
 
     try {
-      const response = await setTableProperties({
-        columns,
-        rows,
-        columnWidth,
-        rowHeight,
+      // Apply both alignment and padding properties
+      const alignmentResponse = await setTableAlignment(tableAlignment, props.onStatusUpdate);
+      const cellAlignResponse = await setCellAlignment(cellAlignment, props.onStatusUpdate);
+      const paddingResponse = await setTableProperties({
         cellPadding
       }, props.onStatusUpdate);
 
-      if (!response.success) {
-        throw new Error(response.error || 'Failed to apply table properties');
+      if (!alignmentResponse.success || !cellAlignResponse.success || !paddingResponse.success) {
+        throw new Error('Failed to apply table properties');
       }
+
+      props.onStatusUpdate?.({
+        type: 'success',
+        message: 'Table properties applied successfully'
+      });
 
     } catch (error) {
       console.error('Apply error:', error);
@@ -116,15 +79,13 @@
 </script>
 
 <div class="flex flex-col w-full gap-4">
-  <!-- Row 1: Interactive Table + Alignment Controls (50/50 split) -->
+  <!-- Row 1: Interactive Table + Alignment Controls (2-column grid) -->
   <div class="grid grid-cols-2 gap-4">
     <!-- Left: Interactive Table Preview -->
     <div>
       <InteractiveTable 
         {tableAlignment} 
         {cellAlignment}
-        {columns}
-        {rows}
       />
     </div>
     
@@ -139,19 +100,11 @@
     </div>
   </div>
 
-  <!-- Row 2: Size Controls -->
+  <!-- Row 2: Size Controls (matching 2-column layout) -->
   <div>
     <SizeControls
-      {columns}
-      {rows}
-      {columnWidth}
-      {rowHeight}
       {cellPadding}
       {isProcessing}
-      onColumnsChange={(value) => columns = value}
-      onRowsChange={(value) => rows = value}
-      onColumnWidthChange={(value) => columnWidth = value}
-      onRowHeightChange={(value) => rowHeight = value}
       onCellPaddingChange={(value) => cellPadding = value}
       onApply={handleApply}
     />
