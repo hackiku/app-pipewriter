@@ -32,7 +32,7 @@
 <div class="min-h-full bg-background flex flex-col">
   
 	<!-- Scaled up mode toggle -->
-	<div class="fixed top-3 right-3 scale-150 origin-top-right">
+	<div class="fixed top-3 right-3 scale-120 origin-top-right">
 		<ModeToggle />
 	</div>
 	

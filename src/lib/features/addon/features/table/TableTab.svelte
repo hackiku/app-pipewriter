@@ -78,7 +78,7 @@
   }
 </script>
 
-<div class="flex flex-col w-full gap-4">
+<div class="flex flex-col w-full gap-2">
   <!-- Row 1: Interactive Table + Alignment Controls (2-column grid) -->
   <div class="grid grid-cols-2 gap-4">
     <!-- Left: Interactive Table Preview -->

@@ -1,6 +1,6 @@
 <!-- $lib/iframe/AddOn.svelte -->
 <script lang="ts">
-	import { fade, slide } from "svelte/transition";
+	// import { fade, slide } from "svelte/transition";
 	import { setContext } from "svelte";
 	import * as Resizable from "$lib/components/ui/resizable";
 	import { browser } from "$app/environment";
@@ -127,9 +127,9 @@
 					class={activeTab || showAboutModal ? "z-0" : ""}
 				/>
 				<Resizable.Pane defaultSize={chainModeState.chainMode ? 35 : 35} minSize={0}>
-					<div class="m-2 p-4 border">
+					<!-- <div class="m-2 p-4 border">
 						<TableTab />
-					</div>
+					</div> -->
 					{#if chainModeState.chainMode}
 					<!-- TODO: stopped displaying when chainmode on. display nothing when offm but load back the TableTab commented out ) -->
 					<!-- Show DropperQueue when chain mode is active -->
