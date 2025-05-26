@@ -11,6 +11,11 @@ export const DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1k3ZaPn-
 
 export const docLinks: DocLink[] = [
 	{
+		title: "tableOps",
+		desc: "Scripty thingy",
+		url: "https://docs.google.com/document/d/1tTGB_CkcwggSImc6NsoBga-TKsJXxR3NPwx_7NzWrx8/edit?tab=t.0#heading=h.4zw3ivdqe6q4"
+	},
+	{
 		title: "Blank",
 		desc: "Start with a blank document",
 		url: "https://docs.google.com/document/d/1w8qegZlVeY9Lk7MKTu2WhYBrmEjAYvx1yHxPsEIWEDo/"

@@ -24,7 +24,7 @@
     const status = getSubscriptionStatus();
     switch (status) {
       case "Pro": return "bg-primary text-primary-foreground";
-      case "Trial": return "bg-amber-500 text-white";
+      case "Trial": return "bg-amber-700 text-white";
       default: return "bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300";
     }
   }
@@ -61,21 +61,21 @@
     onclick={toggleProfile}
     aria-label="Toggle profile menu"
   >
-    <Avatar.Root class="h-9 w-9">
+    <Avatar.Root class="h-7 w-7">
       {#if getUser() && getUser()?.photoURL}
         <Avatar.Image 
           src={getUser().photoURL} 
           alt="User avatar" 
         />
       {/if}
-      <Avatar.Fallback class="bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
+      <Avatar.Fallback class="bg-neutral-300 text-sm dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
         {getInitials()}
       </Avatar.Fallback>
     </Avatar.Root>
     
     <!-- Status Badge -->
     {#if getUser()}
-      <div class="absolute -top-1 -right-1 rounded-full text-[0.6rem] font-bold px-1 min-w-5 h-5 flex items-center justify-center {getBadgeColor()}">
+      <div class="absolute -top-2 -right-3 rounded-md text-[0.5rem] font-bold px-1 min-w-5 h-5 flex items-center justify-center {getBadgeColor()}">
         {getSubscriptionStatus()}
       </div>
     {/if}

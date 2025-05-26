@@ -1,9 +1,10 @@
 <!-- src/lib/features/addon/features/table/TableTab.svelte -->
+
 <script lang="ts">
   import InteractiveTable from './InteractiveTable.svelte';
   import AlignmentButtonGrid from './AlignmentButtonGrid.svelte';
   import SizeControls from './SizeControls.svelte';
-  import { setTableAlignment, setCellAlignment, setTableProperties } from '$lib/services/google/table';
+  import { getGoogleService } from '$lib/services/google/client';
 
   // Props
   const props = $props<{
@@ -24,10 +25,13 @@
   let cellAlignment = $state<'top' | 'middle' | 'bottom'>('middle');
   let isProcessing = $state(false);
 
-  // Only cell padding control - default to 0.00 inches
-  let cellPadding = $state(0.00);
+  // Scope selection (cell vs table)
+  let scope = $state<'cell' | 'table'>('table');
 
-  // Handle alignment changes - no status updates, just local state
+  // Cell padding in points (converted from inches)
+  let cellPadding = $state(0); // 0 points = no padding
+
+  // Handle alignment changes - just update local state (no API calls)
   function handleAlignmentChange(type: 'table' | 'cell', value: string) {
     if (type === 'table') {
       tableAlignment = value as 'left' | 'center' | 'right';
@@ -36,7 +40,22 @@
     }
   }
 
-  // Handle apply changes - only trigger status here
+  // Handle scope change
+  function toggleScope() {
+    scope = scope === 'cell' ? 'table' : 'cell';
+  }
+
+  // Convert inches to points for padding input
+  function inchesToPoints(inches: number): number {
+    return Math.round(inches * 72); // 1 inch = 72 points
+  }
+
+  // Handle cell padding change (convert inches to points)
+  function handlePaddingChange(inches: number) {
+    cellPadding = inchesToPoints(inches);
+  }
+
+  // Main apply function - sends all settings to backend
   async function handleApply() {
     if (isProcessing) return;
 
@@ -48,15 +67,31 @@
     });
 
     try {
-      // Apply both alignment and padding properties
-      const alignmentResponse = await setTableAlignment(tableAlignment, props.onStatusUpdate);
-      const cellAlignResponse = await setCellAlignment(cellAlignment, props.onStatusUpdate);
-      const paddingResponse = await setTableProperties({
-        cellPadding
+      const client = getGoogleService();
+      
+      // Apply table positioning (with limitations noted)
+      const positionResponse = await client.sendMessage('tableOps', {
+        action: 'setTablePosition',
+        alignment: tableAlignment
       }, props.onStatusUpdate);
 
-      if (!alignmentResponse.success || !cellAlignResponse.success || !paddingResponse.success) {
-        throw new Error('Failed to apply table properties');
+      // Apply cell content alignment  
+      const alignmentResponse = await client.sendMessage('tableOps', {
+        action: 'setCellAlignment',
+        scope: scope,
+        alignment: cellAlignment
+      }, props.onStatusUpdate);
+
+      // Apply cell padding
+      const paddingResponse = await client.sendMessage('tableOps', {
+        action: 'setCellPadding',
+        scope: scope,
+        padding: cellPadding
+      }, props.onStatusUpdate);
+
+      // Check if all operations succeeded
+      if (!positionResponse.success || !alignmentResponse.success || !paddingResponse.success) {
+        throw new Error('Some table operations failed');
       }
 
       props.onStatusUpdate?.({
@@ -78,8 +113,8 @@
   }
 </script>
 
-<div class="flex flex-col w-full gap-2">
-  <!-- Row 1: Interactive Table + Alignment Controls (2-column grid) -->
+<div class="flex flex-col w-full gap-4">
+  <!-- Row 1: Interactive Table + Alignment Controls -->
   <div class="grid grid-cols-2 gap-4">
     <!-- Left: Interactive Table Preview -->
     <div>
@@ -100,13 +135,39 @@
     </div>
   </div>
 
-  <!-- Row 2: Size Controls (matching 2-column layout) -->
-  <div>
+  <!-- Row 2: Scope Selector + Controls -->
+  <div class="space-y-3">
+    <!-- Scope Toggle -->
+    <div class="flex items-center justify-center">
+      <button
+        class="flex items-center gap-2 px-3 py-1.5 text-xs border border-border rounded-md hover:bg-accent transition-colors"
+        onclick={toggleScope}
+        disabled={isProcessing}
+      >
+        <span class="font-medium">Apply to:</span>
+        <span class={scope === 'table' ? 'text-primary font-semibold' : 'text-muted-foreground'}>
+          {scope === 'table' ? '📋 Whole Table' : '🎯 Selected Cell'}
+        </span>
+        <span class="text-xs opacity-60">(click to toggle)</span>
+      </button>
+    </div>
+
+    <!-- Size Controls -->
     <SizeControls
       {cellPadding}
       {isProcessing}
-      onCellPaddingChange={(value) => cellPadding = value}
+      onCellPaddingChange={handlePaddingChange}
       onApply={handleApply}
     />
+  </div>
+
+  <!-- Info Text -->
+  <div class="text-xs text-center text-muted-foreground space-y-1">
+    <p>Place cursor in table cell before applying</p>
+    {#if scope === 'cell'}
+      <p class="text-orange-600 dark:text-orange-400">⚡ Will apply to selected cell only</p>
+    {:else}
+      <p class="text-blue-600 dark:text-blue-400">🌐 Will apply to entire table</p>
+    {/if}
   </div>
 </div>

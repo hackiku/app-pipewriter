@@ -60,7 +60,7 @@
         <div class="py-1">
           {#each docLinks as link}
             <button 
-              class="w-full text-left px-2 py-1.5 hover:bg-accent hover:text-accent-foreground transition-colors rounded-sm"
+              class="w-full text-sm text-left px-2 py-1.5 hover:bg-accent hover:text-accent-foreground transition-colors rounded-sm"
               onclick={() => openUrl(link.url)}
             >
               <div class="flex items-start gap-2">
@@ -91,7 +91,7 @@
   </div>
 
   <!-- Help Button and User Avatar - Properly aligned -->
-  <div class="flex items-center gap-2">
+  <div class="flex items-center gap-2 mr-2">
     <Button
       variant="ghost"
       size="icon"
