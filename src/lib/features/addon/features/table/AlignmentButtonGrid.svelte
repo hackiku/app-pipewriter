@@ -56,10 +56,10 @@
   }
 </script>
 
-<div class="space-y-4">
+<div class="space-y-2">
   <!-- Table Position Section -->
   <div>
-    <h3 class="text-xs font-medium mb-2 text-neutral-600 dark:text-neutral-400">
+    <h3 class="text-[0.6em] mb-1 font-medium text-muted-foreground">
       Table Position
     </h3>
     <div class="grid grid-cols-3 gap-2">
@@ -82,7 +82,7 @@
 
   <!-- Cell Content Section -->
   <div>
-    <h3 class="text-xs font-medium mb-2 text-neutral-600 dark:text-neutral-400">
+    <h3 class="text-[0.6em] mb-1 font-medium text-muted-foreground">
       Cell Content
     </h3>
     <div class="grid grid-cols-3 gap-2">
@@ -96,7 +96,7 @@
           {#if props.isProcessing && props.cellAlignment === align.value}
             <Loader2 class="h-4 w-4 animate-spin" />
           {:else}
-            <svelte:component this={align.icon} class="h-4 w-4" />
+            <svelte:component this={align.icon} class="h-3 w-3" />
           {/if}
         </button>
       {/each}
