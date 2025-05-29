@@ -1,19 +1,13 @@
-<!-- $lib/iframe/features/dropper/DropperGrid.svelte -->
+<!-- Fixed src/lib/features/addon/features/dropper/DropperGrid.svelte -->
 <script lang="ts">
   import { getContext } from 'svelte';
   import ElementCard from './ElementCard.svelte';
-  import { elementManager, getElementsByCategory } from '$lib/data/addon/utils';
-  import type { ElementTheme, ElementCategory } from '$lib/data/addon/types';
-
+  import type { ElementTheme } from '$lib/types/elements';
   import { useTrialFeatures } from '$lib/context/trial.svelte';
+  import { createDropperElements } from '$lib/context/elements.svelte';
+  import type { DropperElementsStore } from '$lib/context/elements.svelte';
 
   const trialFeatures = useTrialFeatures();
-
-  function getUserTier() {
-    if (trialFeatures.trialInfo.isPro) return 'pro';
-    if (trialFeatures.trialInfo.active) return 'trial';
-    return 'free';
-  }
 
   // Props
   const props = $props<{
@@ -30,34 +24,27 @@
   // Get UI state from context
   const uiState = getContext('uiState');
 
-  // Local state
-  let categoriesCache = $state<Record<string, any>>({});
+  // Create elements store
+  const elementsStore = createDropperElements(getUserTier());
 
-  // Get grid classes based on column count
-  function getGridClasses() {
-    const gridCols = props.gridColumns || 3; // Default to 3 if undefined
-    return {
-      grid: `grid-cols-${gridCols}`,
-      gap: gridCols === 1 ? 'gap-5' : 'gap-2',
-      padding: gridCols === 1 ? 'px-8' : 'px-2'
-    };
+  // Get user tier from trial context
+  function getUserTier(): 'free' | 'trial' | 'pro' {
+    if (trialFeatures.trialInfo.isPro) return 'pro';
+    if (trialFeatures.trialInfo.active) return 'trial';
+    return 'free';
   }
 
-  // Load categories on theme change but use manual state tracking to prevent loops
-  let lastTheme = $state<ElementTheme | null>(null);
-
+  // Update store when theme changes
   $effect(() => {
-    if (lastTheme === props.theme) return;
+    elementsStore.setTheme(props.theme);
+  });
 
-    const userTier = getUserTier();
-    console.log(`Loading categories for theme ${props.theme}, tier: ${userTier}`);
-    const categories = elementManager.getElementsByCategory(props.theme, userTier);
-
-    setTimeout(() => {
-      categoriesCache = categories;
-      lastTheme = props.theme;
-      console.log('Categories loaded:', Object.keys(categoriesCache).length);
-    }, 0);
+  // Update store when user tier changes
+  $effect(() => {
+    const newTier = getUserTier();
+    if (newTier !== elementsStore.userTier) {
+      elementsStore.setUserTier(newTier);
+    }
   });
 
   // Handle element selection
@@ -78,19 +65,48 @@
       props.onChainToggle(elementId);
     }
   }
+
+  // Cleanup on destroy
+  $effect(() => {
+    return () => {
+      elementsStore.cleanup();
+    };
+  });
 </script>
 
 <div class="space-y-2 px-2 pb-10">
-  {#if Object.keys(categoriesCache).length === 0}
+  {#if elementsStore.loading}
     <div class="p-4 text-center">
-      <p class="text-neutral-500 dark:text-neutral-400">
-        Loading elements for theme: {props.theme}
+      <div class="flex flex-col items-center space-y-2">
+        <div class="h-6 w-6 border-2 border-t-transparent border-primary rounded-full animate-spin"></div>
+        <p class="text-neutral-500 dark:text-neutral-400 text-sm">
+          Loading elements...
+        </p>
+      </div>
+    </div>
+  {:else if elementsStore.error}
+    <div class="p-4 text-center">
+      <div class="text-red-500 dark:text-red-400 text-sm">
+        <p class="font-medium">Failed to load elements</p>
+        <p class="text-xs mt-1 opacity-75">{elementsStore.error}</p>
+        <button 
+          class="mt-2 px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded text-xs hover:bg-red-200 dark:hover:bg-red-900/50"
+          onclick={() => elementsStore.loadElements()}
+        >
+          Retry
+        </button>
+      </div>
+    </div>
+  {:else if Object.keys(elementsStore.elements).length === 0}
+    <div class="p-4 text-center">
+      <p class="text-neutral-500 dark:text-neutral-400 text-sm">
+        No elements available for theme: {props.theme}
       </p>
     </div>
   {:else}
-    {#each Object.entries(categoriesCache) as [category, categoryElements]}
+    {#each Object.entries(elementsStore.elements) as [category, categoryElements]}
       <section>
-        <!-- Use uiState.showInfo from context instead of local state -->
+        <!-- Category Header -->
         {#if uiState.showInfo}
           <h3
             class="mb-2 ml-2 text-xs font-normal capitalize text-neutral-400 dark:text-neutral-500"
@@ -99,6 +115,7 @@
           </h3>
         {/if}
 
+        <!-- Elements Grid -->
         <div class="grid grid-cols-3 gap-2">
           {#each categoryElements as element (element.id)}
             <ElementCard
@@ -111,6 +128,7 @@
               chainMode={props.chainMode || false}
               chainPosition={props.getChainPosition ? props.getChainPosition(element.id) : 0}
               onChainToggle={handleChainToggle}
+              svgUrl={elementsStore.getElementSvgUrl(element.id, props.theme)}
             />
           {/each}
         </div>
@@ -118,3 +136,13 @@
     {/each}
   {/if}
 </div>
+
+<!-- Debug info (remove in production) -->
+{#if process.env.NODE_ENV === 'development'}
+  <div class="fixed bottom-2 left-2 text-xs text-gray-400 font-mono">
+    Elements: {elementsStore.debugState().totalElements} | 
+    Categories: {elementsStore.debugState().categoriesCount} |
+    Tier: {elementsStore.userTier} |
+    Theme: {elementsStore.theme}
+  </div>
+{/if}

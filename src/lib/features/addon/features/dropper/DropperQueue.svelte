@@ -1,10 +1,10 @@
-<!-- $lib/iframe/features/dropper/DropperQueue.svelte -->
+<!-- Fixed src/lib/features/addon/features/dropper/DropperQueue.svelte -->
 <script lang="ts">
 	import { X, Play, XCircle } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { cn } from '$lib/utils';
-	import type { Element, ElementTheme } from '$lib/data/addon/types';
-	import { elementManager } from '$lib/data/addon/utils';
+	import type { ElementWithAccess, ElementTheme } from '$lib/types/elements';
+	import { elementsService } from '$lib/services/firestore/elements';
 
 	// Props
 	const props = $props<{
@@ -16,20 +16,37 @@
 		onDiscardQueue: () => void;
 	}>();
 
-	// Get element details for queued items
-	let queuedElementDetails = $derived(() => {
-		return props.queuedElements
-			.map((id) => elementManager.getElement(id))
-			.filter(Boolean) as Element[];
+	// Get element details for queued items - now using the new service
+	let queuedElementDetails = $state<ElementWithAccess[]>([]);
+	let loading = $state(false);
+
+	// Load element details when queue changes
+	$effect(async () => {
+		if (props.queuedElements.length === 0) {
+			queuedElementDetails = [];
+			return;
+		}
+
+		loading = true;
+		const elementPromises = props.queuedElements.map(id => 
+			elementsService.getElementById(id, 'trial') // Use trial tier for queue display
+		);
+
+		try {
+			const elements = await Promise.all(elementPromises);
+			queuedElementDetails = elements.filter(Boolean) as ElementWithAccess[];
+		} catch (error) {
+			console.error('Error loading queued elements:', error);
+			queuedElementDetails = [];
+		} finally {
+			loading = false;
+		}
 	});
 
-	// Function to get the correct image path based on both element theme and app theme
-	function getSvgUrl(element: Element): string {
-		const baseId = element.id.endsWith('-dark') ? element.id.replace(/-dark$/, '') : element.id;
-
-		// Use the element's theme directly since it's already processed
-		const svgPath = element.theme === 'dark' ? `${baseId}-dark.svg` : `${baseId}.svg`;
-		return `/elements/${svgPath}`;
+	// Function to get the correct image path
+	function getSvgUrl(element: ElementWithAccess): string {
+		// Use the svgPath from the element (calculated by service)
+		return element.svgPath;
 	}
 
 	// Handle remove element from queue
@@ -41,7 +58,6 @@
 </script>
 
 <div class="flex h-full flex-col bg-background">
-
 	<!-- Queue Content -->
 	<div class="flex-1 p-2 space-y-3">
 		<!-- Draggable Pad Container -->
@@ -50,7 +66,11 @@
 				<!-- Empty State -->
 				<div class="flex flex-1 items-center justify-center text-center">
 					<p class="text-sm text-muted-foreground">No elements queued</p>
-					<!-- <p class="text-xs text-muted-foreground/70 mt-1">Click elements above to add them to the queue</p> -->
+				</div>
+			{:else if loading}
+				<!-- Loading State -->
+				<div class="flex flex-1 items-center justify-center">
+					<div class="h-4 w-4 border-2 border-t-transparent border-primary rounded-full animate-spin"></div>
 				</div>
 			{:else}
 				<!-- Queued Elements -->
@@ -66,7 +86,7 @@
 									>
 										<img
 											src={getSvgUrl(element)}
-											alt={element.alt}
+											alt={element.description}
 											class="h-full w-full object-cover"
 											loading="lazy"
 										/>
@@ -79,7 +99,7 @@
 													? 'bg-primary/80 text-white'
 													: 'bg-neutral-200/80 text-neutral-700 dark:bg-neutral-700/80 dark:text-neutral-200'}"
 											>
-												{element.metadata?.tier === 'pro' ? 'Pro' : 'Free'}
+												{element.metadata?.tier === 'pro' ? 'Pro' : element.metadata?.tier || 'Free'}
 											</div>
 										</div>
 

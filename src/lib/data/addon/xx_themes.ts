@@ -1,5 +1,5 @@
 // src/lib/data/addon/themes.ts
-import { ElementTheme, Theme } from './types';
+import type { ElementTheme, Theme } from './types';
 
 // Define available themes
 export const themes: Theme[] = [

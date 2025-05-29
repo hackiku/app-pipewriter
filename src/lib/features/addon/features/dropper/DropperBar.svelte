@@ -2,7 +2,7 @@
 <script lang="ts">
 	import { Link2, PaintBucket, X, Plus } from '@lucide/svelte';
 	import ChainActions from './ChainActions.svelte';
-	import type { ElementTheme } from '$lib/data/addon/types';
+	import type { ElementTheme } from '$lib/types/elements';
 
 	// Props
 	const props = $props<{

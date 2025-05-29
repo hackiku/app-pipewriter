@@ -1,7 +1,7 @@
 <!-- $lib/iframe/features/dropper/ChainActions.svelte -->
 <script lang="ts">
 	import { X, Plus } from '@lucide/svelte';
-	import type { ElementTheme } from '$lib/data/addon/types';
+	import type { ElementTheme } from '$lib/types/elements';
 
 	// Simplified props - only what we actually need
 	const props = $props<{

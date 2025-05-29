@@ -1,11 +1,9 @@
-<!-- $lib/iframe/features/Dropper.svelte -->
+<!-- Fixed src/lib/features/addon/features/Dropper.svelte -->
 <script lang="ts">
   import { getContext } from "svelte";
   import { fade, slide, fly } from "svelte/transition";
-  import type { StatusUpdate } from "$lib/data/addon/types";
+  import type { ElementTheme, StatusUpdate } from '$lib/types/elements';
   import { insertElement } from "$lib/services/google/docs";
-  import { elementManager, getElementsByCategory } from '$lib/data/addon/utils';
-  import type { ElementTheme } from '$lib/data/addon/types';
   
   import StatusBar from "../components/StatusBar.svelte";
   import DropperGrid from "./dropper/DropperGrid.svelte";

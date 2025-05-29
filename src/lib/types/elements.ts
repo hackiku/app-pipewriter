@@ -1,4 +1,4 @@
-// src/lib/data/addon/types.ts
+// src/lib/types/elements.ts
 
 // Core element types - explicitly export these first
 export type ElementTheme = 'light' | 'dark';
