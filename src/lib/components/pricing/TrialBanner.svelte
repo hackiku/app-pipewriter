@@ -1,8 +1,9 @@
-<!-- src/lib/components/trial/TrialBanner.svelte -->
+<!-- src/lib/components/pricing/TrialBanner.svelte -->
+
 <script lang="ts">
   import { useTrialFeatures } from '$lib/context/trial.svelte';
   import { Button } from '$lib/components/ui/button';
-  import { ChevronDown, Sparkles, Clock, AlertTriangle, Terminal } from 'lucide-svelte';
+  import { ChevronDown, Sparkles, Clock, AlertTriangle, Terminal } from '@lucide/svelte';
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
   import { dev } from '$app/environment';
   import SimpleUpgradeModal from '$lib/components/pricing/SimpleUpgradeModal.svelte';

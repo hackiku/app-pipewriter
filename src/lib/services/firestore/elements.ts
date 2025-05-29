@@ -233,17 +233,15 @@ class ElementsService {
 
 	/**
 	 * Get the correct SVG URL based on app theme and element theme
-	 * This is the main function components should use
+	 * FIXED: Dropper theme creates CONTRAST with app theme
 	 */
 	getSvgUrl(elementId: string, elementTheme: ElementTheme, appTheme: ElementTheme): string {
 		const baseId = elementId.endsWith('-dark') ? elementId.replace(/-dark$/, '') : elementId;
 
-		// Logic: Show dark variant when:
-		// 1. Element theme is dark, OR
-		// 2. App is in dark mode AND element theme is light (invert for contrast)
-		const shouldUseDarkVariant =
-			elementTheme === 'dark' ||
-			(appTheme === 'dark' && elementTheme === 'light');
+		// FIXED LOGIC: Dropper theme is opposite of app theme for contrast
+		// - Same themes → use light SVG (backgrounds will be contrasting)  
+		// - Different themes → use dark SVG (backgrounds will be similar)
+		const shouldUseDarkVariant = elementTheme !== appTheme;
 
 		const svgPath = shouldUseDarkVariant ? `${baseId}-dark.svg` : `${baseId}.svg`;
 		return `/elements/${svgPath}`;

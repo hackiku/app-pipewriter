@@ -15,7 +15,7 @@
 	
 	import { getGoogleService } from "$lib/services/google/client";
 	import type { GoogleAppsService } from "$lib/services/google/client";
-	import TrialBanner from "$lib/components/trial/TrialBanner.svelte";
+	import TrialBanner from "$lib/components/pricing/TrialBanner.svelte";
 	
 	// Component state with Runes
 	let zenMode = $state(false);

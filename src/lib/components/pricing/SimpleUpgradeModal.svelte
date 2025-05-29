@@ -1,8 +1,8 @@
 <!-- src/lib/components/pricing/SimpleUpgradeModal.svelte -->
 <script lang="ts">
   import * as Dialog from "$lib/components/ui/dialog";
+  import { Crown } from '@lucide/svelte';
   import { Button } from "$lib/components/ui/button";
-  import { Crown } from 'lucide-svelte';
   import { useTrialFeatures } from '$lib/context/trial.svelte';
   
   // Props
