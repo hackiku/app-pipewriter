@@ -1,13 +1,12 @@
-<!-- $lib/iframe/features/dropper/DropperBar.svelte -->
+<!-- Fixed src/lib/features/addon/features/dropper/DropperBar.svelte -->
 <script lang="ts">
 	import { Link2, PaintBucket, X, Plus } from '@lucide/svelte';
-	import ChainActions from './ChainActions.svelte';
 	import type { ElementTheme } from '$lib/types/elements';
 
-	// Props
+	// Props - FIXED: theme should be ElementTheme, not string
 	const props = $props<{
 		isProcessing: boolean;
-		theme: string;
+		theme: ElementTheme; // Changed from string to ElementTheme
 		selectedElements: string[];
 		chainMode: boolean;
 		queuedElements?: string[];
@@ -29,12 +28,12 @@
 	let gridColumns = $state(3);
 
 	// Themes configuration (these won't change)
-	const themes = [
+	const themes: Array<{ id: ElementTheme; color: string; label: string }> = [
 		{ id: 'light', color: '#FFFFFF', label: 'Light' },
 		{ id: 'dark', color: '#171717', label: 'Dark' }
 	];
 
-	// Current theme
+	// Current theme - FIXED: proper type checking
 	let currentTheme = $derived(() => {
 		return themes.find((t) => t.id === props.theme) || themes[0];
 	});
@@ -109,20 +108,18 @@
 				
 				<!-- Theme Toggle Button -->
 				<button
-				class="h-7 w-7 rounded-full border-2 border-border/60
-				transition-all duration-150
-				hover:border-primary/60 hover:shadow-sm active:scale-95 dark:hover:border-primary/80"
-				style={`background-color: ${currentTheme.color}`}
-				disabled={props.isProcessing}
-				onclick={props.onToggleTheme}
-				title={`Switch to ${nextTheme.label} theme`}
+					class="h-7 w-7 rounded-full border-2 border-border/60
+					transition-all duration-150
+					hover:border-primary/60 hover:shadow-sm active:scale-95 dark:hover:border-primary/80"
+					style={`background-color: ${currentTheme.color}`}
+					disabled={props.isProcessing}
+					onclick={props.onToggleTheme}
+					title={`Switch to ${nextTheme.label} theme`}
 				>
-				<PaintBucket
-					size={14}
-					class="mx-auto {props.chainMode
-						? 'text-primary-foreground'
-						: 'text-muted-foreground hover:text-foreground'}"
-				/>
+					<PaintBucket
+						size={14}
+						class="mx-auto text-muted-foreground hover:text-foreground"
+					/>
 					<span class="sr-only">Switch to {nextTheme.label} theme</span>
 				</button>
 
@@ -142,6 +139,7 @@
 				</button>
 			</div>
 
+			<!-- Chain Mode Actions -->
 			{#if props.chainMode}
 				<div class="flex items-center gap-2">
 					<!-- Clear/Reset Button -->
@@ -154,6 +152,7 @@
 		       hover:shadow-sm active:scale-95
 		       disabled:cursor-not-allowed disabled:opacity-50"
 						onclick={props.onDiscardQueue}
+						disabled={props.isProcessing || !props.queuedElements?.length}
 						title="Clear queue"
 					>
 						<X size={12} class="mx-auto" />
@@ -169,20 +168,13 @@
 		       hover:shadow-sm active:scale-95
 		       disabled:cursor-not-allowed disabled:opacity-50"
 						onclick={props.onApplyQueue}
+						disabled={props.isProcessing || !props.queuedElements?.length}
+						title={`Drop ${props.queuedElements?.length || 0} elements`}
 					>
 						<Plus size={12} class="mx-auto" />
 					</button>
 				</div>
 			{/if}
-			<!-- Right Side Chain Actions -->
-			<!-- {#if props.chainMode && props.queuedElements && props.queuedElements.length >= 0 && props.onApplyQueue && props.onDiscardQueue}
-        <ChainActions 
-          queuedElements={props.queuedElements}
-          isProcessing={props.isProcessing}
-          onApplyQueue={props.onApplyQueue}
-          onDiscardQueue={props.onDiscardQueue}
-        />
-				{/if} -->
 		</div>
 	</div>
 </div>

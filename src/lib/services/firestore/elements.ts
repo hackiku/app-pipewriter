@@ -1,4 +1,4 @@
-// src/lib/services/firestore/elements.ts
+// src/lib/services/firestore/elements.ts - Fixed version
 
 import { getFirebaseService } from '$lib/services/firebase/client';
 import { collection, getDocs, query, where, orderBy, onSnapshot } from 'firebase/firestore';
@@ -17,6 +17,17 @@ class ElementsService {
 	private cacheExpiry = 0;
 	private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 	private unsubscribe: (() => void) | null = null;
+
+	// Define category order for consistent display
+	private readonly CATEGORY_ORDER = [
+		'containers',
+		'content',
+		'buttons',
+		'cards',
+		'blurbs',
+		'lists',
+		'special'
+	];
 
 	static getInstance(): ElementsService {
 		if (!this.instance) {
@@ -39,6 +50,8 @@ class ElementsService {
 		try {
 			const { db } = getFirebaseService();
 			const elementsRef = collection(db, 'elements');
+
+			// Fixed query with proper ordering
 			const q = query(
 				elementsRef,
 				where('active', '==', true),
@@ -56,8 +69,25 @@ class ElementsService {
 				elements.push(element);
 			});
 
+			// Sort elements by our custom category order
+			elements.sort((a, b) => {
+				const aOrder = this.CATEGORY_ORDER.indexOf(a.category);
+				const bOrder = this.CATEGORY_ORDER.indexOf(b.category);
+
+				// If category not in our order, put it at the end
+				const aIndex = aOrder === -1 ? 999 : aOrder;
+				const bIndex = bOrder === -1 ? 999 : bOrder;
+
+				if (aIndex !== bIndex) {
+					return aIndex - bIndex;
+				}
+
+				// Within same category, sort by ID
+				return a.id.localeCompare(b.id);
+			});
+
 			this.cacheExpiry = now + this.CACHE_DURATION;
-			console.log(`✅ Loaded ${elements.length} elements from Firestore`);
+			console.log(`✅ Loaded ${elements.length} elements from Firestore (ordered)`);
 			return elements;
 
 		} catch (error) {
@@ -75,7 +105,7 @@ class ElementsService {
 	): Promise<Record<string, ElementWithAccess[]>> {
 		const elements = await this.getElements();
 
-		return elements.reduce((grouped, element) => {
+		const grouped = elements.reduce((grouped, element) => {
 			const elementTier = element.metadata?.tier || 'free';
 			const isLocked = !this.checkTierAccess(userTier, elementTier);
 
@@ -83,7 +113,7 @@ class ElementsService {
 			const elementWithAccess: ElementWithAccess = {
 				...element,
 				isLocked,
-				svgPath: this.getSvgPath(element.id, theme),
+				svgPath: this.getSvgPath(element.id, 'light'), // Always provide light path
 				svgPathDark: element.metadata?.supports?.darkMode
 					? this.getSvgPath(element.id, 'dark')
 					: undefined
@@ -96,6 +126,25 @@ class ElementsService {
 
 			return grouped;
 		}, {} as Record<string, ElementWithAccess[]>);
+
+		// Ensure categories are in our preferred order
+		const orderedGrouped: Record<string, ElementWithAccess[]> = {};
+
+		// First add categories in our preferred order
+		this.CATEGORY_ORDER.forEach(category => {
+			if (grouped[category]) {
+				orderedGrouped[category] = grouped[category];
+			}
+		});
+
+		// Then add any remaining categories
+		Object.entries(grouped).forEach(([category, elements]) => {
+			if (!orderedGrouped[category]) {
+				orderedGrouped[category] = elements;
+			}
+		});
+
+		return orderedGrouped;
 	}
 
 	/**
@@ -170,9 +219,10 @@ class ElementsService {
 	}
 
 	/**
-	 * Get SVG path for element with theme handling
+	 * Get SVG path for element - FIXED VERSION
 	 */
 	private getSvgPath(elementId: string, theme: ElementTheme): string {
+		// Don't modify the element ID - it should already be correct
 		const baseId = elementId.endsWith('-dark') ? elementId.replace(/-dark$/, '') : elementId;
 
 		if (theme === 'dark') {
@@ -182,21 +232,21 @@ class ElementsService {
 	}
 
 	/**
-	 * Get contextual element theme based on app theme
+	 * Get the correct SVG URL based on app theme and element theme
+	 * This is the main function components should use
 	 */
-	getContextualElementId(elementId: string, appTheme: ElementTheme): string {
+	getSvgUrl(elementId: string, elementTheme: ElementTheme, appTheme: ElementTheme): string {
 		const baseId = elementId.endsWith('-dark') ? elementId.replace(/-dark$/, '') : elementId;
-		const isDarkVariant = elementId.endsWith('-dark');
 
-		// If element is explicitly dark, keep it dark
-		if (isDarkVariant) return elementId;
+		// Logic: Show dark variant when:
+		// 1. Element theme is dark, OR
+		// 2. App is in dark mode AND element theme is light (invert for contrast)
+		const shouldUseDarkVariant =
+			elementTheme === 'dark' ||
+			(appTheme === 'dark' && elementTheme === 'light');
 
-		// If app is in dark mode and element is light, make it dark
-		if (appTheme === 'dark' && !isDarkVariant) {
-			return `${baseId}-dark`;
-		}
-
-		return elementId;
+		const svgPath = shouldUseDarkVariant ? `${baseId}-dark.svg` : `${baseId}.svg`;
+		return `/elements/${svgPath}`;
 	}
 
 	/**
@@ -204,7 +254,6 @@ class ElementsService {
 	 */
 	private getFallbackElements(): ElementDefinition[] {
 		console.log('📦 Using fallback hardcoded elements');
-		// Import the hardcoded elements as fallback
 		try {
 			const { elementsDb } = require('$lib/data/addon/elements');
 			return Object.values(elementsDb);

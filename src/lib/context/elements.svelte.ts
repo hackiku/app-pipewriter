@@ -1,4 +1,4 @@
-// src/lib/context/elements.svelte.ts
+// src/lib/context/elements.svelte.ts - Fixed version
 
 import { elementsService, type ElementWithAccess } from '$lib/services/firestore/elements';
 import type { ElementTheme } from '$lib/types/elements';
@@ -102,19 +102,11 @@ export function createDropperElements(initialUserTier: 'free' | 'trial' | 'pro' 
 	}
 
 	/**
-	 * Get SVG URL for element with proper theme handling
+	 * Get SVG URL for element with proper theme handling - FIXED VERSION
 	 */
 	function getElementSvgUrl(elementId: string, appTheme: ElementTheme): string {
-		const baseId = elementId.endsWith('-dark') ? elementId.replace(/-dark$/, '') : elementId;
-
-		// Use current element theme or app theme logic
-		const shouldUseDarkVariant =
-			appTheme === 'dark'
-				? state.theme === 'light' // In dark app, light elements should be dark
-				: state.theme === 'dark'; // In light app, dark elements stay dark
-
-		const svgPath = shouldUseDarkVariant ? `${baseId}-dark.svg` : `${baseId}.svg`;
-		return `/elements/${svgPath}`;
+		// Use the service method which handles all the complex logic
+		return elementsService.getSvgUrl(elementId, state.theme, appTheme);
 	}
 
 	/**

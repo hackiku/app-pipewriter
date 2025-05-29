@@ -1,11 +1,11 @@
-<!-- Fixed src/lib/features/addon/features/dropper/DropperGrid.svelte -->
+<!-- Final src/lib/features/addon/features/dropper/DropperGrid.svelte -->
 <script lang="ts">
   import { getContext } from 'svelte';
   import ElementCard from './ElementCard.svelte';
   import type { ElementTheme } from '$lib/types/elements';
   import { useTrialFeatures } from '$lib/context/trial.svelte';
-  import { createDropperElements } from '$lib/context/elements.svelte';
-  import type { DropperElementsStore } from '$lib/context/elements.svelte';
+	import { dev } from '$app/environment';
+  import { createDropperElements, type DropperElementsStore } from '$lib/context/elements.svelte';
 
   const trialFeatures = useTrialFeatures();
 
@@ -128,7 +128,6 @@
               chainMode={props.chainMode || false}
               chainPosition={props.getChainPosition ? props.getChainPosition(element.id) : 0}
               onChainToggle={handleChainToggle}
-              svgUrl={elementsStore.getElementSvgUrl(element.id, props.theme)}
             />
           {/each}
         </div>
@@ -137,9 +136,9 @@
   {/if}
 </div>
 
-<!-- Debug info (remove in production) -->
-{#if process.env.NODE_ENV === 'development'}
-  <div class="fixed bottom-2 left-2 text-xs text-gray-400 font-mono">
+<!-- {#if process.env.NODE_ENV === 'development'} -->
+{#if dev}
+  <div class="fixed bottom-2 left-2 text-[0.5em] text-gray-400 font-mono">
     Elements: {elementsStore.debugState().totalElements} | 
     Categories: {elementsStore.debugState().categoriesCount} |
     Tier: {elementsStore.userTier} |
