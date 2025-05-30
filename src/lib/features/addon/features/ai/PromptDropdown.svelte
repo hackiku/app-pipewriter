@@ -1,4 +1,4 @@
-<!-- $lib/iframe/features/ai/PromptDropdown.svelte - Compact UX -->
+<!-- $lib/iframe/features/ai/PromptDropdown.svelte - Firebase Integration -->
 <script lang="ts">
   import { slide, fade } from "svelte/transition";
   import { Button } from "$lib/components/ui/button";
@@ -13,6 +13,8 @@
     Save
   } from "lucide-svelte";
   import PromptEditor from "./PromptEditor.svelte";
+  import { createPromptsStore } from '$lib/context/prompts.svelte';
+  import { useTrialFeatures } from '$lib/context/trial.svelte';
   
   // Props
   const props = $props<{
@@ -21,51 +23,25 @@
     onPromptDrop?: (prompt: any) => void;
   }>();
 
-  // Enhanced prompt data with categories
-  const promptsData = [
-    {
-      id: "1",
-      category: "writing",
-      title: "Polish Copy",
-      description: "Improve clarity, tone and engagement while keeping the same meaning and length",
-      content: "Please improve the clarity, tone and engagement of the selected text while maintaining the same core meaning and approximate length."
-    },
-    {
-      id: "2", 
-      category: "writing",
-      title: "Executive Summary",
-      description: "Convert to executive summary with key points and clear structure",
-      content: "Convert the selected text into a clear executive summary with bullet points highlighting the key takeaways and decisions."
-    },
-    {
-      id: "3",
-      category: "code", 
-      title: "HTML Structure",
-      description: "Convert to semantic HTML with proper heading hierarchy and tags",
-      content: "Convert this content to clean, semantic HTML with proper heading hierarchy (h1, h2, h3) and appropriate tags like <p>, <ul>, <ol>, <strong>, <em>."
-    },
-    {
-      id: "4",
-      category: "code",
-      title: "Clean Markup", 
-      description: "Strip formatting and convert to clean, minimal HTML structure",
-      content: "Remove all formatting and convert to clean, minimal HTML with just the essential semantic structure."
-    },
-    {
-      id: "5",
-      category: "design",
-      title: "Content Sections",
-      description: "Organize into clear sections with headers and logical flow",
-      content: "Reorganize this content into clear, logical sections with descriptive headers and improved information hierarchy."
-    },
-    {
-      id: "6",
-      category: "design", 
-      title: "Bullet Points",
-      description: "Convert to scannable bullet points and lists for better readability",
-      content: "Convert this content into scannable bullet points and numbered lists that improve readability and comprehension."
+  // Get trial features context
+  const trialFeatures = useTrialFeatures();
+  
+  // Create prompts store with current user tier
+  function getUserTier(): 'free' | 'trial' | 'pro' {
+    if (trialFeatures.trialInfo.isPro) return 'pro';
+    if (trialFeatures.trialInfo.active) return 'trial';
+    return 'free';
+  }
+  
+  const promptsStore = createPromptsStore(getUserTier());
+
+  // Update store when user tier changes
+  $effect(() => {
+    const newTier = getUserTier();
+    if (newTier !== promptsStore.userTier) {
+      promptsStore.setUserTier(newTier);
     }
-  ];
+  });
 
   // State
   let isOpen = $state(props.isOpen || false);
@@ -73,20 +49,29 @@
   let editMode = $state(false);
   let selectedCategory = $state("all");
 
-  // Categories for filtering
-  const categories = [
-    { id: "all", label: "All", count: promptsData.length },
-    { id: "writing", label: "Writing", count: promptsData.filter(p => p.category === "writing").length },
-    { id: "code", label: "Code", count: promptsData.filter(p => p.category === "code").length },
-    { id: "design", label: "Design", count: promptsData.filter(p => p.category === "design").length }
-  ];
+  // Get all prompts as flat array for category filtering
+  let allPrompts = $derived(promptsStore.getAllPrompts());
 
-  // Filtered prompts
-  let filteredPrompts = $derived(
-    selectedCategory === "all" 
-      ? promptsData 
-      : promptsData.filter(p => p.category === selectedCategory)
-  );
+  // Categories for filtering - dynamically generated from data
+  let categories = $derived(() => {
+    const categoryCounts = promptsStore.getCategoryCounts();
+    return [
+      { id: "all", label: "All", count: allPrompts.length },
+      ...Object.entries(categoryCounts).map(([id, count]) => ({
+        id,
+        label: id.charAt(0).toUpperCase() + id.slice(1),
+        count
+      }))
+    ];
+  });
+
+  // Filtered prompts based on selected category
+  let filteredPrompts = $derived(() => {
+    if (selectedCategory === "all") {
+      return allPrompts;
+    }
+    return promptsStore.getPromptsByCategory(selectedCategory);
+  });
 
   function toggleDropdown() {
     if (props.isProcessing) return;
@@ -135,7 +120,9 @@
     const colors = {
       writing: "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950",
       code: "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-950", 
-      design: "text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-950"
+      design: "text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-950",
+      marketing: "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-950",
+      technical: "text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-950"
     };
     return colors[category] || "text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-950";
   }
@@ -145,6 +132,13 @@
     "w-full justify-between px-3 h-9 font-normal text-sm",
     activePrompt && "border-primary/60 bg-primary/5 hover:bg-primary/10"
   ));
+
+  // Cleanup on destroy
+  $effect(() => {
+    return () => {
+      promptsStore.cleanup();
+    };
+  });
 </script>
 
 <div class="space-y-2">
@@ -153,13 +147,35 @@
       class="bg-background border rounded-lg shadow-sm overflow-hidden"
       transition:slide={{ duration: 200 }}
     >
-      {#if editMode && activePrompt}
+      {#if promptsStore.loading}
+        <!-- Loading State -->
+        <div class="p-6 text-center">
+          <div class="flex flex-col items-center space-y-2">
+            <div class="h-4 w-4 border-2 border-t-transparent border-primary rounded-full animate-spin"></div>
+            <p class="text-muted-foreground text-sm">Loading prompts...</p>
+          </div>
+        </div>
+      {:else if promptsStore.error}
+        <!-- Error State -->
+        <div class="p-4 text-center">
+          <div class="text-red-500 dark:text-red-400 text-sm">
+            <p class="font-medium">Failed to load prompts</p>
+            <p class="text-xs mt-1 opacity-75">{promptsStore.error}</p>
+            <button 
+              class="mt-2 px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded text-xs hover:bg-red-200 dark:hover:bg-red-900/50"
+              onclick={() => promptsStore.loadPrompts()}
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      {:else if editMode && activePrompt}
         <!-- Editor Mode -->
         <div class="p-3" transition:fade={{ duration: 150 }}>
           <PromptEditor 
             prompt={activePrompt}
             onBack={backToList}
-            onSave={() => {/* Save logic */}}
+            onSave={() => {/* Save logic - could update Firestore */}}
             onDrop={dropPrompt}
             isProcessing={props.isProcessing}
           />
@@ -168,10 +184,10 @@
         <!-- List Mode -->
         <div>
           <!-- Category Filter Tabs -->
-          <div class="flex border-b bg-muted/30">
+          <div class="flex border-b bg-muted/30 overflow-x-auto">
             {#each categories as category}
               <button
-                class="flex-1 px-2 py-2 text-xs font-medium transition-colors
+                class="flex-shrink-0 px-2 py-2 text-xs font-medium transition-colors
                   {selectedCategory === category.id 
                     ? 'text-primary border-b-2 border-primary bg-background' 
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -186,30 +202,43 @@
 
           <!-- Prompts List - Max 3 visible, scrollable -->
           <div class="max-h-[180px] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
-            {#each filteredPrompts as prompt (prompt.id)}
-              <button
-                class="w-full p-3 text-left hover:bg-muted/50 transition-colors border-b border-border/50 last:border-b-0
-                  {activePrompt?.id === prompt.id ? 'bg-primary/5 border-primary/20' : ''}"
-                onclick={() => selectPrompt(prompt)}
-                disabled={props.isProcessing}
-              >
-                <div class="relative flex items-start gap-2">
-                  <!-- Category Badge -->
-                  <span class="absolute top-0 right-2 items-center px-1.5 py-0.5 rounded text-[0.6rem] font-medium mt-0.5 {getCategoryColor(prompt.category)}">
-                    {prompt.category}
-                  </span>
-                  
-                  <div class="flex-1 min-w-0">
-                    <h4 class="font-medium text-sm text-foreground mb-0.5">{prompt.title}</h4>
-                    <p class="text-xs text-muted-foreground line-clamp-2">{prompt.description}</p>
+            {#if filteredPrompts.length === 0}
+              <div class="p-4 text-center text-muted-foreground text-sm">
+                No prompts available for this category
+              </div>
+            {:else}
+              {#each filteredPrompts as prompt (prompt.id)}
+                <button
+                  class="w-full p-3 text-left hover:bg-muted/50 transition-colors border-b border-border/50 last:border-b-0 relative
+                    {activePrompt?.id === prompt.id ? 'bg-primary/5 border-primary/20' : ''}
+                    {prompt.isLocked ? 'opacity-60' : ''}"
+                  onclick={() => !prompt.isLocked && selectPrompt(prompt)}
+                  disabled={props.isProcessing || prompt.isLocked}
+                  title={prompt.isLocked ? 'Upgrade to access this prompt' : prompt.description}
+                >
+                  <div class="flex items-start gap-2">
+                    <!-- UPDATED: Category Badge - positioned as requested -->
+                    <span class="absolute top-0 right-2 items-center px-1.5 py-0.5 rounded text-[0.6rem] font-medium mt-0.5 {getCategoryColor(prompt.category)}">
+                      {prompt.category}
+                    </span>
+                    
+                    <div class="flex-1 min-w-0 pr-16">
+                      <h4 class="font-medium text-sm text-foreground mb-0.5 flex items-center gap-2">
+                        {prompt.title}
+                        {#if prompt.isLocked}
+                          <span class="text-xs bg-muted text-muted-foreground px-1 py-0.5 rounded">Pro</span>
+                        {/if}
+                      </h4>
+                      <p class="text-xs text-muted-foreground line-clamp-2">{prompt.description}</p>
+                    </div>
                   </div>
-                </div>
-              </button>
-            {/each}
+                </button>
+              {/each}
+            {/if}
           </div>
 
           <!-- Action Buttons Row -->
-          {#if activePrompt}
+          {#if activePrompt && !activePrompt.isLocked}
             <div class="p-2 border-t bg-muted/20" transition:slide={{ duration: 150 }}>
               <div class="flex items-center gap-1">
                 <!-- Clear -->
