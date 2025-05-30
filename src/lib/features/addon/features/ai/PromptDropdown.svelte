@@ -1,188 +1,272 @@
-<!-- $lib/iframe/features/ai/PromptDropdown.svelte -->
+<!-- $lib/iframe/features/ai/PromptDropdown.svelte - Compact UX -->
 <script lang="ts">
-  import { slide } from "svelte/transition";
+  import { slide, fade } from "svelte/transition";
   import { Button } from "$lib/components/ui/button";
-  import * as Checkbox from "$lib/components/ui/checkbox";
   import { cn } from "$lib/utils";
-  import { ChevronDown, X, Trash2 } from "lucide-svelte";
+  import { 
+    ChevronDown, 
+    X, 
+    Edit3, 
+    Play, 
+    Copy, 
+    ArrowLeft,
+    Save
+  } from "lucide-svelte";
+  import PromptEditor from "./PromptEditor.svelte";
   
   // Props
   const props = $props<{
     isProcessing?: boolean;
     isOpen?: boolean;
+    onPromptDrop?: (prompt: any) => void;
   }>();
+
+  // Enhanced prompt data with categories
+  const promptsData = [
+    {
+      id: "1",
+      category: "writing",
+      title: "Polish Copy",
+      description: "Improve clarity, tone and engagement while keeping the same meaning and length",
+      content: "Please improve the clarity, tone and engagement of the selected text while maintaining the same core meaning and approximate length."
+    },
+    {
+      id: "2", 
+      category: "writing",
+      title: "Executive Summary",
+      description: "Convert to executive summary with key points and clear structure",
+      content: "Convert the selected text into a clear executive summary with bullet points highlighting the key takeaways and decisions."
+    },
+    {
+      id: "3",
+      category: "code", 
+      title: "HTML Structure",
+      description: "Convert to semantic HTML with proper heading hierarchy and tags",
+      content: "Convert this content to clean, semantic HTML with proper heading hierarchy (h1, h2, h3) and appropriate tags like <p>, <ul>, <ol>, <strong>, <em>."
+    },
+    {
+      id: "4",
+      category: "code",
+      title: "Clean Markup", 
+      description: "Strip formatting and convert to clean, minimal HTML structure",
+      content: "Remove all formatting and convert to clean, minimal HTML with just the essential semantic structure."
+    },
+    {
+      id: "5",
+      category: "design",
+      title: "Content Sections",
+      description: "Organize into clear sections with headers and logical flow",
+      content: "Reorganize this content into clear, logical sections with descriptive headers and improved information hierarchy."
+    },
+    {
+      id: "6",
+      category: "design", 
+      title: "Bullet Points",
+      description: "Convert to scannable bullet points and lists for better readability",
+      content: "Convert this content into scannable bullet points and numbered lists that improve readability and comprehension."
+    }
+  ];
 
   // State
   let isOpen = $state(props.isOpen || false);
-  let activePrompt = $state(null); // Simulated for scaffolding
-  let useMasterPrompt = $state(true);
-  let promptTitle = $state("Prompt title...");
-  let promptContent = $state("Enter your prompt...");
-  let promptEdited = $state(false);
-  
-  // For scaffolding - would normally come from a store
-  const availablePrompts = [
-    { id: "1", title: "Prompt 1", content: "This is the first prompt" },
-    { id: "2", title: "Prompt 2", content: "This is the second prompt" },
-    { id: "3", title: "Prompt 3", content: "This is the third prompt" }
+  let activePrompt = $state(null);
+  let editMode = $state(false);
+  let selectedCategory = $state("all");
+
+  // Categories for filtering
+  const categories = [
+    { id: "all", label: "All", count: promptsData.length },
+    { id: "writing", label: "Writing", count: promptsData.filter(p => p.category === "writing").length },
+    { id: "code", label: "Code", count: promptsData.filter(p => p.category === "code").length },
+    { id: "design", label: "Design", count: promptsData.filter(p => p.category === "design").length }
   ];
 
-  // Derived values with $derived instead of $:
-  let buttonClass = $derived(cn(
-    "w-full justify-between px-3 h-9 font-normal",
-    activePrompt && "border-2 border-black bg-primary/5 hover:bg-primary/10"
-  ));
-
-  let clearButtonClass = $derived(cn(
-    "w-full justify-between px-3 h-9 font-normal",
-    "bg-red-100 hover:bg-red-200 text-red-700 border-red-300",
-    "dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-400 dark:border-red-800"
-  ));
+  // Filtered prompts
+  let filteredPrompts = $derived(
+    selectedCategory === "all" 
+      ? promptsData 
+      : promptsData.filter(p => p.category === selectedCategory)
+  );
 
   function toggleDropdown() {
     if (props.isProcessing) return;
     isOpen = !isOpen;
+    if (!isOpen) {
+      editMode = false; // Reset edit mode when closing
+    }
+  }
+
+  function selectPrompt(prompt) {
+    activePrompt = prompt;
+    editMode = false;
   }
 
   function clearPrompt() {
     activePrompt = null;
-    promptTitle = "Prompt title...";
-    promptContent = "Enter your prompt...";
-    isOpen = false;
+    editMode = false;
   }
 
-  function toggleMasterPrompt() {
-    useMasterPrompt = !useMasterPrompt;
+  function editPrompt() {
+    if (!activePrompt) return;
+    editMode = true;
   }
-  
-  function selectPrompt(id) {
-    const prompt = availablePrompts.find(p => p.id === id);
-    if (prompt) {
-      activePrompt = prompt;
-      promptTitle = prompt.title;
-      promptContent = prompt.content;
+
+  function backToList() {
+    editMode = false;
+  }
+
+  function dropPrompt() {
+    if (!activePrompt) return;
+    props.onPromptDrop?.(activePrompt);
+    isOpen = false; // Close dropdown after dropping
+  }
+
+  async function copyPrompt() {
+    if (!activePrompt) return;
+    try {
+      await navigator.clipboard.writeText(activePrompt.content);
+      // Could add a toast notification here
+    } catch (error) {
+      console.error('Failed to copy prompt:', error);
     }
   }
-  
-  function handleSave() {
-    if (activePrompt) {
-      // Would normally update store
-      promptEdited = false;
-    }
+
+  function getCategoryColor(category: string) {
+    const colors = {
+      writing: "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950",
+      code: "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-950", 
+      design: "text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-950"
+    };
+    return colors[category] || "text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-950";
   }
-  
-  function handleReset() {
-    if (activePrompt) {
-      // Would normally reset from store
-      promptTitle = activePrompt.title;
-      promptContent = activePrompt.content;
-      promptEdited = false;
-    }
-  }
+
+  // Main button classes
+  let buttonClass = $derived(cn(
+    "w-full justify-between px-3 h-9 font-normal text-sm",
+    activePrompt && "border-primary/60 bg-primary/5 hover:bg-primary/10"
+  ));
 </script>
 
 <div class="space-y-2">
   {#if isOpen}
     <div
-      class="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border"
-      transition:slide={{ duration: 150 }}
+      class="bg-background border rounded-lg shadow-sm overflow-hidden"
+      transition:slide={{ duration: 200 }}
     >
-      <!-- Prompt Title -->
-      <input
-        type="text"
-        bind:value={promptTitle}
-        class="w-full px-2 py-1 text-sm font-medium bg-transparent focus:outline-none"
-        placeholder="Prompt title..."
-        disabled={props.isProcessing}
-        on:input={() => promptEdited = true}
-      />
-      
-      <!-- Prompt Content Area -->
-      <div class="w-full rounded-md border mt-1.5">
-        <textarea
-          bind:value={promptContent}
-          class="w-full h-[100px] p-2 text-sm bg-transparent resize-none focus:outline-none"
-          placeholder="Enter your prompt..."
-          disabled={props.isProcessing}
-          on:input={() => promptEdited = true}
-        />
-      </div>
-
-      <!-- Bottom Controls -->
-      <div class="flex items-center justify-between pt-2">
-        <!-- Prompt Selection Buttons -->
-        <div class="flex gap-1">
-          {#each availablePrompts as prompt}
-            <Button
-              variant="ghost"
-              size="sm"
-              class={cn(
-                "h-6 w-6 rounded-full p-0 text-xs",
-                activePrompt?.id === prompt.id && "bg-primary text-primary-foreground"
-              )}
-              onclick={() => selectPrompt(prompt.id)}
-              disabled={props.isProcessing}
-            >
-              {prompt.id}
-            </Button>
-          {/each}
+      {#if editMode && activePrompt}
+        <!-- Editor Mode -->
+        <div class="p-3" transition:fade={{ duration: 150 }}>
+          <PromptEditor 
+            prompt={activePrompt}
+            onBack={backToList}
+            onSave={() => {/* Save logic */}}
+            onDrop={dropPrompt}
+            isProcessing={props.isProcessing}
+          />
         </div>
+      {:else}
+        <!-- List Mode -->
+        <div>
+          <!-- Category Filter Tabs -->
+          <div class="flex border-b bg-muted/30">
+            {#each categories as category}
+              <button
+                class="flex-1 px-2 py-2 text-xs font-medium transition-colors
+                  {selectedCategory === category.id 
+                    ? 'text-primary border-b-2 border-primary bg-background' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  }"
+                onclick={() => selectedCategory = category.id}
+              >
+                {category.label}
+                <span class="ml-1 text-[0.6rem] opacity-60">({category.count})</span>
+              </button>
+            {/each}
+          </div>
 
-        <!-- Save/Reset Buttons -->
-        <div class="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            class="h-6"
-            onclick={handleSave}
-            disabled={props.isProcessing || !promptEdited}
-          >
-            Save
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            class="h-6 w-6"
-            onclick={handleReset}
-            disabled={props.isProcessing || !promptEdited}
-          >
-            <X class="h-3.5 w-3.5" />
-          </Button>
+          <!-- Prompts List - Max 3 visible, scrollable -->
+          <div class="max-h-[180px] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+            {#each filteredPrompts as prompt (prompt.id)}
+              <button
+                class="w-full p-3 text-left hover:bg-muted/50 transition-colors border-b border-border/50 last:border-b-0
+                  {activePrompt?.id === prompt.id ? 'bg-primary/5 border-primary/20' : ''}"
+                onclick={() => selectPrompt(prompt)}
+                disabled={props.isProcessing}
+              >
+                <div class="relative flex items-start gap-2">
+                  <!-- Category Badge -->
+                  <span class="absolute top-0 right-2 items-center px-1.5 py-0.5 rounded text-[0.6rem] font-medium mt-0.5 {getCategoryColor(prompt.category)}">
+                    {prompt.category}
+                  </span>
+                  
+                  <div class="flex-1 min-w-0">
+                    <h4 class="font-medium text-sm text-foreground mb-0.5">{prompt.title}</h4>
+                    <p class="text-xs text-muted-foreground line-clamp-2">{prompt.description}</p>
+                  </div>
+                </div>
+              </button>
+            {/each}
+          </div>
+
+          <!-- Action Buttons Row -->
+          {#if activePrompt}
+            <div class="p-2 border-t bg-muted/20" transition:slide={{ duration: 150 }}>
+              <div class="flex items-center gap-1">
+                <!-- Clear -->
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="h-7 w-7 p-0"
+                  onclick={clearPrompt}
+                  disabled={props.isProcessing}
+                  title="Clear selection"
+                >
+                  <X class="h-3 w-3" />
+                </Button>
+
+                <!-- Edit -->
+                <Button
+                  variant="ghost" 
+                  size="sm"
+                  class="h-7 px-2 gap-1"
+                  onclick={editPrompt}
+                  disabled={props.isProcessing}
+                >
+                  <Edit3 class="h-3 w-3" />
+                  <span class="text-xs">Edit</span>
+                </Button>
+
+                <!-- Spacer -->
+                <div class="flex-1"></div>
+
+                <!-- Copy -->
+                <Button
+                  variant="ghost"
+                  size="sm" 
+                  class="h-7 w-7 p-0"
+                  onclick={copyPrompt}
+                  disabled={props.isProcessing}
+                  title="Copy to clipboard"
+                >
+                  <Copy class="h-3 w-3" />
+                </Button>
+
+                <!-- Drop (Primary) -->
+                <Button
+                  size="sm"
+                  class="h-7 px-3 gap-1"
+                  onclick={dropPrompt}
+                  disabled={props.isProcessing}
+                >
+                  <Play class="h-3 w-3" />
+                  <span class="text-xs font-medium">Drop</span>
+                </Button>
+              </div>
+            </div>
+          {/if}
         </div>
-      </div>
-      
-      <!-- Include Layout Context Checkbox -->
-      <div class="flex items-center space-x-2 border-t mt-3 pt-2">
-        <Checkbox.Root
-          checked={useMasterPrompt}
-          onCheckedChange={toggleMasterPrompt}
-          disabled={props.isProcessing}
-          class="h-4 w-4"
-        >
-          <Checkbox.Indicator>
-            <div class="h-4 w-4 bg-primary"></div>
-          </Checkbox.Indicator>
-        </Checkbox.Root>
-        <label class="text-sm">
-          Include layout context
-        </label>
-      </div>
+      {/if}
     </div>
-
-    <!-- Clear Prompt Button -->
-    <Button
-      variant="outline"
-      class={clearButtonClass}
-      onclick={clearPrompt}
-      disabled={props.isProcessing || !activePrompt}
-    >
-      <div class="flex items-center gap-2">
-        <Trash2 class="h-4 w-4" />
-        <span>Clear prompt</span>
-      </div>
-      <X class="h-4 w-4" />
-    </Button>
   {/if}
   
   <!-- Main Toggle Button -->
@@ -193,15 +277,54 @@
     disabled={props.isProcessing}
   >
     {#if activePrompt}
-      <span class="font-medium text-black dark:text-white">{activePrompt.title}</span>
+      <span class="font-medium text-foreground truncate">{activePrompt.title}</span>
     {:else}
       <span class="text-muted-foreground">Select prompt...</span>
     {/if}
     <ChevronDown
       class={cn(
-        "h-4 w-4 transition-transform duration-200",
+        "h-4 w-4 transition-transform duration-200 flex-shrink-0",
         isOpen && "rotate-180"
       )}
     />
   </Button>
 </div>
+
+<style>
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-thumb-border {
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  
+  .scrollbar-track-transparent {
+    scrollbar-track-color: transparent;
+  }
+  
+  /* Webkit scrollbar styles */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 2px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--border) / 0.8);
+  }
+</style>

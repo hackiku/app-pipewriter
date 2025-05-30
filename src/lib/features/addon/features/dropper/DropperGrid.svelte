@@ -137,11 +137,11 @@
 </div>
 
 <!-- {#if process.env.NODE_ENV === 'development'} -->
-{#if dev}
+<!-- {#if dev}
   <div class="fixed bottom-2 left-2 text-[0.5em] text-gray-400 font-mono">
     Elements: {elementsStore.debugState().totalElements} | 
     Categories: {elementsStore.debugState().categoriesCount} |
     Tier: {elementsStore.userTier} |
     Theme: {elementsStore.theme}
   </div>
-{/if}
+{/if} -->

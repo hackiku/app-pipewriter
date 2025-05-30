@@ -1,10 +1,12 @@
 <!-- $lib/features/addon/layout/BottomBar.svelte -->
 <script lang="ts">
   import { fade } from 'svelte/transition';
-	import { ExternalLink, HelpCircle, ChevronDown } from '@lucide/svelte';
+	import { ExternalLink, HelpCircle, ChevronDown, Crown } from '@lucide/svelte';
   import { Button } from '$lib/components/ui/button';
   import AppAbout from './AppAbout.svelte';
   import UserAvatar from '$lib/components/user/UserAvatar.svelte';
+  import UpgradeDrawer from '$lib/components/pricing/UpgradeDrawer.svelte';
+  import { useTrialFeatures } from '$lib/context/trial.svelte';
   import { docLinks, DRIVE_FOLDER_URL } from '$lib/data/addon/templateDocs';
   
   // Props
@@ -12,9 +14,13 @@
     onToggleAboutModal: () => void
   }>();
   
+  // Get trial features context
+  const trialFeatures = useTrialFeatures();
+  
   // State variables 
   let showAboutModal = $state(false);
   let dropdownOpen = $state(false);
+  let showUpgradeDrawer = $state(false); // ADDED: Upgrade drawer state
   
   function openUrl(url: string) {
     window.open(url, '_blank');
@@ -29,6 +35,24 @@
   
   function toggleDropdown() {
     dropdownOpen = !dropdownOpen;
+  }
+  
+  // ADDED: Upgrade drawer functions
+  function openUpgradeFlow() {
+    showUpgradeDrawer = true;
+  }
+  
+  function handleUpgradeDrawerChange(open: boolean) {
+    showUpgradeDrawer = open;
+  }
+  
+  // Get current subscription status for button styling
+  function isPro() {
+    return trialFeatures.trialInfo.isPro;
+  }
+  
+  function isActive() {
+    return trialFeatures.trialInfo.active;
   }
 </script>
 
@@ -90,9 +114,27 @@
     {/if}
   </div>
 
-  <!-- Help Button and User Avatar - Properly aligned -->
+  <!-- Right side: Upgrade Button, Help Button and User Avatar -->
   <div class="flex items-center gap-2 mr-2">
+    <!-- ADDED: Round Upgrade Button for Dev -->
     <Button
+      variant={isPro() ? "default" : "outline"}
+      size="icon"
+      class="h-6 w-6 rounded-full flex items-center justify-center
+        {isPro() 
+          ? 'bg-primary text-primary-foreground' 
+          : isActive() 
+            ? 'border-amber-500 text-amber-600 hover:bg-amber-50 dark:border-amber-400 dark:text-amber-400 dark:hover:bg-amber-950' 
+            : 'border-muted-foreground/60 hover:bg-muted'
+        }"
+      onclick={openUpgradeFlow}
+      title={isPro() ? 'Manage Subscription' : 'Upgrade to Pro'}
+    >
+      <Crown class="h-3 w-4" />
+    </Button>
+
+    <!-- Help Button -->
+    <!-- <Button
       variant="ghost"
       size="icon"
       class="h-9 w-9 rounded-full flex items-center justify-center"
@@ -100,12 +142,16 @@
       aria-label="Help and about"
     >
       <HelpCircle class="h-4 w-4" />
-    </Button>
+    </Button> -->
 
+    <!-- User Avatar -->
     <UserAvatar />
   </div>
   
+  <!-- ADDED: Upgrade Drawer -->
+  <UpgradeDrawer isOpen={showUpgradeDrawer} onOpenChange={handleUpgradeDrawerChange} />
 
+  <!-- About Modal -->
   <AppAbout 
     showAboutModal={showAboutModal}
     onToggleAboutModal={toggleAboutModal}

@@ -6,10 +6,7 @@
   import * as Avatar from "$lib/components/ui/avatar/index.js";
   import { getUser } from '$lib/services/firebase/auth.svelte';
   
-  // Props - allow choosing upgrade component
-  const props = $props<{
-    upgradeComponent?: 'modal' | 'drawer';
-  }>();
+  // SIMPLIFIED: No props needed since we only use UpgradeDrawer now
   
   // Local state
   let showProfile = $state(false);
@@ -90,7 +87,6 @@
     <ProfileCard 
       showProfileCard={showProfile} 
       onToggleProfileCard={toggleProfile}
-      upgradeComponent={props.upgradeComponent || 'modal'}
     />
   {/if}
 </div>

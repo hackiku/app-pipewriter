@@ -47,7 +47,7 @@
 		"emulators:ui": "firebase emulators:start --only hosting,firestore,auth,functions --import=./emulator-data",
 		"emulators:export": "firebase emulators:export ./emulator-data",
 		"emulators:clear": "firebase emulators:exec --only firestore 'echo Clearing data...'",
-		"seed": "bun run scripts/seed-emulator.ts",
+		"seed": "bun run scripts/seed/seed-elements.ts",
 		"seed:elements": "bun run scripts/seed/seed-elements.ts",
 		"test:firebase": "bun run scripts/test-firebase-setup.ts",
 		"db:reset": "npm run emulators:clear",

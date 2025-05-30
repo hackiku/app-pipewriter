@@ -92,7 +92,7 @@
 </script>
 
 <Drawer.Root open={isOpen} onOpenChange={handleOpenChange}>
-  <Drawer.Content class="max-h-[85vh]">
+  <Drawer.Content class="max-h-[85vh] mx-3">
     <div class="mx-auto w-full max-w-md">
       
       <Drawer.Header class="text-center pb-4">

@@ -6,20 +6,18 @@
   import { Button } from '$lib/components/ui/button';
   import * as Avatar from "$lib/components/ui/avatar/index.js";
   import { useTrialFeatures } from '$lib/context/trial.svelte';
-  import SimpleUpgradeModal from '$lib/components/pricing/SimpleUpgradeModal.svelte';
   import UpgradeDrawer from '$lib/components/pricing/UpgradeDrawer.svelte';
   
   // Props
   const props = $props<{
     showProfileCard: boolean;
     onToggleProfileCard: () => void;
-    upgradeComponent?: 'modal' | 'drawer';
   }>();
   
-  // State
-  let showUpgradeModal = $state(false);
+  // State - FIXED: Better state coordination
   let showUpgradeDrawer = $state(false);
   let isLoggingOut = $state(false);
+  let isTransitioning = $state(false); // ADDED: Prevent double-opens
   
   // Get trial features context
   const trialFeatures = useTrialFeatures();
@@ -61,26 +59,30 @@
     props.onToggleProfileCard();
   }
   
-  // FIXED: Smooth transition from profile to upgrade
+  // FIXED: Proper modal transition without conflicts
   function openUpgradeFlow() {
-    closeCard(); // Close profile first
+    if (isTransitioning) return; // Prevent double-opens
     
-    // Wait for profile card to close, then open upgrade
+    isTransitioning = true;
+    
+    // Close profile card immediately
+    closeCard();
+    
+    // Wait for ProfileCard fade out + a bit extra for safety
     setTimeout(() => {
-      if (props.upgradeComponent === 'drawer') {
-        showUpgradeDrawer = true;
-      } else {
-        showUpgradeModal = true;
-      }
-    }, 200); // Match the fade transition duration
+      showUpgradeDrawer = true;
+      isTransitioning = false;
+    }, 250); // Slightly longer than fade duration
   }
   
-  function handleUpgradeModalChange(open: boolean) {
-    showUpgradeModal = open;
-  }
-  
+  // FIXED: Proper drawer state management
   function handleUpgradeDrawerChange(open: boolean) {
     showUpgradeDrawer = open;
+    
+    // Reset transitioning state when drawer closes
+    if (!open) {
+      isTransitioning = false;
+    }
   }
   
   async function handleLogout() {
@@ -95,18 +97,25 @@
       isLoggingOut = false;
     }
   }
+  
+  // FIXED: Make sure upgrade drawer is only rendered when profile is closed
+  let shouldRenderDrawer = $derived(!props.showProfileCard && showUpgradeDrawer);
 </script>
 
-<!-- Upgrade Components -->
-<SimpleUpgradeModal isOpen={showUpgradeModal} onOpenChange={handleUpgradeModalChange} />
-<UpgradeDrawer isOpen={showUpgradeDrawer} onOpenChange={handleUpgradeDrawerChange} />
+<!-- FIXED: Only render drawer when profile is fully closed -->
+{#if shouldRenderDrawer}
+  <UpgradeDrawer isOpen={showUpgradeDrawer} onOpenChange={handleUpgradeDrawerChange} />
+{/if}
 
 {#if props.showProfileCard}
-  <!-- Backdrop with proper ESC handling -->
-  <div 
-    class="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4"
+  <!-- Profile Modal with FIXED z-index to avoid conflicts -->
+  <a 
+    class="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4"
     onclick={closeCard}
+		href="/"
+		type="button"
     role="dialog"
+		tabindex=0
     aria-modal="true"
     in:fade={{ duration: 200 }}
     out:fade={{ duration: 200 }}
@@ -183,12 +192,16 @@
 
           <!-- Action Buttons -->
           <div class="space-y-3">
-            <!-- Primary Action Button -->
+            <!-- FIXED: Upgrade Button with proper disabled state -->
             <Button 
               class="w-full h-11 font-medium"
               onclick={openUpgradeFlow}
+              disabled={isTransitioning}
             >
-              {#if isPro()}
+              {#if isTransitioning}
+                <div class="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
+                Opening...
+              {:else if isPro()}
                 <Sparkles class="h-4 w-4 mr-2" />
                 Manage Subscription
               {:else}
@@ -202,7 +215,7 @@
               variant="outline"
               class="w-full h-11"
               onclick={handleLogout}
-              disabled={isLoggingOut}
+              disabled={isLoggingOut || isTransitioning}
             >
               {#if isLoggingOut}
                 <div class="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
@@ -223,5 +236,5 @@
         </p>
       </div>
     </div>
-  </div>
+  </a>
 {/if}

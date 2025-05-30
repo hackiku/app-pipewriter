@@ -1,114 +1,145 @@
 <!-- $lib/iframe/features/ai/PromptEditor.svelte -->
 <script lang="ts">
-  import { ScrollArea } from "$lib/components/ui/scroll-area";
   import { Button } from "$lib/components/ui/button";
-  import { RotateCw } from 'lucide-svelte';
-  import { cn } from "$lib/utils";
-  import { promptStore, activePrompt, type Prompt } from '../../stores/promptStore';
+  import { Textarea } from "$lib/components/ui/textarea";
+  import { ArrowLeft, Save, Play } from "lucide-svelte";
 
-  export let disabled: boolean = false;
+  // Props
+  const props = $props<{
+    prompt: {
+      id: string;
+      category: string;
+      title: string;
+      description: string;
+      content: string;
+    };
+    onBack: () => void;
+    onSave: (updatedPrompt: any) => void;
+    onDrop: () => void;
+    isProcessing?: boolean;
+  }>();
 
-  let currentPrompt: Prompt;
-  let isEdited = false;
+  // Editable state
+  let editTitle = $state(props.prompt.title);
+  let editDescription = $state(props.prompt.description);
+  let editContent = $state(props.prompt.content);
 
-  $: {
-    if ($activePrompt) {
-      currentPrompt = { ...$activePrompt };
-    } else {
-      currentPrompt = { id: "", title: "", content: "" };
-    }
-  }
-
-  $: isEdited = $activePrompt && (currentPrompt.title !== $activePrompt.title || currentPrompt.content !== $activePrompt.content);
-
-  function handleReset() {
-    if ($activePrompt) {
-      $promptStore.resetPrompt($activePrompt.id);
-      isEdited = false;
-    }
-  }
-
-  function handleSave() {
-    if ($activePrompt) {
-      $promptStore.updatePrompt(currentPrompt);
-      isEdited = false;
-    }
-  }
-
-  function selectPrompt(id: string) {
-    $promptStore.setActivePrompt(id);
-    isEdited = false;
-  }
-
-  function handleInput() {
-    isEdited = true;
-  }
-
-  $: numberButtonClass = (id: string) => cn(
-    "h-6 w-6 rounded-full p-0 text-xs",
-    $activePrompt?.id === id && "bg-primary text-primary-foreground"
+  // Track if changes were made
+  let hasChanges = $derived(
+    editTitle !== props.prompt.title ||
+    editDescription !== props.prompt.description ||
+    editContent !== props.prompt.content
   );
 
-  $: combinedPromptContent = $promptStore.useMasterPrompt && $activePrompt
-    ? `${currentPrompt.content}\n\n–––––––––\n\n${$promptStore.masterPrompt}`
-    : currentPrompt.content;
+  function handleSave() {
+    const updatedPrompt = {
+      ...props.prompt,
+      title: editTitle,
+      description: editDescription,
+      content: editContent
+    };
+    props.onSave(updatedPrompt);
+  }
+
+  function getCategoryColor(category: string) {
+    const colors = {
+      writing: "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950",
+      code: "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-950", 
+      design: "text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-950"
+    };
+    return colors[category] || "text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-950";
+  }
 </script>
 
-<div class="space-y-1.5">
-  <input
-    type="text"
-    bind:value={currentPrompt.title}
-    class="w-full px-2 py-1 text-sm font-medium bg-transparent focus:outline-none"
-    placeholder="Prompt title..."
-    {disabled}
-    on:input={handleInput}
-  />
-  
-  <ScrollArea class="w-full rounded-md border">
-    <textarea
-      bind:value={combinedPromptContent}
-      class="w-full h-[100px] p-2 text-sm bg-transparent resize-none focus:outline-none"
-      placeholder="Enter your prompt..."
-      {disabled}
-      on:input={handleInput}
+<div class="space-y-3">
+  <!-- Header with category and back button -->
+  <div class="flex items-center gap-2">
+    <Button
+      variant="ghost"
+      size="sm"
+      class="h-7 w-7 p-0"
+      onclick={props.onBack}
+      disabled={props.isProcessing}
+      title="Back to list"
+    >
+      <ArrowLeft class="h-3 w-3" />
+    </Button>
+    
+    <span class="inline-flex items-center px-2 py-1 rounded text-[0.65rem] font-medium {getCategoryColor(props.prompt.category)}">
+      {props.prompt.category}
+    </span>
+    
+    <span class="text-xs text-muted-foreground">editing</span>
+  </div>
+
+  <!-- Title Input -->
+  <div>
+    <label class="text-xs font-medium text-muted-foreground">Title</label>
+    <input
+      type="text"
+      bind:value={editTitle}
+      class="w-full mt-1 px-2 py-1.5 text-sm font-medium bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary"
+      placeholder="Prompt title..."
+      disabled={props.isProcessing}
     />
-  </ScrollArea>
+  </div>
 
-  <div class="flex items-center justify-between pt-1">
-    <div class="flex gap-1">
-      {#each $promptStore.prompts as prompt}
-        <Button
-          variant="ghost"
-          size="sm"
-          class={numberButtonClass(prompt.id)}
-          on:click={() => selectPrompt(prompt.id)}
-          {disabled}
-        >
-          {prompt.id}
-        </Button>
-      {/each}
+  <!-- Description Input -->
+  <div>
+    <label class="text-xs font-medium text-muted-foreground">Description</label>
+    <input
+      type="text"
+      bind:value={editDescription}
+      class="w-full mt-1 px-2 py-1.5 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary"
+      placeholder="Brief description..."
+      disabled={props.isProcessing}
+    />
+  </div>
+
+  <!-- Content Textarea -->
+  <div>
+    <label class="text-xs font-medium text-muted-foreground">Prompt Content</label>
+    <Textarea
+      bind:value={editContent}
+      class="w-full mt-1 min-h-[80px] text-sm resize-none"
+      placeholder="Enter the full prompt content..."
+      disabled={props.isProcessing}
+    />
+    <div class="flex justify-between mt-1">
+      <span class="text-[0.65rem] text-muted-foreground">Be specific for better AI results</span>
+      <span class="text-[0.65rem] text-muted-foreground">{editContent.length} chars</span>
     </div>
+  </div>
 
+  <!-- Action Buttons -->
+  <div class="flex items-center justify-between pt-2 border-t">
     <div class="flex items-center gap-2">
+      <!-- Save Button -->
       <Button
-        variant="ghost"
-        size="sm"
-        class="h-6"
-        on:click={handleSave}
-        disabled={disabled || !isEdited}
+        variant="outline"
+        size="sm" 
+        class="h-7 px-3 gap-1"
+        onclick={handleSave}
+        disabled={props.isProcessing || !hasChanges}
       >
-        Save
+        <Save class="h-3 w-3" />
+        <span class="text-xs">Save</span>
       </Button>
       
-      <Button
-        variant="ghost"
-        size="icon"
-        class="h-6 w-6"
-        on:click={handleReset}
-        disabled={disabled || !isEdited}
-      >
-        <RotateCw class="h-3.5 w-3.5" />
-      </Button>
+      {#if hasChanges}
+        <span class="text-[0.65rem] text-amber-600 dark:text-amber-400">unsaved changes</span>
+      {/if}
     </div>
+
+    <!-- Drop Button -->
+    <Button
+      size="sm"
+      class="h-7 px-3 gap-1"
+      onclick={props.onDrop}
+      disabled={props.isProcessing}
+    >
+      <Play class="h-3 w-3" />
+      <span class="text-xs font-medium">Drop</span>
+    </Button>
   </div>
 </div>
