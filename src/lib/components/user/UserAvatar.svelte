@@ -6,6 +6,11 @@
   import * as Avatar from "$lib/components/ui/avatar/index.js";
   import { getUser } from '$lib/services/firebase/auth.svelte';
   
+  // Props - allow choosing upgrade component
+  const props = $props<{
+    upgradeComponent?: 'modal' | 'drawer';
+  }>();
+  
   // Local state
   let showProfile = $state(false);
   
@@ -24,7 +29,7 @@
     const status = getSubscriptionStatus();
     switch (status) {
       case "Pro": return "bg-primary text-primary-foreground";
-      case "Trial": return "bg-amber-700 text-white";
+      case "Trial": return "bg-amber-600 text-white";
       default: return "bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300";
     }
   }
@@ -57,7 +62,7 @@
 
 <div class="relative">
   <button
-    class="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+    class="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full"
     onclick={toggleProfile}
     aria-label="Toggle profile menu"
   >
@@ -68,14 +73,14 @@
           alt="User avatar" 
         />
       {/if}
-      <Avatar.Fallback class="bg-neutral-300 text-sm dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
+      <Avatar.Fallback class="bg-neutral-300 text-sm dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-medium">
         {getInitials()}
       </Avatar.Fallback>
     </Avatar.Root>
     
     <!-- Status Badge -->
     {#if getUser()}
-      <div class="absolute -top-2 -right-3 rounded-md text-[0.5rem] font-bold px-1 min-w-5 h-5 flex items-center justify-center {getBadgeColor()}">
+      <div class="absolute -top-2 -right-3 rounded-md text-[0.5rem] font-bold px-1 min-w-5 h-5 flex items-center justify-center {getBadgeColor()} shadow-sm">
         {getSubscriptionStatus()}
       </div>
     {/if}
@@ -84,7 +89,8 @@
   {#if showProfile}
     <ProfileCard 
       showProfileCard={showProfile} 
-      onToggleProfileCard={toggleProfile} 
+      onToggleProfileCard={toggleProfile}
+      upgradeComponent={props.upgradeComponent || 'modal'}
     />
   {/if}
 </div>

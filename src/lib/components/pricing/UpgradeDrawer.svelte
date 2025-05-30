@@ -1,8 +1,9 @@
-<!-- src/lib/features/pricing/UpgradeDrawer.svelte -->
+<!-- src/lib/components/pricing/UpgradeDrawer.svelte -->
+
 <script lang="ts">
-  import * as Drawer from "$lib/components/ui/drawer/index.js";
-  import { Button } from "$lib/components/ui/button/index.js";
-  import UpgradeCard from "./UpgradeCard.svelte";
+  import * as Drawer from "$lib/components/ui/drawer";
+  import { Button } from "$lib/components/ui/button";
+  import { Crown, Sparkles, Check, X } from '@lucide/svelte';
   import { useTrialFeatures } from '$lib/context/trial.svelte';
   
   // Props
@@ -35,8 +36,7 @@
     }
   }
   
-  // For demo purpose, we'll use simple functions to update the premium status
-  // In a production app, this would connect to Stripe or another payment processor
+  // Demo upgrade/downgrade functions
   async function handleUpgrade() {
     isProcessing = true;
     errorMessage = "";
@@ -44,17 +44,15 @@
     try {
       const response = await fetch('/api/user/upgrade', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Content-Type': 'application/json' }
       });
       
       if (!response.ok) {
         throw new Error("Failed to upgrade");
       }
       
-      // Reload the page to get updated user data
-      window.location.reload();
+      handleOpenChange(false);
+      window.location.reload(); // Reload to get updated user data
     } catch (error) {
       errorMessage = error instanceof Error ? error.message : "Failed to upgrade";
     } finally {
@@ -67,76 +65,158 @@
     errorMessage = "";
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo, we'll just update via window.fetch:
       const response = await fetch('/api/user/downgrade', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Content-Type': 'application/json' }
       });
       
       if (!response.ok) {
         throw new Error("Failed to downgrade");
       }
       
-      // Close the drawer
       handleOpenChange(false);
-      
-      // Reload the page to get updated user data
       window.location.reload();
-    } catch (error) {
-      console.error("Failed to downgrade:", error);
-      errorMessage = error instanceof Error ? error.message : "Failed to downgrade";
     } finally {
       isProcessing = false;
     }
   }
+
+  // Pro features list
+  const proFeatures = [
+    "All premium design elements",
+    "Advanced color & style customization", 
+    "AI-powered content generation",
+    "Export to multiple formats",
+    "Priority support & updates"
+  ];
 </script>
 
 <Drawer.Root open={isOpen} onOpenChange={handleOpenChange}>
-  <Drawer.Content>
-    <div class="mx-auto w-full max-w-lg">
-      <Drawer.Header>
-        <Drawer.Title>Choose Your Plan</Drawer.Title>
-        <Drawer.Description>
-          {#if trialStatus.active}
-            You have {trialStatus.daysLeft} days left in your trial. Upgrade to keep all premium features.
-          {:else if trialStatus.isPremium}
-            You're currently on the Premium plan.
+  <Drawer.Content class="max-h-[85vh]">
+    <div class="mx-auto w-full max-w-md">
+      
+      <Drawer.Header class="text-center pb-4">
+        <Drawer.Title class="flex items-center justify-center gap-2 text-xl">
+          {#if trialStatus.isPro}
+            <Crown class="h-6 w-6 text-primary" />
+            Manage Subscription
           {:else}
-            Choose the plan that works best for you.
+            <Sparkles class="h-6 w-6 text-primary" />
+            Upgrade to Pro
+          {/if}
+        </Drawer.Title>
+        
+        <Drawer.Description class="text-sm text-muted-foreground mt-2">
+          {#if trialStatus.active}
+            You have <span class="font-medium text-amber-600">{trialStatus.daysLeft} days</span> left in your trial.
+          {:else if trialStatus.isPro}
+            You're currently on the <span class="font-medium text-primary">Pro plan</span>.
+          {:else}
+            Get access to all premium features and supercharge your workflow.
           {/if}
         </Drawer.Description>
       </Drawer.Header>
-      
-      <div class="p-4 pb-0">
-        <!-- Cards -->
-        <UpgradeCard 
-          onUpgrade={handleUpgrade}
-          onDowngrade={handleDowngrade}
-        />
-        
-        <!-- Error message if any -->
-        {#if errorMessage}
-          <div class="mt-4 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
-            {errorMessage}
+
+      <div class="px-4 pb-6">
+        {#if trialStatus.isPro}
+          <!-- Pro User View -->
+          <div class="text-center space-y-6">
+            <div class="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+              <Crown class="h-8 w-8 text-primary" />
+            </div>
+            
+            <div class="space-y-2">
+              <p class="text-lg font-medium">You're on Pro! 🎉</p>
+              <p class="text-sm text-muted-foreground">
+                Enjoying all premium features with unlimited access.
+              </p>
+            </div>
+
+            <div class="pt-4 border-t">
+              <Button
+                variant="destructive"
+                class="w-full"
+                onclick={handleDowngrade}
+                disabled={isProcessing}
+              >
+                {isProcessing ? 'Processing...' : 'Downgrade to Free'}
+              </Button>
+              <p class="text-xs text-muted-foreground mt-2">
+                You can always upgrade again later
+              </p>
+            </div>
+          </div>
+
+        {:else}
+          <!-- Free/Trial User View -->
+          <div class="space-y-6">
+            
+            <!-- Pricing -->
+            <div class="text-center p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg border">
+              <div class="space-y-1">
+                <p class="text-2xl font-bold">$9<span class="text-lg font-normal text-muted-foreground">/month</span></p>
+                <p class="text-sm text-muted-foreground">Pro Tester Plan</p>
+              </div>
+            </div>
+
+            <!-- Features List -->
+            <div class="space-y-3">
+              <p class="font-medium text-sm">What you get:</p>
+              <ul class="space-y-2">
+                {#each proFeatures as feature}
+                  <li class="flex items-start gap-3 text-sm">
+                    <Check class="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                    <span>{feature}</span>
+                  </li>
+                {/each}
+              </ul>
+            </div>
+
+            <!-- Error Message -->
+            {#if errorMessage}
+              <div class="p-3 bg-destructive/10 text-destructive rounded-lg text-sm flex items-center gap-2">
+                <X class="h-4 w-4" />
+                {errorMessage}
+              </div>
+            {/if}
+
+            <!-- Upgrade Button -->
+            <div class="space-y-3 pt-2">
+              <Button
+                class="w-full h-12 text-base font-medium"
+                onclick={handleUpgrade}
+                disabled={isProcessing}
+              >
+                {#if isProcessing}
+                  <div class="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Processing...
+                {:else}
+                  <Sparkles class="h-4 w-4 mr-2" />
+                  Upgrade to Pro Now
+                {/if}
+              </Button>
+              
+              <p class="text-xs text-center text-muted-foreground">
+                Cancel anytime • No long-term commitment
+              </p>
+            </div>
           </div>
         {/if}
-        
-        <!-- Extra info -->
-        <div class="mt-6 text-center text-sm text-muted-foreground">
-          <p>Questions? Email <a href="mailto:support@pipewriter.io" class="text-primary hover:underline">support@pipewriter.io</a></p>
-        </div>
       </div>
-      
-      <Drawer.Footer class="pt-2">
-        <Drawer.Close asChild>
-          <Button variant="outline" disabled={isProcessing}>Cancel</Button>
-        </Drawer.Close>
+
+      <Drawer.Footer class="border-t pt-4">
+        <div class="flex flex-col space-y-2">
+          <Drawer.Close asChild>
+            <Button variant="outline" class="w-full">
+              Close
+            </Button>
+          </Drawer.Close>
+          <p class="text-xs text-center text-muted-foreground">
+            Questions? Email <a href="mailto:support@pipewriter.io" class="text-primary hover:underline">support@pipewriter.io</a>
+          </p>
+        </div>
       </Drawer.Footer>
+      
     </div>
   </Drawer.Content>
 </Drawer.Root>
