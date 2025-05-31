@@ -1,4 +1,4 @@
-// src/lib/context/prompts.svelte.ts
+// src/lib/context/prompts.svelte.ts - Simplified Version
 
 import { promptsService, type PromptWithAccess } from '$lib/services/firestore/prompts';
 import { browser } from '$app/environment';

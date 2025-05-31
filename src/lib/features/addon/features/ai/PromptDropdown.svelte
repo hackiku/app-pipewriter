@@ -1,4 +1,4 @@
-<!-- $lib/iframe/features/ai/PromptDropdown.svelte - Firebase Integration -->
+<!-- $lib/iframe/features/ai/PromptDropdown.svelte - Working Version -->
 <script lang="ts">
   import { slide, fade } from "svelte/transition";
   import { Button } from "$lib/components/ui/button";
@@ -8,9 +8,7 @@
     X, 
     Edit3, 
     Play, 
-    Copy, 
-    ArrowLeft,
-    Save
+    Copy
   } from "lucide-svelte";
   import PromptEditor from "./PromptEditor.svelte";
   import { createPromptsStore } from '$lib/context/prompts.svelte';
@@ -175,7 +173,7 @@
           <PromptEditor 
             prompt={activePrompt}
             onBack={backToList}
-            onSave={() => {/* Save logic - could update Firestore */}}
+            onSave={() => {/* Save logic for later */}}
             onDrop={dropPrompt}
             isProcessing={props.isProcessing}
           />
@@ -217,7 +215,7 @@
                   title={prompt.isLocked ? 'Upgrade to access this prompt' : prompt.description}
                 >
                   <div class="flex items-start gap-2">
-                    <!-- UPDATED: Category Badge - positioned as requested -->
+                    <!-- Category Badge - positioned as requested -->
                     <span class="absolute top-0 right-2 items-center px-1.5 py-0.5 rounded text-[0.6rem] font-medium mt-0.5 {getCategoryColor(prompt.category)}">
                       {prompt.category}
                     </span>

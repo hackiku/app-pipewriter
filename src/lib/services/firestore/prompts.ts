@@ -1,4 +1,4 @@
-// src/lib/services/firestore/prompts.ts
+// src/lib/services/firestore/prompts.ts - Simplified Version
 
 import { getFirebaseService } from '$lib/services/firebase/client';
 import { collection, getDocs, query, where, orderBy, onSnapshot } from 'firebase/firestore';
@@ -238,16 +238,6 @@ class PromptsService {
 				title: "Polish Copy",
 				description: "Improve clarity, tone and engagement while keeping the same meaning and length",
 				content: "Please improve the clarity, tone and engagement of the selected text while maintaining the same core meaning and approximate length.",
-				active: true,
-				createdAt: new Date(),
-				updatedAt: new Date()
-			},
-			{
-				id: "html-structure",
-				category: "code",
-				title: "HTML Structure",
-				description: "Convert to semantic HTML with proper heading hierarchy and tags",
-				content: "Convert this content to clean, semantic HTML with proper heading hierarchy (h1, h2, h3) and appropriate tags like <p>, <ul>, <ol>, <strong>, <em>.",
 				active: true,
 				createdAt: new Date(),
 				updatedAt: new Date()
