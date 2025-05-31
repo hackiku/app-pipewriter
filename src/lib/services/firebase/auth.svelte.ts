@@ -9,6 +9,11 @@ let user = $state<User | null>(null);
 let loading = $state(true);
 let error = $state<string | null>(null);
 
+// Helper to detect if we're on addon route (iframe context)
+function isAddonRoute(): boolean {
+	return browser && window.location.pathname === '/addon';
+}
+
 // Initialize Firebase auth
 if (browser) {
 	import('firebase/auth').then(({ onAuthStateChanged, getIdToken }) => {
@@ -62,8 +67,15 @@ if (browser) {
 						// Don't fail the whole auth flow if provisioning fails
 					}
 
-					// Force reload of all server data
-					await invalidateAll();
+					// IFRAME-AWARE REFRESH
+					if (isAddonRoute()) {
+						// In addon/iframe: just reload the page to update server data
+						console.log('Addon route: reloading page for auth update');
+						window.location.reload();
+					} else {
+						// Normal web app: use SvelteKit's invalidation
+						await invalidateAll();
+					}
 
 				} catch (err) {
 					console.error("Error creating session:", err);
@@ -75,8 +87,15 @@ if (browser) {
 					await fetch('/api/auth/session', { method: 'DELETE' });
 					console.log('Session deleted successfully');
 
-					// Force reload of all server data
-					await invalidateAll();
+					// IFRAME-AWARE REFRESH
+					if (isAddonRoute()) {
+						// In addon/iframe: just reload to show login
+						console.log('Addon route: reloading page for sign out');
+						window.location.reload();
+					} else {
+						// Normal web app: use SvelteKit's invalidation
+						await invalidateAll();
+					}
 				} catch (err) {
 					console.error("Error deleting session:", err);
 				}
@@ -109,12 +128,10 @@ export function signIn() {
 		const { auth } = getFirebaseService();
 		const provider = new GoogleAuthProvider();
 
-		// Add scopes if needed for Google Docs access
-		// provider.addScope('https://www.googleapis.com/auth/documents');
-
 		return signInWithPopup(auth, provider)
 			.then(result => {
 				console.log("Signed in:", result.user.displayName);
+				// Auth state change handler will handle the reload/invalidation
 				return result.user;
 			})
 			.catch(err => {
@@ -125,8 +142,7 @@ export function signIn() {
 	});
 }
 
-// Simple sign out function
-// Simple sign out function with route-based iframe behavior
+// Simple sign out function with iframe awareness
 export async function signOut() {
 	if (!browser) return Promise.resolve(false);
 	error = null;
@@ -140,15 +156,13 @@ export async function signOut() {
 				// Delete session on server
 				await fetch('/api/auth/session', { method: 'DELETE' });
 
-				// Use route to determine logout behavior
-				const isAddonRoute = window.location.pathname === '/addon';
-
-				if (isAddonRoute) {
-					// Addon route (iframe context): just reload to show login UI
+				// IFRAME-AWARE LOGOUT
+				if (isAddonRoute()) {
+					// In addon/iframe: just reload to show login UI
 					console.log('Addon route logout: reloading page');
 					window.location.reload();
 				} else {
-					// Normal web app routes: use SvelteKit's invalidation
+					// Normal web app: use SvelteKit's invalidation
 					console.log('Normal route logout: using invalidateAll');
 					await invalidateAll();
 				}

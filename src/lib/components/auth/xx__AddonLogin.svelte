@@ -2,40 +2,44 @@
 <script lang="ts">
 	import { Button } from "$lib/components/ui/button";
 	import { Checkbox } from "$lib/components/ui/checkbox";
-	import { ArrowRight } from 'lucide-svelte';
+	import { signIn, getError } from '$lib/services/firebase/auth.svelte';
+	import { ArrowRight } from '@lucide/svelte';
 	import ModeToggle from "../ui/mode-toggle.svelte";
-	import { iframeSignIn } from '$lib/services/firebase/iframe-auth';
 	
-	// Local state - NO REACTIVE AUTH STATE
+	// Local state
 	let isSigningIn = $state(false);
 	let showTutorial = $state(true);
-	let errorMessage = $state('');
 	
 	async function handleGoogleSignIn() {
 		isSigningIn = true;
-		errorMessage = '';
-		
 		try {
+			await signIn();
 			localStorage.setItem('pipewriter-show-tutorial', showTutorial.toString());
-			await iframeSignIn();
-			// Function handles reload, so this won't execute
+			console.log('Sign in successful in iframe, tutorial preference saved:', showTutorial);
+			// NO NAVIGATION - Let the server reload handle the state change
 		} catch (error) {
 			console.error('Sign in error:', error);
-			errorMessage = error.message || 'Sign in failed';
 		} finally {
 			isSigningIn = false;
 		}
 	}
+	
+	let authError = $derived(getError());
 </script>
 
+<!-- Iframe-optimized login with safe padding and spacing -->
 <div class="min-h-full bg-background flex flex-col">
+	
+	<!-- Scaled up mode toggle -->
 	<div class="fixed top-3 right-3 scale-120 origin-top-right">
 		<ModeToggle />
 	</div>
 	
+	<!-- Safe top padding for iframe -->
 	<div class="flex-1 flex flex-col items-center justify-center py-8 px-4 mb-32">
 		<div class="w-full max-w-[240px] space-y-6">
 			
+			<!-- Compact Headlines for iframe -->
 			<div class="text-center space-y-3">
 				<h1 class="text-xl font-bold tracking-tight">
 					Welcome to Pipewriter
@@ -45,12 +49,14 @@
 				</p>
 			</div>
 
-			{#if errorMessage}
+			<!-- Auth Error -->
+			{#if authError}
 				<div class="p-3 text-xs text-destructive-foreground bg-destructive/10 rounded-md border border-destructive/20">
-					{errorMessage}
+					{authError}
 				</div>
 			{/if}
 
+			<!-- Google Sign In Button with proper spacing -->
 			<div class="px-2">
 				<Button 
 					class="w-full h-10 text-sm"
@@ -72,6 +78,7 @@
 				</Button>
 			</div>
 
+			<!-- Centered Tutorial Checkbox -->
 			<div class="flex items-center justify-center space-x-3 px-2">
 				<Checkbox 
 					id="show-tutorial-iframe" 
@@ -88,7 +95,9 @@
 		</div>
 	</div>
 
+	<!-- Styled bottom footer -->
 	<div class="pb-6 text-center space-y-3">
+		<!-- Main App Button -->
 		<div>
 			<Button 
 				variant="ghost" 
@@ -99,6 +108,33 @@
 				Main App
 				<ArrowRight class="h-3 w-3 ml-1" />
 			</Button>
+		</div>
+		
+		<!-- Footer Links -->
+		<div class="flex items-center justify-center gap-4 text-xs">
+			<a 
+				href="https://pipewriter.io" 
+				target="_blank"
+				class="text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline"
+			>
+				Website
+			</a>
+			<span class="text-muted-foreground/50">•</span>
+			<a 
+				href="https://pipewriter.io/terms" 
+				target="_blank"
+				class="text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline"
+			>
+				Terms
+			</a>
+			<span class="text-muted-foreground/50">•</span>
+			<a 
+				href="https://pipewriter.io/privacy" 
+				target="_blank"
+				class="text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline"
+			>
+				Privacy
+			</a>
 		</div>
 	</div>
 </div>
