@@ -6,21 +6,22 @@
   import AppAbout from './AppAbout.svelte';
   import UserAvatar from '$lib/components/user/UserAvatar.svelte';
   import UpgradeDrawer from '$lib/components/pricing/UpgradeDrawer.svelte';
-  import { useTrialFeatures } from '$lib/context/trial.svelte';
   import { docLinks, DRIVE_FOLDER_URL } from '$lib/data/addon/templateDocs';
   
-  // Props
+  // Props instead of context - same functionality
   const props = $props<{
-    onToggleAboutModal: () => void
+    onToggleAboutModal: () => void;
+    user: any;
+    isPro: boolean;
+    trialActive: boolean;
+    trialDaysLeft: number;
+    onSignOut: () => Promise<void>;
   }>();
   
-  // Get trial features context
-  const trialFeatures = useTrialFeatures();
-  
-  // State variables 
+  // State variables - same as before
   let showAboutModal = $state(false);
   let dropdownOpen = $state(false);
-  let showUpgradeDrawer = $state(false); // ADDED: Upgrade drawer state
+  let showUpgradeDrawer = $state(false);
   
   function openUrl(url: string) {
     window.open(url, '_blank');
@@ -37,7 +38,6 @@
     dropdownOpen = !dropdownOpen;
   }
   
-  // ADDED: Upgrade drawer functions
   function openUpgradeFlow() {
     showUpgradeDrawer = true;
   }
@@ -46,18 +46,18 @@
     showUpgradeDrawer = open;
   }
   
-  // Get current subscription status for button styling
+  // Same logic, just using props instead of context
   function isPro() {
-    return trialFeatures.trialInfo.isPro;
+    return props.isPro;
   }
   
   function isActive() {
-    return trialFeatures.trialInfo.active;
+    return props.trialActive;
   }
 </script>
 
 <div class="w-full pr-5 h-12 flex items-center justify-between">
-  <!-- Docs Dropdown -->
+  <!-- Docs Dropdown - same as before -->
   <div class="relative">
     <Button
       variant="outline"
@@ -114,9 +114,9 @@
     {/if}
   </div>
 
-  <!-- Right side: Upgrade Button, Help Button and User Avatar -->
+  <!-- Right side: Upgrade Button and User Avatar - same as before -->
   <div class="flex items-center gap-2 mr-2">
-    <!-- ADDED: Round Upgrade Button for Dev -->
+    <!-- Round Upgrade Button - same styling -->
     <Button
       variant={isPro() ? "default" : "outline"}
       size="icon"
@@ -133,25 +133,20 @@
       <Crown class="h-3 w-4" />
     </Button>
 
-    <!-- Help Button -->
-    <!-- <Button
-      variant="ghost"
-      size="icon"
-      class="h-9 w-9 rounded-full flex items-center justify-center"
-      onclick={toggleAboutModal}
-      aria-label="Help and about"
-    >
-      <HelpCircle class="h-4 w-4" />
-    </Button> -->
-
-    <!-- User Avatar -->
-    <UserAvatar />
+    <!-- User Avatar with props -->
+    <UserAvatar 
+      user={props.user}
+      isPro={props.isPro}
+      trialActive={props.trialActive}
+      trialDaysLeft={props.trialDaysLeft}
+      onSignOut={props.onSignOut}
+    />
   </div>
   
-  <!-- ADDED: Upgrade Drawer -->
+  <!-- Upgrade Drawer - same as before -->
   <UpgradeDrawer isOpen={showUpgradeDrawer} onOpenChange={handleUpgradeDrawerChange} />
 
-  <!-- About Modal -->
+  <!-- About Modal - same as before -->
   <AppAbout 
     showAboutModal={showAboutModal}
     onToggleAboutModal={toggleAboutModal}

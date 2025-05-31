@@ -1,47 +1,46 @@
 <!-- src/routes/+page.svelte -->
 <script lang="ts">
-  import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
   import { Button } from "$lib/components/ui/button";
   import { Checkbox } from "$lib/components/ui/checkbox";
   import ModeToggle from "$lib/components/ui/mode-toggle.svelte";
-  import { signIn, getError, getUser, isLoading } from '$lib/services/firebase/auth.svelte';
+  import { signIn } from '$lib/services/auth';
   import { ArrowRight } from 'lucide-svelte';
+
+  // Get server data to check if user is already logged in
+  const { data } = $props();
+
+  // If user is already authenticated (server knows), show different content
+  const isAuthenticated = data?.user != null;
 
   // Local state
   let isSigningIn = $state(false);
   let showTutorial = $state(true);
-  let mounted = $state(false);
-
-  // Check if user is already authenticated and redirect
-  $effect(() => {
-    const user = getUser();
-    const loading = isLoading();
-    
-    if (mounted && !loading && user) {
-      console.log('User already authenticated, redirecting to addon...');
-      goto('/addon');
-    }
-  });
-
-  onMount(() => {
-    mounted = true;
-  });
+  let authError = $state<string | null>(null);
 
   async function handleGoogleSignIn() {
+    if (isSigningIn) return;
+    
     isSigningIn = true;
+    authError = null;
+    
     try {
-      await signIn();
+      // Save tutorial preference
       localStorage.setItem('pipewriter-show-tutorial', showTutorial.toString());
-      console.log('Sign in successful, tutorial preference saved:', showTutorial);
+      
+      // Simple sign in - will reload page on success
+      await signIn();
+      
     } catch (error) {
       console.error('Sign in error:', error);
+      authError = error instanceof Error ? error.message : 'Sign in failed';
     } finally {
       isSigningIn = false;
     }
   }
 
-  let authError = $derived(getError());
+  function goToApp() {
+    window.location.href = '/addon';
+  }
 </script>
 
 <div class="min-h-screen bg-background relative">
@@ -50,23 +49,36 @@
     <ModeToggle />
   </div>
 
-  <!-- Main Content - positioned upper-center -->
+  <!-- Main Content -->
   <div class="flex flex-col items-center pt-24 pb-16 px-6 min-h-screen">
-    {#if mounted}
-      <div class="w-full max-w-xs sm:max-w-sm space-y-8">
-        
+    <div class="w-full max-w-xs sm:max-w-sm space-y-8">
+      
+      <!-- Headlines -->
+      <div class="text-center space-y-4">
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
+          Welcome to Pipewriter
+        </h1>
+        <p class="text-muted-foreground text-sm sm:text-base">
+          Beautiful content elements for Google Docs
+        </p>
+      </div>
 
-        <!-- Headlines -->
+      {#if isAuthenticated}
+        <!-- User is already logged in -->
         <div class="text-center space-y-4">
-          <h4 class="text-[0.5em] text-foreground/40">homepage</h4>
-					<h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
-            Welcome to Pipewriter
-          </h1>
-          <p class="text-muted-foreground text-sm sm:text-base">
-            Beautiful content elements for Google Docs
-          </p>
+          <div class="p-4 bg-primary/10 text-primary rounded-lg">
+            ✅ You're signed in as {data.user.email}
+          </div>
+          
+          <Button class="w-full h-11" onclick={goToApp}>
+            <span>Open Pipewriter</span>
+            <ArrowRight class="h-4 w-4 ml-2" />
+          </Button>
         </div>
-
+        
+      {:else}
+        <!-- User needs to sign in -->
+        
         <!-- Auth Error -->
         {#if authError}
           <div class="p-3 text-sm text-destructive-foreground bg-destructive/10 rounded-md border border-destructive/20">
@@ -74,7 +86,7 @@
           </div>
         {/if}
 
-        <!-- Google Sign In Button - Responsive for narrow widths -->
+        <!-- Google Sign In Button -->
         <Button 
           class="w-full h-11 text-sm sm:text-base"
           onclick={handleGoogleSignIn}
@@ -84,7 +96,6 @@
             <div class="h-4 w-4 border-2 border-t-transparent border-current rounded-full animate-spin mr-2 flex-shrink-0"></div>
             <span class="truncate">Signing in...</span>
           {:else}
-            <!-- Use the proper Google logo -->
             <img 
               src="/logos/google.svg" 
               alt="Google" 
@@ -104,25 +115,23 @@
           />
           <label 
             for="show-tutorial" 
-            class="text-sm leading-relaxed peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+            class="text-sm leading-relaxed cursor-pointer flex-1"
           >
-            Show tutorial
+            Show tutorial when opening app
           </label>
         </div>
+      {/if}
+    </div>
 
-      </div>
-
-      <!-- Bottom tagline -->
-      <div class="mt-auto pt-8 text-center">
-        <p class="text-sm text-muted-foreground">
-          Prototypes start with words
-        </p>
-      </div>
-    {/if}
+    <!-- Bottom tagline -->
+    <div class="mt-auto pt-8 text-center">
+      <p class="text-sm text-muted-foreground">
+        Prototypes start with words
+      </p>
+    </div>
   </div>
 </div>
 
-<!-- Add responsive breakpoint for very small screens -->
 <style>
   @media (min-width: 475px) {
     .xs\:block {

@@ -1,26 +1,32 @@
 <!-- src/lib/components/user/UserAvatar.svelte -->
 <script lang="ts">
-  import { fade } from 'svelte/transition';
-  import ProfileCard from './ProfileCard.svelte';
-  import { useTrialFeatures } from '$lib/context/trial.svelte';
   import * as Avatar from "$lib/components/ui/avatar/index.js";
-  import { getUser } from '$lib/services/firebase/auth.svelte';
-  
-  // SIMPLIFIED: No props needed since we only use UpgradeDrawer now
-  
+  import ProfileCard from './ProfileCard.svelte';
+
+  // Simple props - no contexts
+  const props = $props<{
+    user: {
+      uid: string;
+      email: string;
+      displayName?: string;
+      photoURL?: string;
+    };
+    isPro: boolean;
+    trialActive: boolean;
+    trialDaysLeft: number;
+    onSignOut: () => Promise<void>;
+  }>();
+
   // Local state
   let showProfile = $state(false);
-  
-  // Get trial features to determine subscription status
-  const trialFeatures = useTrialFeatures();
-  
+
   // Get subscription status
   function getSubscriptionStatus() {
-    if (trialFeatures.trialInfo.isPro) return "Pro";
-    if (trialFeatures.trialInfo.active) return "Trial";
+    if (props.isPro) return "Pro";
+    if (props.trialActive) return "Trial";
     return "Free";
   }
-  
+
   // Badge color based on status
   function getBadgeColor() {
     const status = getSubscriptionStatus();
@@ -30,28 +36,25 @@
       default: return "bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300";
     }
   }
-  
+
   // Generate initials for fallback
   function getInitials() {
-    const user = getUser();
-    if (!user) return '';
-    
-    if (user.displayName) {
-      return user.displayName
+    if (props.user.displayName) {
+      return props.user.displayName
         .split(' ')
         .map(name => name[0])
         .join('')
         .toUpperCase()
         .slice(0, 2);
     }
-    
-    if (user.email) {
-      return user.email[0].toUpperCase();
+
+    if (props.user.email) {
+      return props.user.email[0].toUpperCase();
     }
-    
-    return '';
+
+    return 'U';
   }
-  
+
   function toggleProfile() {
     showProfile = !showProfile;
   }
@@ -64,9 +67,9 @@
     aria-label="Toggle profile menu"
   >
     <Avatar.Root class="h-7 w-7">
-      {#if getUser() && getUser()?.photoURL}
+      {#if props.user.photoURL}
         <Avatar.Image 
-          src={getUser().photoURL} 
+          src={props.user.photoURL} 
           alt="User avatar" 
         />
       {/if}
@@ -76,17 +79,20 @@
     </Avatar.Root>
     
     <!-- Status Badge -->
-    {#if getUser()}
-      <div class="absolute -top-2 -right-3 rounded-md text-[0.5rem] font-bold px-1 min-w-5 h-5 flex items-center justify-center {getBadgeColor()} shadow-sm">
-        {getSubscriptionStatus()}
-      </div>
-    {/if}
+    <div class="absolute -top-2 -right-3 rounded-md text-[0.5rem] font-bold px-1 min-w-5 h-5 flex items-center justify-center {getBadgeColor()} shadow-sm">
+      {getSubscriptionStatus()}
+    </div>
   </button>
   
   {#if showProfile}
     <ProfileCard 
       showProfileCard={showProfile} 
       onToggleProfileCard={toggleProfile}
+      user={props.user}
+      isPro={props.isPro}
+      trialActive={props.trialActive}
+      trialDaysLeft={props.trialDaysLeft}
+      onSignOut={props.onSignOut}
     />
   {/if}
 </div>

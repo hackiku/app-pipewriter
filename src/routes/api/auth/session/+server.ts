@@ -1,72 +1,87 @@
 // src/routes/api/auth/session/+server.ts
 import { json } from '@sveltejs/kit';
-import { adminAuth } from '$lib/server/firebase-admin';
+import { adminAuth, adminFirestore } from '$lib/server/firebase-admin';
 import { dev } from '$app/environment';
 
-// Session duration (5 days)
-const SESSION_EXPIRES_IN = 60 * 60 * 24 * 5 * 1000;
+const SESSION_EXPIRES_IN = 60 * 60 * 24 * 5 * 1000; // 5 days
 
 /**
- * Creates a session from a Firebase ID token
+ * Creates session AND provisions user in one step
  */
 export async function POST({ request, cookies }) {
 	try {
 		const { idToken } = await request.json();
 
 		if (!idToken) {
-			console.error('No ID token provided');
 			return json({ error: 'No ID token provided' }, { status: 400 });
 		}
 
-		console.log('Creating session from ID token');
-
-		// Create a session cookie
+		// Create session cookie
 		const sessionCookie = await adminAuth.createSessionCookie(idToken, {
 			expiresIn: SESSION_EXPIRES_IN
 		});
 
-		// Set cookie options
-		const options = {
-			maxAge: SESSION_EXPIRES_IN / 1000, // Convert to seconds
-			httpOnly: true,
-			secure: !dev, // Only secure in production
-			path: '/',
-			sameSite: 'strict'
-		};
+		// Get user info from token
+		const decodedToken = await adminAuth.verifyIdToken(idToken);
+		const authUser = await adminAuth.getUser(decodedToken.uid);
 
-		// Set the cookie
+		// Provision user in Firestore (merge operation)
+		const userRef = adminFirestore.collection('users').doc(authUser.uid);
+		const existingDoc = await userRef.get();
+
+		if (existingDoc.exists) {
+			// Update existing user
+			await userRef.update({
+				lastLoginDate: new Date(),
+				updatedAt: new Date(),
+				email: authUser.email,
+				displayName: authUser.displayName || null,
+				photoURL: authUser.photoURL || null,
+			});
+			console.log(`✅ Updated existing user: ${authUser.email}`);
+		} else {
+			// Create new user with trial
+			await userRef.set({
+				uid: authUser.uid,
+				email: authUser.email,
+				displayName: authUser.displayName || null,
+				photoURL: authUser.photoURL || null,
+				tier: 'trial',
+				pro: false,
+				trialStartDate: new Date(),
+				projectsCreated: 0,
+				elementsUsed: 0,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				lastLoginDate: new Date(),
+				signupSource: 'google-auth',
+				onboardingCompleted: false,
+			});
+			console.log(`✅ Created new user with trial: ${authUser.email}`);
+		}
+
+		// Set secure cookie for iframe
 		cookies.set('__session', sessionCookie, {
 			maxAge: SESSION_EXPIRES_IN / 1000,
 			httpOnly: true,
-			// secure: !dev,
 			secure: true,
 			path: '/',
-			sameSite: 'none' // Change from 'strict' to 'none' for iframe support
+			sameSite: 'none' // Essential for iframe
 		});
 
-		console.log('Session created successfully');
-
 		return json({ success: true });
+
 	} catch (error) {
-		console.error('Error creating session:', error.message);
-
-		// Provide more detailed error info in development
-		if (dev) {
-			console.error('Full error details:', error);
-			return json({
-				error: 'Failed to create session',
-				message: error.message,
-				code: error.code || 'unknown_error',
-				// Don't include stack trace in response, but log it
-			}, { status: 401 });
-		}
-
-		return json({ error: 'Authentication failed' }, { status: 401 });
+		console.error('Session creation failed:', error);
+		return json({
+			error: 'Authentication failed',
+			details: dev ? error.message : undefined
+		}, { status: 401 });
 	}
 }
 
 /**
- * Deletes the session cookie
+ * Deletes session cookie
  */
 export async function DELETE({ cookies }) {
 	cookies.delete('__session', { path: '/' });
