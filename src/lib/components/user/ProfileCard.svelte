@@ -1,12 +1,12 @@
 <!-- src/lib/components/user/ProfileCard.svelte -->
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import { X, Mail, CheckCircle, Clock, Sparkles, LogOut, Crown } from "@lucide/svelte";
+  import { X, Mail, Clock, Sparkles, LogOut, Crown, RefreshCw } from "@lucide/svelte";
   import { Button } from '$lib/components/ui/button';
   import * as Avatar from "$lib/components/ui/avatar/index.js";
-  import UpgradeDrawer from '$lib/components/pricing/UpgradeDrawer.svelte';
+  import { switchAccount } from '$lib/services/auth';
   
-  // Props instead of contexts - same functionality
+  // Props
   const props = $props<{
     showProfileCard: boolean;
     onToggleProfileCard: () => void;
@@ -22,25 +22,13 @@
     onSignOut: () => Promise<void>;
   }>();
   
-  // State - SAME AS BEFORE
-  let showUpgradeDrawer = $state(false);
+  // Simple state
   let isLoggingOut = $state(false);
-  let isTransitioning = $state(false); // ADDED: Prevent double-opens
+  let isSwitching = $state(false);
+  let isUpgrading = $state(false);
+  let isDowngrading = $state(false);
   
-  // Functions using props instead of contexts - SAME LOGIC
-  function isPro() {
-    return props.isPro;
-  }
-  
-  function isActive() {
-    return props.trialActive;
-  }
-  
-  function getDaysLeft() {
-    return props.trialDaysLeft;
-  }
-  
-  // Generate initials for avatar - SAME LOGIC
+  // Generate initials
   function getInitials() {
     if (!props.user) return '';
     
@@ -64,75 +52,98 @@
     props.onToggleProfileCard();
   }
   
-  // SAME MODAL TRANSITION LOGIC
-  function openUpgradeFlow() {
-    if (isTransitioning) return; // Prevent double-opens
-    
-    isTransitioning = true;
-    
-    // Close profile card immediately
-    closeCard();
-    
-    // Wait for ProfileCard fade out + a bit extra for safety
-    setTimeout(() => {
-      showUpgradeDrawer = true;
-      isTransitioning = false;
-    }, 250); // Slightly longer than fade duration
+  // Simple upgrade - just call API and reload
+  async function handleUpgrade() {
+    if (isUpgrading) return;
+
+    isUpgrading = true;
+    try {
+      const response = await fetch('/api/user/upgrade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        console.log('Upgrade successful, reloading...');
+        window.location.reload();
+      } else {
+        console.error('Upgrade failed');
+      }
+    } catch (error) {
+      console.error('Upgrade error:', error);
+    } finally {
+      isUpgrading = false;
+    }
   }
-  
-  // SAME DRAWER STATE MANAGEMENT
-  function handleUpgradeDrawerChange(open: boolean) {
-    showUpgradeDrawer = open;
-    
-    // Reset transitioning state when drawer closes
-    if (!open) {
-      isTransitioning = false;
+
+  // Simple downgrade - just call API and reload
+  async function handleDowngrade() {
+    if (isDowngrading) return;
+
+    isDowngrading = true;
+    try {
+      const response = await fetch('/api/user/downgrade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        console.log('Downgrade successful, reloading...');
+        window.location.reload();
+      } else {
+        console.error('Downgrade failed');
+      }
+    } catch (error) {
+      console.error('Downgrade error:', error);
+    } finally {
+      isDowngrading = false;
     }
   }
   
   async function handleLogout() {
+    if (isLoggingOut) return;
+
     try {
       isLoggingOut = true;
       await props.onSignOut();
-      closeCard(); // Close profile card after logout
     } catch (error) {
       console.error('Logout failed:', error);
-      // Could add toast notification here
     } finally {
       isLoggingOut = false;
     }
   }
   
-  // SAME RENDER LOGIC
-  let shouldRenderDrawer = $derived(!props.showProfileCard && showUpgradeDrawer);
+  async function handleAccountSwitch() {
+    if (isSwitching) return;
+    
+    try {
+      isSwitching = true;
+      closeCard();
+      await switchAccount();
+    } catch (error) {
+      console.error('Account switch failed:', error);
+    } finally {
+      isSwitching = false;
+    }
+  }
 </script>
 
-<!-- SAME AS BEFORE: Only render drawer when profile is fully closed -->
-{#if shouldRenderDrawer}
-  <UpgradeDrawer isOpen={showUpgradeDrawer} onOpenChange={handleUpgradeDrawerChange} />
-{/if}
-
 {#if props.showProfileCard}
-  <!-- Profile Modal with SAME styling -->
-  <a 
+  <div 
     class="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4"
     onclick={closeCard}
-		href="/"
-		type="button"
     role="dialog"
-		tabindex=0
     aria-modal="true"
     in:fade={{ duration: 200 }}
     out:fade={{ duration: 200 }}
   >
-    <!-- Modal Content - SAME AS BEFORE -->
     <div 
       class="bg-background rounded-lg shadow-lg w-full max-w-sm relative border"
       onclick={(e) => e.stopPropagation()}
       onkeydown={(e) => e.key === 'Escape' && closeCard()}
       tabindex="-1"
     >
-      <!-- Close button - SAME AS BEFORE -->
+      <!-- Close button -->
       <button
         class="absolute top-3 right-3 p-1 rounded-full hover:bg-muted transition-colors"
         onclick={closeCard}
@@ -141,11 +152,10 @@
         <X class="h-4 w-4" />
       </button>
 
-      <!-- Content - SAME AS BEFORE -->
+      <!-- Content -->
       <div class="p-6 pt-8 space-y-6">
-        
         {#if props.user}
-          <!-- User Info - SAME AS BEFORE -->
+          <!-- User Info -->
           <div class="text-center space-y-4">
             <!-- Avatar -->
             <div class="flex justify-center">
@@ -162,30 +172,28 @@
               </Avatar.Root>
             </div>
 
-            <!-- Name and Email - SAME AS BEFORE -->
+            <!-- Name and Email -->
             <div class="space-y-2">
               <h2 class="text-lg font-semibold">
                 {props.user.displayName || 'User'}
               </h2>
-              {#if props.user.email}
-                <div class="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Mail class="h-4 w-4" />
-                  <span class="truncate">{props.user.email}</span>
-                </div>
-              {/if}
+              <div class="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Mail class="h-4 w-4" />
+                <span class="truncate">{props.user.email}</span>
+              </div>
             </div>
 
-            <!-- Subscription Status Badge - SAME AS BEFORE -->
+            <!-- Subscription Status Badge -->
             <div class="flex justify-center">
-              {#if isPro()}
+              {#if props.isPro}
                 <div class="inline-flex items-center gap-2 text-sm font-medium bg-primary text-primary-foreground px-4 py-2 rounded-full">
                   <Crown class="h-4 w-4" />
                   Pro Plan
                 </div>
-              {:else if isActive()}
+              {:else if props.trialActive}
                 <div class="inline-flex items-center gap-2 text-sm font-medium bg-amber-500 text-white px-4 py-2 rounded-full">
                   <Clock class="h-4 w-4" />
-                  Trial • {getDaysLeft()} {getDaysLeft() === 1 ? 'day' : 'days'} left
+                  Trial • {props.trialDaysLeft} {props.trialDaysLeft === 1 ? 'day' : 'days'} left
                 </div>
               {:else}
                 <div class="inline-flex items-center text-sm font-medium bg-muted text-muted-foreground px-4 py-2 rounded-full">
@@ -195,32 +203,61 @@
             </div>
           </div>
 
-          <!-- Action Buttons - SAME AS BEFORE -->
+          <!-- Action Buttons -->
           <div class="space-y-3">
-            <!-- Upgrade Button with proper disabled state - SAME AS BEFORE -->
+            <!-- Upgrade/Downgrade Button -->
+            {#if props.isPro}
+              <Button 
+                variant="outline"
+                class="w-full h-11 font-medium"
+                onclick={handleDowngrade}
+                disabled={isDowngrading || isLoggingOut || isSwitching}
+              >
+                {#if isDowngrading}
+                  <div class="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Downgrading...
+                {:else}
+                  Downgrade to Free
+                {/if}
+              </Button>
+            {:else}
+              <Button 
+                class="w-full h-11 font-medium"
+                onclick={handleUpgrade}
+                disabled={isUpgrading || isLoggingOut || isSwitching}
+              >
+                {#if isUpgrading}
+                  <div class="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Upgrading...
+                {:else}
+                  <Sparkles class="h-4 w-4 mr-2" />
+                  Upgrade to Pro
+                {/if}
+              </Button>
+            {/if}
+
+            <!-- Account Switch Button -->
             <Button 
-              class="w-full h-11 font-medium"
-              onclick={openUpgradeFlow}
-              disabled={isTransitioning}
+              variant="outline"
+              class="w-full h-9 text-sm"
+              onclick={handleAccountSwitch}
+              disabled={isLoggingOut || isSwitching || isUpgrading || isDowngrading}
             >
-              {#if isTransitioning}
-                <div class="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
-                Opening...
-              {:else if isPro()}
-                <Sparkles class="h-4 w-4 mr-2" />
-                Manage Subscription
+              {#if isSwitching}
+                <div class="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
+                Switching...
               {:else}
-                <Sparkles class="h-4 w-4 mr-2" />
-                Upgrade to Pro
+                <RefreshCw class="h-3 w-3 mr-2" />
+                Switch account
               {/if}
             </Button>
 
-            <!-- Logout Button - SAME AS BEFORE -->
+            <!-- Logout Button -->
             <Button 
               variant="outline"
               class="w-full h-11"
               onclick={handleLogout}
-              disabled={isLoggingOut || isTransitioning}
+              disabled={isLoggingOut || isSwitching || isUpgrading || isDowngrading}
             >
               {#if isLoggingOut}
                 <div class="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
@@ -234,12 +271,12 @@
         {/if}
       </div>
 
-      <!-- Footer - SAME AS BEFORE -->
+      <!-- Footer -->
       <div class="px-6 pb-4 text-center border-t pt-4">
         <p class="text-xs text-muted-foreground">
           Pipewriter v1.0 • Made with ❤️ for writers
         </p>
       </div>
     </div>
-  </a>
+  </div>
 {/if}

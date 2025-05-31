@@ -1,31 +1,20 @@
-// src/routes/+layout.server.ts
-import { redirect } from '@sveltejs/kit';
+// src/routes/+layout.server.ts - Clean app-wide layout
 import type { LayoutServerLoad } from './$types';
 import { adminFirestore } from '$lib/server/firebase-admin';
 
-// Trial duration in days
 const TRIAL_PERIOD_DAYS = 10;
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
-	// Public routes - no auth needed (removed the redirect logic here)
-	const publicRoutes = ['/', '/login', '/signup', '/about'];
-	const isPublicRoute = publicRoutes.some(route => url.pathname === route);
-
-	// For /addon route specifically, redirect to home if not authenticated
-	// if (url.pathname.startsWith('/addon') && !locals.authenticated) {
-	// 	throw redirect(303, '/');
-	// }
-
-	// If authenticated, load additional user data
+	// If authenticated, load user data
 	if (locals.authenticated && locals.user) {
 		try {
 			const uid = locals.user.uid;
 
-			// Get user data from Firestore (this will auto-create if needed)
+			// Get user data from Firestore
 			const userDoc = await adminFirestore.collection('users').doc(uid).get();
 			let userData = userDoc.data() || {};
 
-			// FIXED: Use .exists property, not .exists() method
+			// Create user if doesn't exist
 			if (!userDoc.exists) {
 				console.log(`Creating missing user document for ${uid}`);
 
@@ -42,14 +31,14 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 					createdAt: new Date(),
 					updatedAt: new Date(),
 					lastLoginDate: new Date(),
-					signupSource: 'server-fallback'
+					signupSource: 'server-provision'
 				};
 
 				await adminFirestore.collection('users').doc(uid).set(newUserData);
 				userData = newUserData;
 			}
 
-			// Calculate current tier status
+			// Calculate tier status
 			const isPro = userData.pro === true;
 			let trialActive = false;
 			let trialDaysLeft = 0;
@@ -63,8 +52,9 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 				trialActive = trialDaysLeft > 0;
 			}
 
-			// Get feature flags based on current status
+			// Get feature flags
 			const features = getFeatureFlags(isPro, trialActive);
+			const userTier = isPro ? 'pro' : (trialActive ? 'trial' : 'free');
 
 			return {
 				user: locals.user,
@@ -73,6 +63,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 				trialDaysLeft,
 				trialStartDate: userData.trialStartDate ? userData.trialStartDate.toDate() : null,
 				features,
+				userTier,
 				maxProjects: isPro ? 999 : (trialActive ? 10 : 3),
 				canExport: isPro || trialActive
 			};
@@ -81,17 +72,18 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 		}
 	}
 
-	// Default return for public routes or error cases
+	// Default return for non-authenticated users
 	return {
 		user: locals.user,
 		isPro: false,
 		trialActive: false,
 		trialDaysLeft: 0,
+		userTier: 'free',
 		features: getDefaultFeatures()
 	};
 };
 
-// Default features (free tier)
+// Feature flags
 function getDefaultFeatures() {
 	return {
 		allowedElements: ['basic'],
@@ -103,7 +95,6 @@ function getDefaultFeatures() {
 	};
 }
 
-// Get feature flags based on user status
 function getFeatureFlags(isPro: boolean, trialActive: boolean) {
 	if (isPro) {
 		return {
