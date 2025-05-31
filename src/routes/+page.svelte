@@ -55,9 +55,11 @@
     {#if mounted}
       <div class="w-full max-w-xs sm:max-w-sm space-y-8">
         
+
         <!-- Headlines -->
         <div class="text-center space-y-4">
-          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
+          <h4 class="text-[0.5em] text-foreground/40">homepage</h4>
+					<h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
             Welcome to Pipewriter
           </h1>
           <p class="text-muted-foreground text-sm sm:text-base">

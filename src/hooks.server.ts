@@ -1,6 +1,6 @@
-// src/hooks.server.ts
-import { adminAuth, adminFirestore } from "$lib/server/firebase-admin";
-import { redirect, type Handle } from "@sveltejs/kit";
+// src/hooks.server.ts - Enhanced version
+import { adminAuth } from "$lib/server/firebase-admin";
+import type { Handle } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
 
 const auth: Handle = async ({ event, resolve }) => {
@@ -12,14 +12,17 @@ const auth: Handle = async ({ event, resolve }) => {
 
 	if (sessionCookie) {
 		try {
-			// Verify the session cookie
+			// SECURITY: Always verify with checkRevoked: true
 			const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true);
 			const uid = decodedClaims.uid;
 
-			// Get basic user data
+			// SECURITY: Double-check user exists and is active
 			const userRecord = await adminAuth.getUser(uid);
 
-			// Only set essential data in locals
+			if (userRecord.disabled) {
+				throw new Error('User account disabled');
+			}
+
 			event.locals.user = {
 				uid,
 				email: userRecord.email,
@@ -29,31 +32,25 @@ const auth: Handle = async ({ event, resolve }) => {
 			event.locals.authenticated = true;
 
 		} catch (error) {
-			// FIXED: Better error handling - silent cleanup for common issues
-			const errorCode = error?.code || error?.errorInfo?.code;
+			console.error('Session verification failed:', error.code || error.message);
 
-			if (errorCode === 'auth/user-not-found' ||
-				errorCode === 'auth/invalid-session-cookie' ||
-				errorCode === 'auth/argument-error') {
-				// Silent cleanup - these are expected when switching between users
-				event.cookies.delete('__session', { path: '/' });
-			} else {
-				// Only log unexpected errors
-				console.error('Unexpected session error:', errorCode || 'unknown');
-				event.cookies.delete('__session', { path: '/' });
-			}
+			// SECURITY: Always clear invalid sessions
+			event.cookies.delete('__session', { path: '/' });
+			event.locals.user = null;
+			event.locals.authenticated = false;
 		}
 	}
 
 	return resolve(event);
 };
 
-// API routes protection
+// SECURITY: Protect ALL API routes
 const apiGuard: Handle = async ({ event, resolve }) => {
-	// Protect API routes that need auth
 	if (event.url.pathname.startsWith('/api/') &&
 		!event.url.pathname.startsWith('/api/auth/') &&
 		!event.locals.authenticated) {
+
+		console.warn(`Unauthorized API access attempt: ${event.url.pathname}`);
 		return new Response(JSON.stringify({ error: 'Unauthorized' }), {
 			status: 401,
 			headers: { 'Content-Type': 'application/json' }

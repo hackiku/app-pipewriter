@@ -126,6 +126,7 @@ export function signIn() {
 }
 
 // Simple sign out function
+// Simple sign out function with route-based iframe behavior
 export async function signOut() {
 	if (!browser) return Promise.resolve(false);
 	error = null;
@@ -139,8 +140,18 @@ export async function signOut() {
 				// Delete session on server
 				await fetch('/api/auth/session', { method: 'DELETE' });
 
-				// Force reload of all server data
-				await invalidateAll();
+				// Use route to determine logout behavior
+				const isAddonRoute = window.location.pathname === '/addon';
+
+				if (isAddonRoute) {
+					// Addon route (iframe context): just reload to show login UI
+					console.log('Addon route logout: reloading page');
+					window.location.reload();
+				} else {
+					// Normal web app routes: use SvelteKit's invalidation
+					console.log('Normal route logout: using invalidateAll');
+					await invalidateAll();
+				}
 
 				return true;
 			})
