@@ -4,7 +4,7 @@
   import { X, Mail, Clock, Sparkles, LogOut, Crown, RefreshCw } from "@lucide/svelte";
   import { Button } from '$lib/components/ui/button';
   import * as Avatar from "$lib/components/ui/avatar/index.js";
-  import { switchAccount } from '$lib/services/auth';
+  import { signOut, switchAccount } from '$lib/services/auth';
   
   // Props
   const props = $props<{
@@ -19,7 +19,6 @@
     isPro: boolean;
     trialActive: boolean;
     trialDaysLeft: number;
-    onSignOut: () => Promise<void>;
   }>();
   
   // Simple state
@@ -52,7 +51,7 @@
     props.onToggleProfileCard();
   }
   
-  // Simple upgrade - just call API and reload
+  // Simple upgrade - call API and reload
   async function handleUpgrade() {
     if (isUpgrading) return;
 
@@ -64,19 +63,19 @@
       });
 
       if (response.ok) {
-        console.log('Upgrade successful, reloading...');
+        console.log('[PROFILE] Upgrade successful, reloading...');
         window.location.reload();
       } else {
-        console.error('Upgrade failed');
+        console.error('[PROFILE] Upgrade failed');
       }
     } catch (error) {
-      console.error('Upgrade error:', error);
+      console.error('[PROFILE] Upgrade error:', error);
     } finally {
       isUpgrading = false;
     }
   }
 
-  // Simple downgrade - just call API and reload
+  // Simple downgrade - call API and reload
   async function handleDowngrade() {
     if (isDowngrading) return;
 
@@ -88,40 +87,43 @@
       });
 
       if (response.ok) {
-        console.log('Downgrade successful, reloading...');
+        console.log('[PROFILE] Downgrade successful, reloading...');
         window.location.reload();
       } else {
-        console.error('Downgrade failed');
+        console.error('[PROFILE] Downgrade failed');
       }
     } catch (error) {
-      console.error('Downgrade error:', error);
+      console.error('[PROFILE] Downgrade error:', error);
     } finally {
       isDowngrading = false;
     }
   }
   
+  // Navigation-based logout (no reload issues)
   async function handleLogout() {
     if (isLoggingOut) return;
 
     try {
       isLoggingOut = true;
-      await props.onSignOut();
+      closeCard(); // Close immediately
+      await signOut(); // Auth service handles navigation
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('[PROFILE] Logout failed:', error);
     } finally {
       isLoggingOut = false;
     }
   }
   
+  // Navigation-based account switch
   async function handleAccountSwitch() {
     if (isSwitching) return;
     
     try {
       isSwitching = true;
-      closeCard();
-      await switchAccount();
+      closeCard(); // Close immediately
+      await switchAccount(); // Auth service handles navigation
     } catch (error) {
-      console.error('Account switch failed:', error);
+      console.error('[PROFILE] Account switch failed:', error);
     } finally {
       isSwitching = false;
     }
