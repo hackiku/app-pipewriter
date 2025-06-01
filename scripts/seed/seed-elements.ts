@@ -21,7 +21,8 @@ const elementsData = [
 		metadata: {
 			supports: { darkMode: true, customColors: true },
 			tier: 'free'
-		}
+		},
+		displayOrder: 1
 	},
 	{
 		id: 'background-empty',
@@ -30,7 +31,8 @@ const elementsData = [
 		metadata: {
 			supports: { darkMode: true, customColors: true },
 			tier: 'free'
-		}
+		},
+		displayOrder: 2
 	},
 	{
 		id: 'background-color',
@@ -39,7 +41,8 @@ const elementsData = [
 		metadata: {
 			supports: { darkMode: true, customColors: true },
 			tier: 'free'
-		}
+		},
+		displayOrder: 3
 	},
 
 	// ===== CONTENT =====
@@ -54,7 +57,8 @@ const elementsData = [
 		metadata: {
 			supports: { darkMode: true, customText: true },
 			tier: 'free'
-		}
+		},
+		displayOrder: 4
 	},
 	{
 		id: 'zz-left',
@@ -69,7 +73,8 @@ const elementsData = [
 			rows: 1,
 			supports: { darkMode: true, customText: true },
 			tier: 'free'
-		}
+		},
+		displayOrder: 5
 	},
 	{
 		id: 'zz-right',
@@ -84,7 +89,8 @@ const elementsData = [
 			rows: 1,
 			supports: { darkMode: true, customText: true },
 			tier: 'trial'
-		}
+		},
+		displayOrder: 6
 	},
 
 	// ===== LISTS =====
@@ -130,7 +136,8 @@ const elementsData = [
 			variant: 'primary',
 			supports: { darkMode: true, customText: true, customColors: true },
 			tier: 'free'
-		}
+		},
+		displayOrder: 1
 	},
 	{
 		id: 'button-secondary-left',
@@ -141,7 +148,8 @@ const elementsData = [
 			variant: 'secondary',
 			supports: { darkMode: true, customText: true, customColors: true },
 			tier: 'free'
-		}
+		},
+		displayOrder: 1
 	},
 	{
 		id: 'buttons-2-left',
@@ -152,7 +160,8 @@ const elementsData = [
 			cols: 2,
 			supports: { darkMode: true, customText: true, customColors: true },
 			tier: 'free'
-		}
+		},
+		displayOrder: 3
 	},
 	{
 		id: 'button-primary-center',
@@ -284,7 +293,6 @@ const elementsData = [
 			tier: 'pro'
 		}
 	},
-
 	// ===== SPECIAL =====
 	{
 		id: 'styleguide',
@@ -326,6 +334,7 @@ async function seedElements() {
 			active: true,
 			createdAt: new Date(),
 			updatedAt: new Date(),
+			displayOrder: element.displayOrder || index,
 
 			// Add computed search-friendly fields
 			searchTerms: [

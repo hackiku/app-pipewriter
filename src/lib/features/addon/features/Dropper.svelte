@@ -1,6 +1,5 @@
-<!-- Fixed src/lib/features/addon/features/Dropper.svelte -->
+<!-- src/lib/features/addon/features/Dropper.svelte -->
 <script lang="ts">
-  import { getContext } from "svelte";
   import { fade, slide, fly } from "svelte/transition";
   import type { ElementTheme, StatusUpdate } from '$lib/types/elements';
   import { insertElement } from "$lib/services/google/docs";
@@ -9,25 +8,26 @@
   import DropperGrid from "./dropper/DropperGrid.svelte";
   import DropperBar from "./dropper/DropperBar.svelte";
   
-  // Props - service context
-  const { context } = $props();
+  // Props - server data instead of contexts
+  const { 
+    context, 
+    elements, 
+    userTier, 
+    features, 
+    showInfo 
+  } = $props();
   
-  // Get UI state from context
-  const uiState = getContext('uiState');
-  
-  // Local state variables - using plain variables where possible to reduce reactivity
+  // Local state variables
   let isProcessing = $state(false);
   let status = $state<StatusUpdate | null>(null);
   let elementsTheme = $state<ElementTheme>('light');
-  let gridColumns = $state(3); // Default to 3 columns
-  let selectedElements: string[] = []; // No need for reactivity here
+  let gridColumns = $state(3);
   
   // Chain mode state
   let chainMode = $state(false);
-  let queuedElements = $state<string[]>([]); // Ordered array of element IDs
+  let queuedElements = $state<string[]>([]);
   
-  // Initialize once on component mount
-  console.log("Dropper component mounted, initial theme:", elementsTheme);
+  console.log("Dropper mounted with elements:", Object.keys(elements).length, "categories");
   
   // Status bar management
   function handleStatusClose() {
@@ -35,33 +35,27 @@
   }
   
   function setStatusWithTimeout(newStatus: StatusUpdate | null, timeoutMs = 500) {
-    // Add elementId to status for better messaging
     if (newStatus && newStatus.details) {
       const elementIdMatch = newStatus.details.match(/(\w+-\w+(?:-\w+)*)/);
       if (elementIdMatch) {
         (newStatus as any).elementId = elementIdMatch[1];
       }
     }
-    
     status = newStatus;
   }
 
-  // Element selection handler - now handles chain mode
+  // Element selection handler
   async function handleElementSelect(event: CustomEvent<{ elementId: string }>) {
     const { elementId } = event.detail;
     
     if (chainMode) {
-      // In chain mode, add to queue instead of inserting directly
       handleAddToQueue(elementId);
       return;
     }
     
     // Normal mode - insert directly
-    const currentTheme = elementsTheme; // Capture current theme to prevent reactivity issues
+    const currentTheme = elementsTheme;
     
-    console.log(`Element selection handler received: ${elementId} with theme ${currentTheme}`);
-
-    // Set processing state
     isProcessing = true;
     setStatusWithTimeout({
       type: "processing",
@@ -71,14 +65,10 @@
     });
 
     try {
-      console.log(`Attempting to insert element: ${elementId} (${currentTheme})`);
-      
       const response = await insertElement(
         elementId, 
         currentTheme,
-        (update) => {
-          setStatusWithTimeout(update);
-        }
+        (update) => setStatusWithTimeout(update)
       );
 
       if (response.success) {
@@ -111,18 +101,14 @@
     }
   }
   
-  // Chain mode element toggle
+  // Chain mode functions
   function handleChainToggle(elementId: string) {
     const currentIndex = queuedElements.indexOf(elementId);
     
     if (currentIndex >= 0) {
-      // Remove from chain
       queuedElements = queuedElements.filter(id => id !== elementId);
-      console.log(`Removed ${elementId} from chain. Chain: [${queuedElements.join(', ')}]`);
     } else {
-      // Add to chain
       queuedElements = [...queuedElements, elementId];
-      console.log(`Added ${elementId} to chain. Chain: [${queuedElements.join(', ')}]`);
     }
     
     setStatusWithTimeout({
@@ -133,17 +119,15 @@
     }, 1000);
   }
   
-  // Get chain position for an element (1-indexed, 0 if not in chain)
   function getChainPosition(elementId: string): number {
     const index = queuedElements.indexOf(elementId);
     return index >= 0 ? index + 1 : 0;
   }
   
-  // Queue management functions
+  // Queue management
   function handleAddToQueue(elementId: string) {
     if (!queuedElements.includes(elementId)) {
       queuedElements = [...queuedElements, elementId];
-      console.log(`Added ${elementId} to queue. Queue length: ${queuedElements.length}`);
       
       setStatusWithTimeout({
         type: "success",
@@ -156,7 +140,6 @@
   
   function handleRemoveFromQueue(elementId: string) {
     queuedElements = queuedElements.filter(id => id !== elementId);
-    console.log(`Removed ${elementId} from queue. Queue length: ${queuedElements.length}`);
   }
   
   async function handleApplyQueue() {
@@ -172,7 +155,6 @@
     });
 
     try {
-      // Insert elements sequentially
       for (let i = 0; i < queuedElements.length; i++) {
         const elementId = queuedElements[i];
         
@@ -189,7 +171,6 @@
           throw new Error(`Failed to insert ${elementId}: ${response.error}`);
         }
         
-        // Small delay between insertions to prevent overwhelming the API
         if (i < queuedElements.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 500));
         }
@@ -199,10 +180,9 @@
         type: "success",
         message: "Queue applied successfully",
         details: `Successfully inserted ${queuedElements.length} elements`,
-        executionTime: Date.now() // Rough timing
+        executionTime: Date.now()
       });
       
-      // Clear queue after successful application
       queuedElements = [];
       
     } catch (error) {
@@ -234,12 +214,9 @@
     }, 1000);
   }
   
-  // Toggle chain mode
   function toggleChainMode() {
     chainMode = !chainMode;
-    console.log(`Chain mode ${chainMode ? 'enabled' : 'disabled'}`);
     
-    // Clear queue when exiting chain mode
     if (!chainMode && queuedElements.length > 0) {
       handleDiscardQueue();
     }
@@ -251,20 +228,15 @@
     }, 1500);
   }
   
-  // Toggle theme function - keep this simple
   function toggleTheme() {
-    const newTheme = elementsTheme === 'light' ? 'dark' : 'light';
-    console.log(`Toggling theme from ${elementsTheme} to ${newTheme}`);
-    elementsTheme = newTheme;
+    elementsTheme = elementsTheme === 'light' ? 'dark' : 'light';
   }
   
-  // Update grid columns - keep this simple
   function updateGridColumns(cols: number) {
-    console.log(`Updating grid columns to: ${cols}`);
     gridColumns = cols;
   }
 
-  // Export chain mode and queue state for parent component
+  // Export for parent component
   export const getChainModeState = () => ({
     chainMode,
     queuedElements,
@@ -280,15 +252,19 @@
     </div>
   {/if}
   
-  <!-- Main Container - No scrollbar visible but still scrollable -->
+  <!-- Main Container -->
   <div class="h-full pb-8 pt-2 overflow-y-auto scrollbar-none">
     <DropperGrid 
       isProcessing={isProcessing}
       context={context}
+      elements={elements}
+      userTier={userTier}
+      features={features}
       theme={elementsTheme}
       gridColumns={gridColumns}
       chainMode={chainMode}
-      {getChainPosition}
+      showInfo={showInfo}
+      getChainPosition={getChainPosition}
       onElementSelect={handleElementSelect}
       onChainToggle={handleChainToggle}
     />
@@ -299,17 +275,19 @@
     <DropperBar 
       isProcessing={isProcessing}
       theme={elementsTheme}
-      selectedElements={selectedElements}
+      selectedElements={[]}
       chainMode={chainMode}
+      queuedElements={queuedElements}
       onToggleTheme={toggleTheme}
       onGridChange={updateGridColumns}
       onToggleChainMode={toggleChainMode}
+      onApplyQueue={handleApplyQueue}
+      onDiscardQueue={handleDiscardQueue}
     />
   </div>
 </div>
 
 <style>
-  /* Remove scrollbar completely */
   .scrollbar-none {
     -ms-overflow-style: none;
     scrollbar-width: none;

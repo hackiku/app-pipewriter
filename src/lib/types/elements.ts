@@ -30,9 +30,23 @@ export interface ElementDefinition {
 	id: string;
 	category: string;
 	description: string;
-	text?: ElementContent;
-	metadata?: ElementMetadata;
+	text?: Record<string, string>;
+	metadata?: {
+		tier?: 'free' | 'trial' | 'pro';
+		supports?: {
+			darkMode?: boolean;
+			customText?: boolean;
+			customColors?: boolean;
+		};
+		cols?: number;
+		rows?: number;
+		variant?: string;
+	};
+	active: boolean;
+	createdAt: Date;
+	updatedAt: Date;
 }
+
 
 export interface ElementWithAccess extends ElementDefinition {
 	isLocked: boolean;
@@ -57,12 +71,15 @@ export interface Element {
 export type StatusType = 'processing' | 'success' | 'error';
 
 export interface StatusUpdate {
-	type: StatusType;
+	type: 'processing' | 'success' | 'error';
 	message: string;
 	details?: string;
 	executionTime?: number;
 	error?: any;
+	elementId?: string;
 }
+
+
 
 // API response interface
 export interface ApiResponse {
