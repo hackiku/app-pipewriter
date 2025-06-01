@@ -1,23 +1,18 @@
-<!-- Fixed src/lib/features/addon/features/dropper/ElementCard.svelte -->
+<!-- src/lib/features/addon/features/dropper/ElementCard.svelte - CLEANED -->
 <script lang="ts">
   import { Button } from '$lib/components/ui/button';
   import { cn } from '$lib/utils';
   import { Plus, AlertCircle, Lock } from '@lucide/svelte';
-  import type { ElementWithAccess, ElementTheme } from '$lib/types/elements';
-  import { elementsService } from '$lib/services/firestore/elements';
-  import { onMount, onDestroy } from 'svelte';
+  import type { ElementData } from '$lib/server/data-loaders';
+  import type { ElementTheme } from '$lib/types/elements';
 
-  import { useTrialFeatures } from '$lib/context/trial.svelte';
-  const trialFeatures = useTrialFeatures();
-
-  // Props - much simpler now
+  // Props - much simpler now, no contexts!
   const props = $props<{
-    element: ElementWithAccess;
+    element: ElementData;
     onSelect: (id: string) => void;
     theme: ElementTheme;
     disabled?: boolean;
     isSelected?: boolean;
-    isLocked?: boolean;
     chainMode?: boolean;
     chainPosition?: number; // Position in chain (1, 2, 3, etc.) - 0 means not in chain
     onChainToggle?: (id: string) => void;
@@ -26,57 +21,21 @@
   // Local state - minimal
   let isProcessing = $state(false);
   let imageError = $state(false);
-  let appTheme = $state<ElementTheme>('light');
-  let observer: MutationObserver | null = null;
 
-  // Use the element's locked state (calculated by service)
-  const isLocked = props.element.isLocked;
-  const isPro = props.element.metadata?.tier === 'pro';
-
-  // Setup mutation observer to detect app theme changes
-  onMount(() => {
-    // Initial dark mode check
-    appTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-
-    // Watch for dark mode changes
-    observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.attributeName === 'class') {
-          const newAppTheme = document.documentElement.classList.contains('dark')
-            ? 'dark'
-            : 'light';
-          if (appTheme !== newAppTheme) {
-            appTheme = newAppTheme;
-          }
-        }
-      }
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    });
-  });
-
-  // Clean up observer on component destroy
-  onDestroy(() => {
-    if (observer) {
-      observer.disconnect();
+  // Get SVG URL - simple path construction
+  function getSvgUrl(): string {
+    const isDarkTheme = typeof window !== 'undefined' && 
+                       document.documentElement.classList.contains('dark');
+    
+    if (props.element.metadata?.supports?.darkMode && isDarkTheme) {
+      return `/elements/${props.element.id}-dark.svg`;
     }
-  });
-
-  // Check if element is locked using trial context
-  function checkIfElementLocked(): boolean {
-    const elementTier = props.element.metadata?.tier || 'free';
-
-    if (trialFeatures.trialInfo.isPro) return false;
-    if (trialFeatures.trialInfo.active) return elementTier === 'pro';
-    return elementTier !== 'free';
+    return `/elements/${props.element.id}.svg`;
   }
 
   // Handle click on the element card
   async function handleClick(e: MouseEvent) {
-    if (props.disabled || isProcessing) return;
+    if (props.disabled || isProcessing || props.element.isLocked) return;
 
     // In chain mode, handle chain toggle instead of direct selection
     if (props.chainMode && props.onChainToggle) {
@@ -86,11 +45,7 @@
       return;
     }
 
-    // Don't proceed if locked
-    if (checkIfElementLocked()) return;
-
     isProcessing = true;
-
     try {
       await props.onSelect(props.element.id);
     } finally {
@@ -98,15 +53,9 @@
     }
   }
 
-  // Get SVG URL using the service - FIXED VERSION
-  function getSvgUrl(): string {
-    return elementsService.getSvgUrl(props.element.id, props.theme, appTheme);
-  }
-
-  // Card styling based on element theme (not app theme)
+  // Card styling based on element theme
   const cardStyles = {
-    light:
-      'bg-white dark:bg-black border border-neutral-300 dark:border-neutral-700/80 hover:bg-neutral-400/30 dark:hover:bg-neutral-900/80',
+    light: 'bg-white dark:bg-black border border-neutral-300 dark:border-neutral-700/80 hover:bg-neutral-400/30 dark:hover:bg-neutral-900/80',
     dark: 'bg-neutral-950 dark:bg-white hover:bg-neutral-900/80 dark:hover:bg-neutral-400/30 border border-neutral-300'
   };
 
@@ -115,20 +64,17 @@
     'transition-all duration-200 ease-out cursor-pointer'
   );
 
-  // Button class calculation
+  // Button class calculation - SIMPLIFIED
   function getButtonClass() {
-    const isLockedElement = checkIfElementLocked();
-
     return cn(
       baseButtonClasses,
       cardStyles[props.theme],
-      // Hover animations for unlocked elements
-      !isLockedElement &&
-        'hover:-translate-y-1 hover:-translate-x-1 hover:rotate-[-2deg] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.7)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.7)]',
-      !isLockedElement && 'active:translate-y-0 active:translate-x-0 active:shadow-none',
+      // Hover animations ONLY for unlocked elements
+      !props.element.isLocked && 'hover:-translate-y-1 hover:-translate-x-1 hover:rotate-[-2deg] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,0.7)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,0.7)]',
+      !props.element.isLocked && 'active:translate-y-0 active:translate-x-0 active:shadow-none',
       props.isSelected && 'ring-2 ring-primary ring-offset-2',
       (props.disabled || isProcessing) && 'opacity-90 cursor-not-allowed pointer-events-none',
-      isLockedElement && 'opacity-60 grayscale'
+      props.element.isLocked && 'opacity-60 grayscale cursor-not-allowed'
     );
   }
 
@@ -144,10 +90,10 @@
     variant="ghost"
     class={getButtonClass()}
     onclick={handleClick}
-    disabled={props.disabled || isProcessing}
-    title={checkIfElementLocked() ? 'Upgrade to access this element' : props.element.description}
+    disabled={props.disabled || isProcessing || props.element.isLocked}
+    title={props.element.isLocked ? `Upgrade to access this ${props.element.metadata?.tier || 'pro'} element` : props.element.description}
   >
-    <!-- FIXED: Proper aspect ratio container -->
+    <!-- Element Image Container -->
     <div class="relative w-full aspect-[4/2] overflow-hidden">
       {#if imageError}
         <div class="flex h-full flex-col items-center justify-center p-2 text-center">
@@ -155,7 +101,7 @@
           <span class="text-xs text-neutral-500">{props.element.id}</span>
         </div>
       {:else}
-        <!-- FIXED: Element Image with proper object-fit -->
+        <!-- Element Image -->
         <img
           src={getSvgUrl()}
           alt={props.element.description}
@@ -164,26 +110,14 @@
         />
       {/if}
 
-      <!-- Chain Mode Selection Button -->
-      {#if props.chainMode && !checkIfElementLocked()}
-        <div class="pointer-events-none absolute left-0 top-0">
-          <!-- Radial gradient for attention -->
-          <div
-            class="bg-gradient-radial absolute inset-0 h-12
-                    w-12 from-accent/20 from-30% via-accent/10
-                    via-60% to-transparent to-100%"
-          ></div>
-        </div>
-
+      <!-- Chain Mode UI -->
+      {#if props.chainMode && !props.element.isLocked}
         <div class="absolute left-1 top-1 z-10">
-          <div
-            class="pointer-events-auto flex h-5 w-5 items-center justify-center
-                   rounded-full border-2 bg-background/95 backdrop-blur-sm
+          <div class="flex h-5 w-5 items-center justify-center rounded-full border-2 bg-background/95 backdrop-blur-sm
                    {props.chainPosition && props.chainPosition > 0
               ? 'border-primary bg-primary text-primary-foreground shadow-sm'
               : 'border-primary/60 bg-background hover:border-primary hover:bg-primary/5'} 
-                   transition-all duration-150 hover:scale-105"
-          >
+                   transition-all duration-150 hover:scale-105">
             {#if props.chainPosition && props.chainPosition > 0}
               <span class="text-xs font-medium">{props.chainPosition}</span>
             {:else}
@@ -193,64 +127,52 @@
         </div>
       {/if}
 
-      {#if !props.chainMode && !checkIfElementLocked()}
-        <!-- Normal Hover Effect for Unlocked Elements -->
-        <div
-          class="bg-gradient-radial absolute inset-0 flex items-center
-                  justify-center from-background/30 from-20%
-                  via-background/10 via-50% to-transparent to-100%
-                  opacity-0 transition-opacity group-hover:opacity-100"
-        >
+      <!-- Hover Overlays -->
+      {#if !props.chainMode && !props.element.isLocked}
+        <!-- Normal Mode: Add Element -->
+        <div class="absolute inset-0 flex items-center justify-center 
+                    bg-gradient-radial from-background/30 from-20% via-background/10 via-50% to-transparent to-100%
+                    opacity-0 transition-opacity group-hover:opacity-100">
           <div class="rounded-full border border-border/50 bg-background/90 p-2 backdrop-blur-sm">
             <Plus class="text-foreground/80" size={20} />
           </div>
         </div>
-      {:else if !props.chainMode && checkIfElementLocked()}
-        <!-- Locked Element Hover Effect -->
-        <div
-          class="bg-gradient-radial absolute inset-0 flex items-center
-                  justify-center from-background/30 from-20%
-                  via-background/10 via-50% to-transparent to-100%
-                  opacity-0 transition-opacity group-hover:opacity-100"
-        >
+      {:else if !props.chainMode && props.element.isLocked}
+        <!-- Locked Element: Upgrade Message -->
+        <div class="absolute inset-0 flex items-center justify-center 
+                    bg-gradient-radial from-background/50 from-20% via-background/30 via-50% to-transparent to-100%
+                    opacity-0 transition-opacity group-hover:opacity-100">
           <div class="rounded-full border border-border/50 bg-background/90 px-2 py-1 backdrop-blur-sm">
-            <span class="text-xs font-medium text-foreground/80">Get Pro</span>
+            <span class="text-xs font-medium text-foreground/80">
+              {props.element.metadata?.tier === 'pro' ? 'Get Pro' : 'Get Trial'}
+            </span>
           </div>
         </div>
       {/if}
 
+      <!-- Processing State -->
       {#if isProcessing}
-        <!-- Processing State Overlay -->
-        <div
-          class="bg-gradient-radial absolute inset-0 flex items-center
-                  justify-center from-background/80 from-20% via-background/60
-                  via-50% to-background/40 to-100% backdrop-blur-sm"
-        >
-          <div
-            class="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"
-          ></div>
+        <div class="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div class="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
         </div>
       {/if}
     </div>
   </Button>
 
-  <!-- External Locked Overlay -->
-  {#if checkIfElementLocked()}
-    <div
-      class="pointer-events-none absolute inset-0 z-10 
-             bg-gradient-to-t from-background via-background/60 to-transparent 
-             from-0% via-25% to-70%
-             border-b border-background"
-    >
-      <div class="absolute bottom-1 right-1 flex items-center gap-1 opacity-70">
+  <!-- Lock Indicator -->
+  {#if props.element.isLocked}
+    <div class="absolute bottom-1 right-1 flex items-center gap-1 opacity-70 pointer-events-none">
+      <div class="bg-background/90 backdrop-blur-sm rounded px-1 py-0.5 flex items-center gap-1">
         <Lock class="h-3 w-3 text-muted-foreground" />
+        <span class="text-xs text-muted-foreground font-medium">
+          {props.element.metadata?.tier === 'pro' ? 'Pro' : 'Trial'}
+        </span>
       </div>
     </div>
   {/if}
 </div>
 
 <style>
-  /* Custom radial gradient utility */
   .bg-gradient-radial {
     background: radial-gradient(var(--tw-gradient-stops));
   }

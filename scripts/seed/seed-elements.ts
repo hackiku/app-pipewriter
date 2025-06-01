@@ -1,4 +1,4 @@
-// scripts/seed-elements.ts - Updated for your structure
+// scripts/seed-elements.ts - FIXED VERSION
 import { adminFirestore } from '../../src/lib/server/firebase-admin.js';
 
 // Import existing elements as fallback reference
@@ -92,6 +92,40 @@ const elementsData = [
 		},
 		displayOrder: 6
 	},
+	// ===== BLURBS =====
+	{
+		id: 'blurbs-3',
+		category: 'blurbs',
+		description: 'Three horizontal feature blurbs',
+		metadata: {
+			cols: 3,
+			supports: { darkMode: true, customText: true },
+			tier: 'free'
+		},
+		displayOrder: 7
+	},
+	{
+		id: 'blurbs-4',
+		category: 'blurbs',
+		description: 'Four horizontal benefit blurbs',
+		metadata: {
+			cols: 4,
+			supports: { darkMode: true, customText: true },
+			tier: 'trial'
+		},
+		displayOrder: 8
+	},
+	{
+		id: 'blurbs-vertical-3',
+		category: 'blurbs',
+		description: 'Three vertical stacked blurbs for storytelling',
+		metadata: {
+			rows: 3,
+			supports: { darkMode: true, customText: true },
+			tier: 'pro'
+		},
+		displayOrder: 9
+	},
 
 	// ===== LISTS =====
 	{
@@ -102,17 +136,8 @@ const elementsData = [
 			cols: 1,
 			supports: { darkMode: true, customText: true },
 			tier: 'free'
-		}
-	},
-	{
-		id: 'list-2',
-		category: 'lists',
-		description: 'Two column list for comparison or features',
-		metadata: {
-			cols: 2,
-			supports: { darkMode: true, customText: true },
-			tier: 'pro'
-		}
+		},
+		displayOrder: 10
 	},
 	{
 		id: 'list-3',
@@ -123,7 +148,19 @@ const elementsData = [
 			rows: 2,
 			supports: { darkMode: true, customText: true },
 			tier: 'pro'
-		}
+		},
+		displayOrder: 11
+	},
+	{
+		id: 'list-2',
+		category: 'lists',
+		description: 'Two column list for comparison or features',
+		metadata: {
+			cols: 2,
+			supports: { darkMode: true, customText: true },
+			tier: 'pro'
+		},
+		displayOrder: 12
 	},
 
 	// ===== BUTTONS =====
@@ -137,7 +174,7 @@ const elementsData = [
 			supports: { darkMode: true, customText: true, customColors: true },
 			tier: 'free'
 		},
-		displayOrder: 1
+		displayOrder: 13
 	},
 	{
 		id: 'button-secondary-left',
@@ -149,7 +186,7 @@ const elementsData = [
 			supports: { darkMode: true, customText: true, customColors: true },
 			tier: 'free'
 		},
-		displayOrder: 1
+		displayOrder: 14
 	},
 	{
 		id: 'buttons-2-left',
@@ -161,7 +198,7 @@ const elementsData = [
 			supports: { darkMode: true, customText: true, customColors: true },
 			tier: 'free'
 		},
-		displayOrder: 3
+		displayOrder: 15
 	},
 	{
 		id: 'button-primary-center',
@@ -172,7 +209,8 @@ const elementsData = [
 			variant: 'primary',
 			supports: { darkMode: true, customText: true, customColors: true },
 			tier: 'pro'
-		}
+		},
+		displayOrder: 16
 	},
 	{
 		id: 'button-secondary-center',
@@ -183,7 +221,8 @@ const elementsData = [
 			variant: 'secondary',
 			supports: { darkMode: true, customText: true, customColors: true },
 			tier: 'pro'
-		}
+		},
+		displayOrder: 17
 	},
 	{
 		id: 'buttons-2-center',
@@ -194,7 +233,8 @@ const elementsData = [
 			cols: 2,
 			supports: { darkMode: true, customText: true, customColors: true },
 			tier: 'pro'
-		}
+		},
+		displayOrder: 18
 	},
 
 	// ===== CARDS =====
@@ -206,7 +246,8 @@ const elementsData = [
 			cols: 2,
 			supports: { darkMode: true, customText: true },
 			tier: 'free'
-		}
+		},
+		displayOrder: 19
 	},
 	{
 		id: 'cards-3',
@@ -216,7 +257,8 @@ const elementsData = [
 			cols: 3,
 			supports: { darkMode: true, customText: true },
 			tier: 'free'
-		}
+		},
+		displayOrder: 20
 	},
 	{
 		id: 'cards-4',
@@ -225,8 +267,9 @@ const elementsData = [
 		metadata: {
 			cols: 4,
 			supports: { darkMode: true, customText: true },
-			tier: 'trial'
-		}
+			tier: 'pro'
+		},
+		displayOrder: 21
 	},
 	{
 		id: 'cards-2x2',
@@ -237,7 +280,8 @@ const elementsData = [
 			rows: 2,
 			supports: { darkMode: true, customText: true },
 			tier: 'pro'
-		}
+		},
+		displayOrder: 22
 	},
 	{
 		id: 'cards-6',
@@ -248,7 +292,8 @@ const elementsData = [
 			rows: 2,
 			supports: { darkMode: true, customText: true },
 			tier: 'pro'
-		}
+		},
+		displayOrder: 23
 	},
 	{
 		id: 'pricing-2',
@@ -259,50 +304,21 @@ const elementsData = [
 			variant: 'pricing',
 			supports: { darkMode: true, customText: true, customColors: true },
 			tier: 'pro'
-		}
-	},
-
-	// ===== BLURBS =====
-	{
-		id: 'blurbs-3',
-		category: 'blurbs',
-		description: 'Three horizontal feature blurbs',
-		metadata: {
-			cols: 3,
-			supports: { darkMode: true, customText: true },
-			tier: 'free'
-		}
-	},
-	{
-		id: 'blurbs-4',
-		category: 'blurbs',
-		description: 'Four horizontal benefit blurbs',
-		metadata: {
-			cols: 4,
-			supports: { darkMode: true, customText: true },
-			tier: 'trial'
-		}
-	},
-	{
-		id: 'blurbs-vertical-3',
-		category: 'blurbs',
-		description: 'Three vertical stacked blurbs for storytelling',
-		metadata: {
-			rows: 3,
-			supports: { darkMode: true, customText: true },
-			tier: 'pro'
-		}
-	},
-	// ===== SPECIAL =====
-	{
-		id: 'styleguide',
-		category: 'special',
-		description: 'Typography and style guide reference',
-		metadata: {
-			supports: { darkMode: false },
-			tier: 'free'
-		}
+		},
+		displayOrder: 24
 	}
+
+	// ===== SPECIAL =====
+	// {
+	// 	id: 'styleguide',
+	// 	category: 'special',
+	// 	description: 'Typography and style guide reference',
+	// 	metadata: {
+	// 		supports: { darkMode: false },
+	// 		tier: 'free'
+	// 	},
+	// 	displayOrder: 25
+	// }
 ];
 
 // Merge with existing elements if they exist
@@ -312,7 +328,12 @@ if (Object.keys(existingElements).length > 0) {
 	// Add any existing elements that aren't in our seed data
 	Object.entries(existingElements).forEach(([id, element]) => {
 		if (!elementsData.find((e) => e.id === id)) {
-			elementsData.push(element);
+			// Add displayOrder for existing elements that don't have one
+			const elementWithOrder = {
+				...element,
+				displayOrder: element.displayOrder || elementsData.length + 1
+			};
+			elementsData.push(elementWithOrder);
 			console.log(`   + Added existing element: ${id}`);
 		}
 	});
@@ -326,7 +347,8 @@ async function seedElements() {
 	const tierCounts = { free: 0, trial: 0, pro: 0 };
 	const categoryCounts: Record<string, number> = {};
 
-	elementsData.forEach((element) => {
+	// FIXED: Add index parameter to forEach
+	elementsData.forEach((element, index) => {
 		const elementRef = adminFirestore.collection('elements').doc(element.id);
 
 		const firestoreElement = {
@@ -334,14 +356,15 @@ async function seedElements() {
 			active: true,
 			createdAt: new Date(),
 			updatedAt: new Date(),
-			displayOrder: element.displayOrder || index,
+			// FIXED: Now index is available, but also provide better fallback
+			displayOrder: element.displayOrder ?? index + 1,
 
 			// Add computed search-friendly fields
 			searchTerms: [
 				element.id,
 				element.description.toLowerCase(),
 				element.category.toLowerCase(),
-				...(element.text ? Object.values(element.text).map((t) => t.toLowerCase()) : [])
+				...(element.text ? Object.values(element.text).map((t) => String(t).toLowerCase()) : [])
 			].filter(Boolean),
 
 			// Add SVG paths for easy access

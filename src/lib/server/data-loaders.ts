@@ -1,26 +1,24 @@
-// src/lib/server/data-loaders.ts
-
-import { adminFirestore } from '$lib/server/firebase-admin';
-import type { ElementTheme } from '$lib/types/elements';
+// src/lib/server/data-loaders.ts - FIXED VERSION
+import { adminFirestore } from './firebase-admin';
 
 export interface ElementData {
 	id: string;
 	category: string;
 	description: string;
-	text?: Record<string, string>;
 	metadata?: {
 		tier?: 'free' | 'trial' | 'pro';
 		supports?: {
 			darkMode?: boolean;
-			customText?: boolean;
 			customColors?: boolean;
+			customText?: boolean;
 		};
-		cols?: number;
-		rows?: number;
-		variant?: string;
 	};
+	displayOrder?: number;
+	isLocked: boolean;
 	svgPath: string;
-	svgPathDark?: string;
+	// Serializable date fields
+	createdAt?: string;
+	updatedAt?: string;
 }
 
 export interface PromptData {
@@ -32,175 +30,155 @@ export interface PromptData {
 	metadata?: {
 		tier?: 'free' | 'trial' | 'pro';
 		tags?: string[];
-		usage?: number;
 	};
-	isUserPrompt?: boolean;
+	isLocked: boolean;
+	// Serializable date fields
+	createdAt?: string;
+	updatedAt?: string;
 }
 
+/**
+ * Convert Firestore document to serializable format
+ */
+function serializeFirestoreDoc(doc: any): any {
+	const data = doc.data();
+	return {
+		id: doc.id,
+		...data,
+		// Convert Firestore Timestamps to ISO strings for serialization
+		createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt || null,
+		updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt || null,
+	};
+}
+
+/**
+ * Load elements with proper access control and locking
+ */
 export async function getFilteredElements(userTier: 'free' | 'trial' | 'pro'): Promise<Record<string, ElementData[]>> {
 	try {
 		const elementsRef = adminFirestore.collection('elements');
-		const snapshot = await elementsRef.where('active', '==', true).get();
+		const snapshot = await elementsRef
+			.where('active', '==', true)
+			.orderBy('displayOrder')
+			.get();
 
-		const elements: ElementData[] = [];
+		// Convert Firestore docs to serializable format
+		const allElements = snapshot.docs.map(doc => serializeFirestoreDoc(doc));
 
-		snapshot.docs.forEach(doc => {
-			const element = doc.data();
-			const elementTier = element.metadata?.tier || 'free';
-
-			// Filter based on user tier
-			if (canAccessElement(userTier, elementTier)) {
-				elements.push({
-					id: doc.id,
-					category: element.category,
-					description: element.description,
-					text: element.text,
-					metadata: element.metadata,
-					svgPath: `/elements/${doc.id}.svg`,
-					svgPathDark: element.metadata?.supports?.darkMode
-						? `/elements/${doc.id}-dark.svg`
-						: undefined
-				});
+		// Create user access checker
+		const userAccess = {
+			canUseElement: (elementTier: string) => {
+				if (userTier === 'pro') return true;
+				if (userTier === 'trial') return elementTier !== 'pro';
+				return elementTier === 'free';
 			}
-		});
+		};
 
-		// Group by category and sort
-		const grouped = groupElementsByCategory(elements);
+		// Filter and mark locked status
+		const elementsWithAccess = allElements.map(element => ({
+			...element,
+			isLocked: !userAccess.canUseElement(element.metadata?.tier || 'free'),
+			svgPath: `/elements/${element.id}.svg`
+		}));
+
+		// Group by category
+		const grouped = elementsWithAccess.reduce((acc, element) => {
+			if (!acc[element.category]) {
+				acc[element.category] = [];
+			}
+			acc[element.category].push(element);
+			return acc;
+		}, {} as Record<string, ElementData[]>);
+
+		console.log(`✅ Loaded ${elementsWithAccess.length} elements for ${userTier} tier`);
 		return grouped;
 
 	} catch (error) {
-		console.error('Error loading elements:', error);
+		console.error('❌ Error loading elements:', error);
 		return {};
 	}
 }
 
-export async function getFilteredPrompts(userTier: 'free' | 'trial' | 'pro', uid: string): Promise<Record<string, PromptData[]>> {
+/**
+ * Load prompts with proper access control - EXPORTED FUNCTION
+ */
+export async function getFilteredPrompts(userTier: 'free' | 'trial' | 'pro', userId: string): Promise<Record<string, PromptData[]>> {
 	try {
 		// Load system prompts
 		const systemPromptsRef = adminFirestore.collection('prompts');
-		const systemSnapshot = await systemPromptsRef.where('active', '==', true).get();
+		const systemSnapshot = await systemPromptsRef
+			.where('active', '==', true)
+			.orderBy('category')
+			.orderBy('title')
+			.get();
 
-		const systemPrompts: PromptData[] = [];
-		systemSnapshot.docs.forEach(doc => {
-			const prompt = doc.data();
-			const promptTier = prompt.metadata?.tier || 'free';
+		// Convert Firestore docs to serializable format
+		const systemPrompts = systemSnapshot.docs.map(doc => ({
+			...serializeFirestoreDoc(doc),
+			isUserDefined: false
+		}));
 
-			if (canAccessPrompt(userTier, promptTier)) {
-				systemPrompts.push({
-					id: doc.id,
-					category: prompt.category,
-					title: prompt.title,
-					description: prompt.description,
-					content: prompt.content,
-					metadata: prompt.metadata,
-					isUserPrompt: false
-				});
+		// TODO: Load user-defined prompts when implemented
+		// const userPromptsRef = adminFirestore.collection('users').doc(userId).collection('prompts');
+		// const userSnapshot = await userPromptsRef.get();
+		// const userPrompts = userSnapshot.docs.map(doc => serializeFirestoreDoc(doc));
+
+		const userAccess = {
+			canUsePrompt: (promptTier: string) => {
+				if (userTier === 'pro') return true;
+				if (userTier === 'trial') return promptTier !== 'pro';
+				return promptTier === 'free';
 			}
-		});
+		};
 
-		// Load user prompts (if any)
-		const userPrompts: PromptData[] = [];
-		try {
-			const userPromptsRef = adminFirestore.collection('user_prompts');
-			const userSnapshot = await userPromptsRef.where('uid', '==', uid).get();
+		// Filter and mark locked status
+		const promptsWithAccess = systemPrompts.map(prompt => ({
+			...prompt,
+			isLocked: !userAccess.canUsePrompt(prompt.metadata?.tier || 'free')
+		}));
 
-			userSnapshot.docs.forEach(doc => {
-				const prompt = doc.data();
-				userPrompts.push({
-					id: doc.id,
-					category: prompt.category || 'custom',
-					title: prompt.title,
-					description: prompt.description || 'Custom prompt',
-					content: prompt.content,
-					isUserPrompt: true
-				});
-			});
-		} catch (error) {
-			console.log('No user prompts found or error loading them:', error);
-		}
+		// Group by category
+		const grouped = promptsWithAccess.reduce((acc, prompt) => {
+			if (!acc[prompt.category]) {
+				acc[prompt.category] = [];
+			}
+			acc[prompt.category].push(prompt);
+			return acc;
+		}, {} as Record<string, PromptData[]>);
 
-		// Combine and group
-		const allPrompts = [...systemPrompts, ...userPrompts];
-		const grouped = groupPromptsByCategory(allPrompts);
+		console.log(`✅ Loaded ${promptsWithAccess.length} prompts for ${userTier} tier`);
 		return grouped;
 
 	} catch (error) {
-		console.error('Error loading prompts:', error);
+		console.error('❌ Error loading prompts:', error);
 		return {};
 	}
 }
 
-function canAccessElement(userTier: string, elementTier: string): boolean {
-	if (userTier === 'pro') return true;
-	if (userTier === 'trial') return elementTier !== 'pro';
-	return elementTier === 'free';
-}
+/**
+ * Debug helper - check what's in the elements collection
+ */
+export async function debugElementsCollection(): Promise<void> {
+	try {
+		const elementsRef = adminFirestore.collection('elements');
+		const allSnapshot = await elementsRef.get();
 
-function canAccessPrompt(userTier: string, promptTier: string): boolean {
-	if (userTier === 'pro') return true;
-	if (userTier === 'trial') return promptTier !== 'pro';
-	return promptTier === 'free';
-}
+		console.log(`🔍 Debug: Total docs in elements collection: ${allSnapshot.size}`);
 
-function groupElementsByCategory(elements: ElementData[]): Record<string, ElementData[]> {
-	const categoryOrder = ['containers', 'content', 'buttons', 'cards', 'blurbs', 'lists', 'special'];
+		const activeSnapshot = await elementsRef.where('active', '==', true).get();
+		console.log(`🔍 Debug: Active elements: ${activeSnapshot.size}`);
 
-	const grouped = elements.reduce((acc, element) => {
-		if (!acc[element.category]) {
-			acc[element.category] = [];
+		if (activeSnapshot.size > 0) {
+			const firstElement = activeSnapshot.docs[0].data();
+			console.log(`🔍 Debug: First element sample:`, {
+				id: activeSnapshot.docs[0].id,
+				category: firstElement.category,
+				tier: firstElement.metadata?.tier,
+				displayOrder: firstElement.displayOrder,
+				active: firstElement.active
+			});
 		}
-		acc[element.category].push(element);
-		return acc;
-	}, {} as Record<string, ElementData[]>);
-
-	// Sort categories and elements within categories
-	const sorted: Record<string, ElementData[]> = {};
-
-	categoryOrder.forEach(category => {
-		if (grouped[category]) {
-			sorted[category] = grouped[category].sort((a, b) => a.id.localeCompare(b.id));
-		}
-	});
-
-	// Add any remaining categories
-	Object.keys(grouped).forEach(category => {
-		if (!sorted[category]) {
-			sorted[category] = grouped[category].sort((a, b) => a.id.localeCompare(b.id));
-		}
-	});
-
-	return sorted;
-}
-
-function groupPromptsByCategory(prompts: PromptData[]): Record<string, PromptData[]> {
-	const categoryOrder = ['writing', 'code', 'design', 'marketing', 'technical', 'custom'];
-
-	const grouped = prompts.reduce((acc, prompt) => {
-		if (!acc[prompt.category]) {
-			acc[prompt.category] = [];
-		}
-		acc[prompt.category].push(prompt);
-		return acc;
-	}, {} as Record<string, PromptData[]>);
-
-	// Sort categories and prompts within categories
-	const sorted: Record<string, PromptData[]> = {};
-
-	categoryOrder.forEach(category => {
-		if (grouped[category]) {
-			sorted[category] = grouped[category].sort((a, b) => a.title.localeCompare(b.title));
-		}
-	});
-
-	return sorted;
-}
-
-export function getSvgUrl(elementId: string, elementTheme: ElementTheme, appTheme: ElementTheme): string {
-	const baseId = elementId.endsWith('-dark') ? elementId.replace(/-dark$/, '') : elementId;
-
-	// Element theme creates CONTRAST with app theme
-	const shouldUseDarkVariant = elementTheme !== appTheme;
-
-	const svgPath = shouldUseDarkVariant ? `${baseId}-dark.svg` : `${baseId}.svg`;
-	return `/elements/${svgPath}`;
+	} catch (error) {
+		console.error('❌ Debug error:', error);
+	}
 }
