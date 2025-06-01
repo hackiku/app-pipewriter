@@ -1,16 +1,17 @@
-<!-- src/lib/features/addon/features/dropper/ElementCard.svelte - CLEANED -->
+<!-- src/lib/features/addon/features/dropper/ElementCard.svelte - FIXED SVG LOGIC -->
 <script lang="ts">
   import { Button } from '$lib/components/ui/button';
   import { cn } from '$lib/utils';
   import { Plus, AlertCircle, Lock } from '@lucide/svelte';
   import type { ElementData } from '$lib/server/data-loaders';
   import type { ElementTheme } from '$lib/types/elements';
+  import { onMount, onDestroy } from 'svelte';
 
   // Props - much simpler now, no contexts!
   const props = $props<{
     element: ElementData;
     onSelect: (id: string) => void;
-    theme: ElementTheme;
+    theme: ElementTheme; // This is the dropper theme (light/dark)
     disabled?: boolean;
     isSelected?: boolean;
     chainMode?: boolean;
@@ -21,16 +22,69 @@
   // Local state - minimal
   let isProcessing = $state(false);
   let imageError = $state(false);
+  let appTheme = $state<ElementTheme>('light');
+  let observer: MutationObserver | null = null;
 
-  // Get SVG URL - simple path construction
-  function getSvgUrl(): string {
-    const isDarkTheme = typeof window !== 'undefined' && 
-                       document.documentElement.classList.contains('dark');
-    
-    if (props.element.metadata?.supports?.darkMode && isDarkTheme) {
-      return `/elements/${props.element.id}-dark.svg`;
+  // Setup mutation observer to detect app theme changes
+  onMount(() => {
+    // Initial dark mode check
+    appTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+
+    // Watch for dark mode changes
+    observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.attributeName === 'class') {
+          const newAppTheme = document.documentElement.classList.contains('dark')
+            ? 'dark'
+            : 'light';
+          if (appTheme !== newAppTheme) {
+            appTheme = newAppTheme;
+          }
+        }
+      }
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+  });
+
+  // Clean up observer on component destroy
+  onDestroy(() => {
+    if (observer) {
+      observer.disconnect();
     }
-    return `/elements/${props.element.id}.svg`;
+  });
+
+  // FIXED: Proper SVG URL logic with contrast
+  function getSvgUrl(): string {
+    const baseId = props.element.id.endsWith('-dark') ? 
+      props.element.id.replace(/-dark$/, '') : props.element.id;
+
+    // THE KEY LOGIC: Dropper theme creates CONTRAST with app theme
+    // 
+    // CONTRAST MATRIX:
+    // App Theme | Dropper Theme | SVG to Use | Reasoning
+    // ---------|---------------|------------|----------
+    // Light    | Light         | Light SVG  | Light dropper on light app = light elements (same)
+    // Light    | Dark          | Dark SVG   | Dark dropper on light app = dark elements (contrast)
+    // Dark     | Light         | Dark SVG   | Light dropper on dark app = dark elements (contrast) 
+    // Dark     | Dark          | Light SVG  | Dark dropper on dark app = light elements (same)
+    //
+    // SIMPLIFIED: If dropper theme !== app theme → use dark SVG
+    //            If dropper theme === app theme → use light SVG
+
+    const shouldUseDarkVariant = props.theme !== appTheme;
+
+    // Check if element supports dark mode before using dark variant
+    const canUseDarkVariant = props.element.metadata?.supports?.darkMode;
+    const useDarkVariant = shouldUseDarkVariant && canUseDarkVariant;
+
+    if (useDarkVariant) {
+      return `/elements/${baseId}-dark.svg`;
+    }
+    return `/elements/${baseId}.svg`;
   }
 
   // Handle click on the element card
@@ -83,6 +137,13 @@
     console.error(`Failed to load image: ${getSvgUrl()}`);
     imageError = true;
   }
+
+  // Debug SVG selection (only in dev)
+  $effect(() => {
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      console.log(`[${props.element.id}] App: ${appTheme}, Dropper: ${props.theme}, SVG: ${getSvgUrl()}`);
+    }
+  });
 </script>
 
 <div class="relative">
@@ -101,7 +162,7 @@
           <span class="text-xs text-neutral-500">{props.element.id}</span>
         </div>
       {:else}
-        <!-- Element Image -->
+        <!-- Element Image with FIXED SVG logic -->
         <img
           src={getSvgUrl()}
           alt={props.element.description}
