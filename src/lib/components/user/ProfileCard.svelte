@@ -1,10 +1,11 @@
-<!-- src/lib/components/user/ProfileCard.svelte -->
+<!-- src/lib/components/user/ProfileCard.svelte - Updated with StatusDropdown -->
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import { X, Mail, Clock, Sparkles, LogOut, Crown, RefreshCw } from "@lucide/svelte";
+  import { X, Mail, Clock, Crown, LogOut, RefreshCw } from "@lucide/svelte";
   import { Button } from '$lib/components/ui/button';
   import * as Avatar from "$lib/components/ui/avatar/index.js";
   import { signOut, switchAccount } from '$lib/services/auth';
+  import StatusDropdown from './StatusDropdown.svelte';
   
   // Props
   const props = $props<{
@@ -24,8 +25,13 @@
   // Simple state
   let isLoggingOut = $state(false);
   let isSwitching = $state(false);
-  let isUpgrading = $state(false);
-  let isDowngrading = $state(false);
+  
+  // Determine current status for dropdown
+  const currentStatus = $derived<'free' | 'trial' | 'pro'>(() => {
+    if (props.isPro) return 'pro';
+    if (props.trialActive) return 'trial';
+    return 'free';
+  });
   
   // Generate initials
   function getInitials() {
@@ -49,54 +55,6 @@
   
   function closeCard() {
     props.onToggleProfileCard();
-  }
-  
-  // Simple upgrade - call API and reload
-  async function handleUpgrade() {
-    if (isUpgrading) return;
-
-    isUpgrading = true;
-    try {
-      const response = await fetch('/api/user/upgrade', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      if (response.ok) {
-        console.log('[PROFILE] Upgrade successful, reloading...');
-        window.location.reload();
-      } else {
-        console.error('[PROFILE] Upgrade failed');
-      }
-    } catch (error) {
-      console.error('[PROFILE] Upgrade error:', error);
-    } finally {
-      isUpgrading = false;
-    }
-  }
-
-  // Simple downgrade - call API and reload
-  async function handleDowngrade() {
-    if (isDowngrading) return;
-
-    isDowngrading = true;
-    try {
-      const response = await fetch('/api/user/downgrade', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      if (response.ok) {
-        console.log('[PROFILE] Downgrade successful, reloading...');
-        window.location.reload();
-      } else {
-        console.error('[PROFILE] Downgrade failed');
-      }
-    } catch (error) {
-      console.error('[PROFILE] Downgrade error:', error);
-    } finally {
-      isDowngrading = false;
-    }
   }
   
   // Navigation-based logout (no reload issues)
@@ -207,43 +165,21 @@
 
           <!-- Action Buttons -->
           <div class="space-y-3">
-            <!-- Upgrade/Downgrade Button -->
-            {#if props.isPro}
-              <Button 
-                variant="outline"
-                class="w-full h-11 font-medium"
-                onclick={handleDowngrade}
-                disabled={isDowngrading || isLoggingOut || isSwitching}
-              >
-                {#if isDowngrading}
-                  <div class="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Downgrading...
-                {:else}
-                  Downgrade to Free
-                {/if}
-              </Button>
-            {:else}
-              <Button 
-                class="w-full h-11 font-medium"
-                onclick={handleUpgrade}
-                disabled={isUpgrading || isLoggingOut || isSwitching}
-              >
-                {#if isUpgrading}
-                  <div class="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Upgrading...
-                {:else}
-                  <Sparkles class="h-4 w-4 mr-2" />
-                  Upgrade to Pro
-                {/if}
-              </Button>
-            {/if}
+            <!-- Status Dropdown (Dev) / Upgrade Button (Prod) -->
+            <StatusDropdown 
+              currentStatus={currentStatus}
+              isPro={props.isPro}
+              trialActive={props.trialActive}
+              trialDaysLeft={props.trialDaysLeft}
+              disabled={isLoggingOut || isSwitching}
+            />
 
             <!-- Account Switch Button -->
             <Button 
               variant="outline"
               class="w-full h-9 text-sm"
               onclick={handleAccountSwitch}
-              disabled={isLoggingOut || isSwitching || isUpgrading || isDowngrading}
+              disabled={isLoggingOut || isSwitching}
             >
               {#if isSwitching}
                 <div class="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
@@ -259,7 +195,7 @@
               variant="outline"
               class="w-full h-11"
               onclick={handleLogout}
-              disabled={isLoggingOut || isSwitching || isUpgrading || isDowngrading}
+              disabled={isLoggingOut || isSwitching}
             >
               {#if isLoggingOut}
                 <div class="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>

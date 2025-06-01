@@ -88,7 +88,7 @@ const elementsData = [
 			cols: 3,
 			rows: 1,
 			supports: { darkMode: true, customText: true },
-			tier: 'trial'
+			tier: 'free'
 		},
 		displayOrder: 6
 	},
@@ -111,7 +111,7 @@ const elementsData = [
 		metadata: {
 			cols: 4,
 			supports: { darkMode: true, customText: true },
-			tier: 'trial'
+			tier: 'free'
 		},
 		displayOrder: 8
 	},
