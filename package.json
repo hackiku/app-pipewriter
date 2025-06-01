@@ -49,6 +49,7 @@
 		"emulators:clear": "firebase emulators:exec --only firestore 'echo Clearing data...'",
 		"seed": "bun run scripts/seed/seed-elements.ts",
 		"seed:elements": "bun run scripts/seed/seed-elements.ts",
+		"seed:prompts": "bun run scripts/seed/better-prompts.ts",
 		"test:firebase": "bun run scripts/test-firebase-setup.ts",
 		"db:reset": "npm run emulators:clear",
 		"dev:fresh": "npm run emulators:clear && npm run seed && npm run dev",

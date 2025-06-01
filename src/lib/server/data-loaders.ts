@@ -1,4 +1,4 @@
-// src/lib/server/data-loaders.ts - FIXED VERSION
+// src/lib/server/data-loaders.ts - UPDATED VERSION with user prompts
 import { adminFirestore } from './firebase-admin';
 
 export interface ElementData {
@@ -30,8 +30,11 @@ export interface PromptData {
 	metadata?: {
 		tier?: 'free' | 'trial' | 'pro';
 		tags?: string[];
+		usage?: number;
 	};
 	isLocked: boolean;
+	isSystem: boolean;
+	isUserCustom: boolean;
 	// Serializable date fields
 	createdAt?: string;
 	updatedAt?: string;
@@ -100,29 +103,59 @@ export async function getFilteredElements(userTier: 'free' | 'trial' | 'pro'): P
 }
 
 /**
- * Load prompts with proper access control - EXPORTED FUNCTION
+ * UPDATED: Load prompts with user customizations merged with system prompts
  */
 export async function getFilteredPrompts(userTier: 'free' | 'trial' | 'pro', userId: string): Promise<Record<string, PromptData[]>> {
 	try {
+		console.log(`🔄 Loading prompts for user ${userId} (tier: ${userTier})`);
+
 		// Load system prompts
 		const systemPromptsRef = adminFirestore.collection('prompts');
 		const systemSnapshot = await systemPromptsRef
 			.where('active', '==', true)
+			.where('isSystem', '==', true)
 			.orderBy('category')
 			.orderBy('title')
 			.get();
 
-		// Convert Firestore docs to serializable format
-		const systemPrompts = systemSnapshot.docs.map(doc => ({
-			...serializeFirestoreDoc(doc),
-			isUserDefined: false
-		}));
+		console.log(`📦 Found ${systemSnapshot.size} system prompts`);
 
-		// TODO: Load user-defined prompts when implemented
-		// const userPromptsRef = adminFirestore.collection('users').doc(userId).collection('prompts');
-		// const userSnapshot = await userPromptsRef.get();
-		// const userPrompts = userSnapshot.docs.map(doc => serializeFirestoreDoc(doc));
+		// Load user's custom prompts
+		const userPromptsRef = adminFirestore
+			.collection('users')
+			.doc(userId)
+			.collection('prompts');
 
+		const userSnapshot = await userPromptsRef
+			.where('active', '==', true)
+			.get();
+
+		console.log(`👤 Found ${userSnapshot.size} user custom prompts`);
+
+		// Merge prompts (user prompts override system prompts with same ID)
+		const allPrompts = new Map();
+
+		// Add system prompts first
+		systemSnapshot.docs.forEach(doc => {
+			const promptData = serializeFirestoreDoc(doc);
+			allPrompts.set(doc.id, {
+				...promptData,
+				isSystem: true,
+				isUserCustom: false
+			});
+		});
+
+		// Override with user prompts (user customizations take precedence)
+		userSnapshot.docs.forEach(doc => {
+			const promptData = serializeFirestoreDoc(doc);
+			allPrompts.set(doc.id, {
+				...promptData,
+				isSystem: false,
+				isUserCustom: true
+			});
+		});
+
+		// Apply tier-based access control
 		const userAccess = {
 			canUsePrompt: (promptTier: string) => {
 				if (userTier === 'pro') return true;
@@ -132,7 +165,7 @@ export async function getFilteredPrompts(userTier: 'free' | 'trial' | 'pro', use
 		};
 
 		// Filter and mark locked status
-		const promptsWithAccess = systemPrompts.map(prompt => ({
+		const promptsWithAccess = Array.from(allPrompts.values()).map(prompt => ({
 			...prompt,
 			isLocked: !userAccess.canUsePrompt(prompt.metadata?.tier || 'free')
 		}));
@@ -146,38 +179,61 @@ export async function getFilteredPrompts(userTier: 'free' | 'trial' | 'pro', use
 			return acc;
 		}, {} as Record<string, PromptData[]>);
 
-		console.log(`✅ Loaded ${promptsWithAccess.length} prompts for ${userTier} tier`);
+		// Sort within categories
+		Object.keys(grouped).forEach(category => {
+			grouped[category].sort((a, b) => a.title.localeCompare(b.title));
+		});
+
+		console.log(`✅ Loaded ${promptsWithAccess.length} total prompts (${systemSnapshot.size} system + ${userSnapshot.size} custom) for ${userTier} tier`);
+		console.log(`📂 Categories: ${Object.keys(grouped).join(', ')}`);
+
 		return grouped;
 
 	} catch (error) {
 		console.error('❌ Error loading prompts:', error);
+		console.error('Error details:', error.message);
 		return {};
 	}
 }
 
 /**
- * Debug helper - check what's in the elements collection
+ * Debug helper - check what's in the prompts collection
  */
-export async function debugElementsCollection(): Promise<void> {
+export async function debugPromptsCollection(): Promise<void> {
 	try {
-		const elementsRef = adminFirestore.collection('elements');
-		const allSnapshot = await elementsRef.get();
+		const promptsRef = adminFirestore.collection('prompts');
+		const allSnapshot = await promptsRef.get();
 
-		console.log(`🔍 Debug: Total docs in elements collection: ${allSnapshot.size}`);
+		console.log(`🔍 Debug: Total docs in prompts collection: ${allSnapshot.size}`);
 
-		const activeSnapshot = await elementsRef.where('active', '==', true).get();
-		console.log(`🔍 Debug: Active elements: ${activeSnapshot.size}`);
+		const activeSnapshot = await promptsRef.where('active', '==', true).get();
+		console.log(`🔍 Debug: Active prompts: ${activeSnapshot.size}`);
+
+		const systemSnapshot = await promptsRef
+			.where('active', '==', true)
+			.where('isSystem', '==', true)
+			.get();
+		console.log(`🔍 Debug: System prompts: ${systemSnapshot.size}`);
 
 		if (activeSnapshot.size > 0) {
-			const firstElement = activeSnapshot.docs[0].data();
-			console.log(`🔍 Debug: First element sample:`, {
+			const firstPrompt = activeSnapshot.docs[0].data();
+			console.log(`🔍 Debug: First prompt sample:`, {
 				id: activeSnapshot.docs[0].id,
-				category: firstElement.category,
-				tier: firstElement.metadata?.tier,
-				displayOrder: firstElement.displayOrder,
-				active: firstElement.active
+				title: firstPrompt.title,
+				category: firstPrompt.category,
+				tier: firstPrompt.metadata?.tier,
+				isSystem: firstPrompt.isSystem,
+				active: firstPrompt.active
 			});
 		}
+
+		// Check categories
+		const categories = new Set();
+		activeSnapshot.docs.forEach(doc => {
+			categories.add(doc.data().category);
+		});
+		console.log(`🔍 Debug: Categories found: ${Array.from(categories).join(', ')}`);
+
 	} catch (error) {
 		console.error('❌ Debug error:', error);
 	}
