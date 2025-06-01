@@ -1,7 +1,6 @@
-<!-- $lib/iframe/features/Tabs.svelte -->
+<!-- Fixed src/lib/features/addon/features/Tabs.svelte -->
 <script lang="ts">
 	import { fade } from "svelte/transition";
-	import { getContext } from "svelte";
 	// Import components
 	import { Button } from "$lib/components/ui/button";
 	import {
@@ -14,7 +13,6 @@
 		ThumbsUp,
 		AlertCircle,
 	} from "lucide-svelte";
-	// import { cn } from "$lib/utils";
 
 	// Import tab components
 	import TableTab from "./table/TableTab.svelte";
@@ -22,11 +20,18 @@
 	import TextTab from "./text/TextTab.svelte";
 	import AiTab from "./ai/AiTab.svelte";
 
-	// Props
-	const { context } = $props<{ context: any }>();
-
-	// Get UI state from context
-	const uiState = getContext("uiState");
+	// FIXED: Accept props instead of using context
+	const { 
+		context, 
+		prompts,
+		features,
+		showInfo = false  // Add showInfo as prop with default
+	} = $props<{ 
+		context: any;
+		prompts: any;
+		features: any;
+		showInfo?: boolean;
+	}>();
 
 	// Local state
 	let activeTab = $state<string | null>(null);
@@ -167,7 +172,7 @@
 			transition:fade={{ duration: 200 }}
 		>
 			<!-- Tab Header -->
-			{#if uiState.showInfo}
+			{#if showInfo}
 				<div class="px-4 pt-3">
 					<h3 class="text-xs font-medium text-muted-foreground/60">
 						{activeTabData.title}
@@ -186,7 +191,6 @@
 					/>
 
 				{:else if activeTab === "color"}
-				<!-- {#if activeTab === "color"} -->
 					<ColorTab
 						{context}
 						onStatusUpdate={handleStatus}
@@ -196,6 +200,8 @@
 				{:else if activeTab === "ai"}
 					<AiTab
 						{context}
+						{prompts}
+						{features}
 						onStatusUpdate={handleStatus}
 						onProcessingStart={handleProcessingStart}
 						onProcessingEnd={handleProcessingEnd}

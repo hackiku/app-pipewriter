@@ -139,11 +139,11 @@
   }
 
   // Debug SVG selection (only in dev)
-  $effect(() => {
-    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-      console.log(`[${props.element.id}] App: ${appTheme}, Dropper: ${props.theme}, SVG: ${getSvgUrl()}`);
-    }
-  });
+  // $effect(() => {
+  //   if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+  //     console.log(`[${props.element.id}] App: ${appTheme}, Dropper: ${props.theme}, SVG: ${getSvgUrl()}`);
+  //   }
+  // });
 </script>
 
 <div class="relative">

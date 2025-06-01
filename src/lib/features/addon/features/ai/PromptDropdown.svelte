@@ -1,4 +1,4 @@
-<!-- $lib/iframe/features/ai/PromptDropdown.svelte - Working Version -->
+<!-- Fixed src/lib/features/addon/features/ai/PromptDropdown.svelte -->
 <script lang="ts">
   import { slide, fade } from "svelte/transition";
   import { Button } from "$lib/components/ui/button";
@@ -6,56 +6,42 @@
   import { 
     ChevronDown, 
     X, 
-    Edit3, 
+    Edit, 
     Play, 
     Copy
-  } from "lucide-svelte";
+  } from "@lucide/svelte";
   import PromptEditor from "./PromptEditor.svelte";
-  import { createPromptsStore } from '$lib/context/prompts.svelte';
-  import { useTrialFeatures } from '$lib/context/trial.svelte';
   
-  // Props
+  // FIXED: Accept server data as props instead of using contexts
   const props = $props<{
+    prompts: Record<string, any[]>; // Server-provided prompts by category
+    features: any; // User features from server
     isProcessing?: boolean;
     isOpen?: boolean;
-    onPromptDrop?: (prompt: any) => void;
+    activePrompt?: any;
+    onPromptSelect: (prompt: any) => void;
+    onToggleOpen: () => void;
   }>();
 
-  // Get trial features context
-  const trialFeatures = useTrialFeatures();
-  
-  // Create prompts store with current user tier
-  function getUserTier(): 'free' | 'trial' | 'pro' {
-    if (trialFeatures.trialInfo.isPro) return 'pro';
-    if (trialFeatures.trialInfo.active) return 'trial';
-    return 'free';
-  }
-  
-  const promptsStore = createPromptsStore(getUserTier());
-
-  // Update store when user tier changes
-  $effect(() => {
-    const newTier = getUserTier();
-    if (newTier !== promptsStore.userTier) {
-      promptsStore.setUserTier(newTier);
-    }
-  });
-
   // State
-  let isOpen = $state(props.isOpen || false);
-  let activePrompt = $state(null);
   let editMode = $state(false);
   let selectedCategory = $state("all");
 
   // Get all prompts as flat array for category filtering
-  let allPrompts = $derived(promptsStore.getAllPrompts());
+  let allPrompts = $derived(() => {
+    return Object.values(props.prompts).flat();
+  });
 
-  // Categories for filtering - dynamically generated from data
+  // Categories for filtering - dynamically generated from server data
   let categories = $derived(() => {
-    const categoryCounts = promptsStore.getCategoryCounts();
+    const counts: Record<string, number> = {};
+    Object.entries(props.prompts).forEach(([category, prompts]) => {
+      counts[category] = prompts.length;
+    });
+
     return [
       { id: "all", label: "All", count: allPrompts.length },
-      ...Object.entries(categoryCounts).map(([id, count]) => ({
+      ...Object.entries(counts).map(([id, count]) => ({
         id,
         label: id.charAt(0).toUpperCase() + id.slice(1),
         count
@@ -68,29 +54,21 @@
     if (selectedCategory === "all") {
       return allPrompts;
     }
-    return promptsStore.getPromptsByCategory(selectedCategory);
+    return props.prompts[selectedCategory] || [];
   });
 
-  function toggleDropdown() {
-    if (props.isProcessing) return;
-    isOpen = !isOpen;
-    if (!isOpen) {
-      editMode = false; // Reset edit mode when closing
-    }
-  }
-
   function selectPrompt(prompt) {
-    activePrompt = prompt;
+    props.onPromptSelect(prompt);
     editMode = false;
   }
 
   function clearPrompt() {
-    activePrompt = null;
+    props.onPromptSelect(null);
     editMode = false;
   }
 
   function editPrompt() {
-    if (!activePrompt) return;
+    if (!props.activePrompt) return;
     editMode = true;
   }
 
@@ -99,15 +77,15 @@
   }
 
   function dropPrompt() {
-    if (!activePrompt) return;
-    props.onPromptDrop?.(activePrompt);
-    isOpen = false; // Close dropdown after dropping
+    if (!props.activePrompt) return;
+    // The parent will handle the actual drop
+    props.onToggleOpen(); // Close dropdown after dropping
   }
 
   async function copyPrompt() {
-    if (!activePrompt) return;
+    if (!props.activePrompt) return;
     try {
-      await navigator.clipboard.writeText(activePrompt.content);
+      await navigator.clipboard.writeText(props.activePrompt.content);
       // Could add a toast notification here
     } catch (error) {
       console.error('Failed to copy prompt:', error);
@@ -128,50 +106,28 @@
   // Main button classes
   let buttonClass = $derived(cn(
     "w-full justify-between px-3 h-9 font-normal text-sm",
-    activePrompt && "border-primary/60 bg-primary/5 hover:bg-primary/10"
+    props.activePrompt && "border-primary/60 bg-primary/5 hover:bg-primary/10"
   ));
-
-  // Cleanup on destroy
-  $effect(() => {
-    return () => {
-      promptsStore.cleanup();
-    };
-  });
 </script>
 
 <div class="space-y-2">
-  {#if isOpen}
+  {#if props.isOpen}
     <div
       class="bg-background border rounded-lg shadow-sm overflow-hidden"
       transition:slide={{ duration: 200 }}
     >
-      {#if promptsStore.loading}
-        <!-- Loading State -->
+      {#if Object.keys(props.prompts).length === 0}
+        <!-- No prompts available -->
         <div class="p-6 text-center">
           <div class="flex flex-col items-center space-y-2">
-            <div class="h-4 w-4 border-2 border-t-transparent border-primary rounded-full animate-spin"></div>
-            <p class="text-muted-foreground text-sm">Loading prompts...</p>
+            <p class="text-muted-foreground text-sm">No prompts available</p>
           </div>
         </div>
-      {:else if promptsStore.error}
-        <!-- Error State -->
-        <div class="p-4 text-center">
-          <div class="text-red-500 dark:text-red-400 text-sm">
-            <p class="font-medium">Failed to load prompts</p>
-            <p class="text-xs mt-1 opacity-75">{promptsStore.error}</p>
-            <button 
-              class="mt-2 px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded text-xs hover:bg-red-200 dark:hover:bg-red-900/50"
-              onclick={() => promptsStore.loadPrompts()}
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      {:else if editMode && activePrompt}
+      {:else if editMode && props.activePrompt}
         <!-- Editor Mode -->
         <div class="p-3" transition:fade={{ duration: 150 }}>
           <PromptEditor 
-            prompt={activePrompt}
+            prompt={props.activePrompt}
             onBack={backToList}
             onSave={() => {/* Save logic for later */}}
             onDrop={dropPrompt}
@@ -208,7 +164,7 @@
               {#each filteredPrompts as prompt (prompt.id)}
                 <button
                   class="w-full p-3 text-left hover:bg-muted/50 transition-colors border-b border-border/50 last:border-b-0 relative
-                    {activePrompt?.id === prompt.id ? 'bg-primary/5 border-primary/20' : ''}
+                    {props.activePrompt?.id === prompt.id ? 'bg-primary/5 border-primary/20' : ''}
                     {prompt.isLocked ? 'opacity-60' : ''}"
                   onclick={() => !prompt.isLocked && selectPrompt(prompt)}
                   disabled={props.isProcessing || prompt.isLocked}
@@ -224,7 +180,9 @@
                       <h4 class="font-medium text-sm text-foreground mb-0.5 flex items-center gap-2">
                         {prompt.title}
                         {#if prompt.isLocked}
-                          <span class="text-xs bg-muted text-muted-foreground px-1 py-0.5 rounded">Pro</span>
+                          <span class="text-xs bg-muted text-muted-foreground px-1 py-0.5 rounded">
+                            {prompt.metadata?.tier === 'pro' ? 'Pro' : 'Trial'}
+                          </span>
                         {/if}
                       </h4>
                       <p class="text-xs text-muted-foreground line-clamp-2">{prompt.description}</p>
@@ -236,7 +194,7 @@
           </div>
 
           <!-- Action Buttons Row -->
-          {#if activePrompt && !activePrompt.isLocked}
+          {#if props.activePrompt && !props.activePrompt.isLocked}
             <div class="p-2 border-t bg-muted/20" transition:slide={{ duration: 150 }}>
               <div class="flex items-center gap-1">
                 <!-- Clear -->
@@ -259,7 +217,7 @@
                   onclick={editPrompt}
                   disabled={props.isProcessing}
                 >
-                  <Edit3 class="h-3 w-3" />
+                  <Edit class="h-3 w-3" />
                   <span class="text-xs">Edit</span>
                 </Button>
 
@@ -300,18 +258,18 @@
   <Button
     variant="outline"
     class={buttonClass}
-    onclick={toggleDropdown}
+    onclick={props.onToggleOpen}
     disabled={props.isProcessing}
   >
-    {#if activePrompt}
-      <span class="font-medium text-foreground truncate">{activePrompt.title}</span>
+    {#if props.activePrompt}
+      <span class="font-medium text-foreground truncate">{props.activePrompt.title}</span>
     {:else}
       <span class="text-muted-foreground">Select prompt...</span>
     {/if}
     <ChevronDown
       class={cn(
         "h-4 w-4 transition-transform duration-200 flex-shrink-0",
-        isOpen && "rotate-180"
+        props.isOpen && "rotate-180"
       )}
     />
   </Button>

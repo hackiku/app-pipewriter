@@ -1,4 +1,6 @@
-// src/routes/api/auth/session/+server.ts
+// SIMPLIFIED: Single session endpoint handles everything
+// src/routes/api/auth/session/+server.ts - FINAL VERSION
+
 import { json } from '@sveltejs/kit';
 import { adminAuth, adminFirestore } from '$lib/server/firebase-admin';
 import { dev } from '$app/environment';
@@ -6,7 +8,8 @@ import { dev } from '$app/environment';
 const SESSION_EXPIRES_IN = 60 * 60 * 24 * 5 * 1000; // 5 days
 
 /**
- * Creates session AND provisions user in one step
+ * SINGLE SOURCE OF TRUTH for user provisioning
+ * Creates session AND provisions user in one atomic operation
  */
 export async function POST({ request, cookies }) {
 	try {
@@ -16,63 +19,73 @@ export async function POST({ request, cookies }) {
 			return json({ error: 'No ID token provided' }, { status: 400 });
 		}
 
-		// Create session cookie
+		// Verify token and create session
 		const sessionCookie = await adminAuth.createSessionCookie(idToken, {
 			expiresIn: SESSION_EXPIRES_IN
 		});
 
-		// Get user info from token
+		// Get user info
 		const decodedToken = await adminAuth.verifyIdToken(idToken);
 		const authUser = await adminAuth.getUser(decodedToken.uid);
 
-		// Provision user in Firestore (merge operation)
+		// ATOMIC USER PROVISIONING - Firebase best practice
 		const userRef = adminFirestore.collection('users').doc(authUser.uid);
-		const existingDoc = await userRef.get();
+		const userDoc = await userRef.get();
 
-		if (existingDoc.exists) {
-			// Update existing user
-			await userRef.update({
-				lastLoginDate: new Date(),
-				updatedAt: new Date(),
-				email: authUser.email,
-				displayName: authUser.displayName || null,
-				photoURL: authUser.photoURL || null,
-			});
-			console.log(`✅ Updated existing user: ${authUser.email}`);
-		} else {
-			// Create new user with trial
+		const now = new Date();
+
+		if (!userDoc.exists) {
+			// NEW USER: Create with trial (Firebase auth already created the auth user)
 			await userRef.set({
+				// Identity (from Firebase Auth)
 				uid: authUser.uid,
 				email: authUser.email,
 				displayName: authUser.displayName || null,
 				photoURL: authUser.photoURL || null,
+
+				// App-specific subscription data
 				tier: 'trial',
 				pro: false,
-				trialStartDate: new Date(),
+				trialStartDate: now,
+
+				// Usage tracking
 				projectsCreated: 0,
 				elementsUsed: 0,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-				lastLoginDate: new Date(),
-				signupSource: 'google-auth',
-				onboardingCompleted: false,
+
+				// Timestamps
+				createdAt: now,
+				updatedAt: now,
+				lastLoginDate: now,
 			});
-			console.log(`✅ Created new user with trial: ${authUser.email}`);
+
+			console.log(`✅ NEW USER: ${authUser.email} (trial activated)`);
+		} else {
+			// EXISTING USER: Just update login info
+			await userRef.update({
+				lastLoginDate: now,
+				updatedAt: now,
+				// Sync auth info in case it changed
+				email: authUser.email,
+				displayName: authUser.displayName || null,
+				photoURL: authUser.photoURL || null,
+			});
+
+			console.log(`✅ EXISTING USER: ${authUser.email} (login updated)`);
 		}
 
-		// Set secure cookie for iframe
+		// Set secure iframe-compatible cookie
 		cookies.set('__session', sessionCookie, {
 			maxAge: SESSION_EXPIRES_IN / 1000,
 			httpOnly: true,
 			secure: true,
 			path: '/',
-			sameSite: 'none' // Essential for iframe
+			sameSite: 'none' // Required for iframe
 		});
 
 		return json({ success: true });
 
 	} catch (error) {
-		console.error('Session creation failed:', error);
+		console.error('Session/provisioning failed:', error);
 		return json({
 			error: 'Authentication failed',
 			details: dev ? error.message : undefined
@@ -80,11 +93,17 @@ export async function POST({ request, cookies }) {
 	}
 }
 
-/**
- * Deletes session cookie
- */
 export async function DELETE({ cookies }) {
 	cookies.delete('__session', { path: '/' });
-	console.log('Session deleted successfully');
 	return json({ success: true });
 }
+
+/**
+ * REMOVE THESE FILES - No longer needed:
+ * - src/routes/api/auth/provision-user/+server.ts
+ * - src/lib/services/firestore/user-provisioning.ts
+ * 
+ * Firebase Auth handles user creation automatically.
+ * This endpoint handles Firestore user document creation.
+ * Single responsibility, no duplication.
+ */
