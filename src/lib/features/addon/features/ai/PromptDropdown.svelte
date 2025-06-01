@@ -1,4 +1,4 @@
-<!-- src/lib/features/addon/features/ai/PromptDropdown.svelte -->
+<!-- src/lib/features/addon/features/ai/PromptDropdown.svelte - DEBUG VERSION -->
 <script lang="ts">
   import { slide, fade } from "svelte/transition";
   import { Button } from "$lib/components/ui/button";
@@ -31,17 +31,32 @@
   let selectedCategory = $state("all");
   let isOperating = $state(false);
 
+  // DEBUG: Log the data
+  $effect(() => {
+    console.log('🔍 PromptDropdown Debug:', {
+      prompts: props.prompts,
+      promptsKeys: Object.keys(props.prompts || {}),
+      promptsCount: Object.values(props.prompts || {}).flat().length,
+      editMode,
+      createMode,
+      selectedCategory,
+      isOpen: props.isOpen
+    });
+  });
+
   let allPrompts = $derived(() => {
-    return Object.values(props.prompts).flat();
+    const flattened = Object.values(props.prompts || {}).flat();
+    console.log('📋 All prompts:', flattened.length, flattened.map(p => p.title));
+    return flattened;
   });
 
   let categories = $derived(() => {
     const counts: Record<string, number> = {};
-    Object.entries(props.prompts).forEach(([category, prompts]) => {
+    Object.entries(props.prompts || {}).forEach(([category, prompts]) => {
       counts[category] = prompts.length;
     });
 
-    return [
+    const cats = [
       { id: "all", label: "All", count: allPrompts.length },
       ...Object.entries(counts).map(([id, count]) => ({
         id,
@@ -49,44 +64,63 @@
         count
       }))
     ];
+    
+    console.log('📂 Categories:', cats);
+    return cats;
   });
 
   let filteredPrompts = $derived(() => {
+    let filtered;
     if (selectedCategory === "all") {
-      return allPrompts;
+      filtered = allPrompts;
+    } else {
+      filtered = (props.prompts || {})[selectedCategory] || [];
     }
-    return props.prompts[selectedCategory] || [];
+    console.log(`🔍 Filtered prompts for "${selectedCategory}":`, filtered.length, filtered.map(p => p.title));
+    return filtered;
   });
 
   function selectPrompt(prompt) {
+    console.log('✅ Selecting prompt:', prompt.title);
     props.onPromptSelect(prompt);
     editMode = false;
     createMode = false;
   }
 
   function clearPrompt() {
+    console.log('❌ Clearing prompt');
     props.onPromptSelect(null);
     editMode = false;
     createMode = false;
   }
 
   function startEdit() {
+    console.log('✏️ Starting edit mode');
     if (!props.activePrompt) return;
     editMode = true;
     createMode = false;
   }
 
-  function startCreate() {
+  function startCreate(event) {
+    console.log('➕ Starting create mode');
+    event?.preventDefault();
+    event?.stopPropagation();
+    
     editMode = false;
     createMode = true;
-    clearPrompt();
+    // DON'T call clearPrompt() - it resets createMode!
+    props.onPromptSelect(null); // Just clear the active prompt
+    
+    console.log('📝 Create mode set:', { editMode, createMode });
   }
 
   function backToList() {
+    console.log('⬅️ Back to list');
     editMode = false;
     createMode = false;
   }
 
+  // Rest of functions unchanged...
   function dropPrompt() {
     if (!props.activePrompt) return;
     props.onToggleOpen();
@@ -143,7 +177,6 @@
         await props.onPromptsUpdate();
         backToList();
         if (isNew) {
-          // Auto-select the new prompt
           setTimeout(() => {
             const newPrompt = allPrompts.find(p => p.id === promptData.id);
             if (newPrompt) selectPrompt(newPrompt);
@@ -180,6 +213,14 @@
   {#if props.isOpen}
     <div class="bg-background border rounded-lg shadow-sm overflow-hidden" transition:slide={{ duration: 200 }}>
       
+      <!-- DEBUG INFO -->
+      <div class="p-2 bg-yellow-50 border-b text-xs">
+        <strong>DEBUG:</strong> 
+        Prompts: {Object.keys(props.prompts || {}).length} categories, 
+        {allPrompts.length} total, 
+        Mode: {createMode ? 'CREATE' : editMode ? 'EDIT' : 'BROWSE'}
+      </div>
+      
       {#if editMode && props.activePrompt}
         <!-- Edit Mode -->
         <div class="p-3" transition:fade={{ duration: 150 }}>
@@ -195,6 +236,7 @@
       {:else if createMode}
         <!-- Create Mode -->
         <div class="p-3" transition:fade={{ duration: 150 }}>
+          <div class="p-2 bg-green-50 text-xs mb-2">CREATE MODE ACTIVE</div>
           <PromptEditor 
             prompt={{
               id: '',
@@ -214,15 +256,18 @@
           />
         </div>
 
-      {:else if Object.keys(props.prompts).length === 0}
+      {:else if Object.keys(props.prompts || {}).length === 0}
         <!-- No prompts -->
         <div class="p-6 text-center">
           <p class="text-muted-foreground text-sm">No prompts available</p>
+          <p class="text-xs text-red-500">DEBUG: Empty prompts object</p>
         </div>
 
       {:else}
         <!-- Browse Mode -->
         <div>
+          <div class="p-2 bg-blue-50 text-xs">BROWSE MODE - {filteredPrompts.length} prompts shown</div>
+          
           <!-- Category Tabs -->
           <div class="flex border-b bg-muted/30 overflow-x-auto">
             {#each categories as category}
@@ -232,7 +277,10 @@
                     ? 'text-primary border-b-2 border-primary bg-background' 
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                   }"
-                onclick={() => selectedCategory = category.id}
+                onclick={() => {
+                  console.log('📂 Switching to category:', category.id);
+                  selectedCategory = category.id;
+                }}
               >
                 {category.label} ({category.count})
               </button>
@@ -244,6 +292,7 @@
             {#if filteredPrompts.length === 0}
               <div class="p-4 text-center text-muted-foreground text-sm">
                 No prompts in this category
+                <p class="text-xs text-red-500">DEBUG: Category "{selectedCategory}" has 0 prompts</p>
               </div>
             {:else}
               {#each filteredPrompts as prompt (prompt.id)}
@@ -282,26 +331,35 @@
           <!-- Action Buttons -->
           <div class="p-2 border-t bg-muted/20 flex items-center justify-between">
             <div class="flex items-center gap-1">
-              <!-- New Prompt -->
-              <Button variant="ghost" size="sm" class="h-7 px-2 gap-1" onclick={startCreate} disabled={isOperating}>
+              <!-- New Prompt - FIXED EVENT HANDLING -->
+              <button
+                class="h-7 px-2 gap-1 text-xs flex items-center border border-border rounded hover:bg-muted"
+                onclick={startCreate}
+                disabled={isOperating}
+              >
                 <Plus class="h-3 w-3" />
-                <span class="text-xs">New</span>
-              </Button>
+                <span>New</span>
+              </button>
+              
+              <!-- DEBUG BUTTON -->
+              <button
+                class="h-7 px-2 gap-1 text-xs flex items-center border border-yellow-500 rounded bg-yellow-100"
+                onclick={() => console.log('🐛 Current state:', { editMode, createMode, allPrompts: allPrompts.length })}
+              >
+                Debug
+              </button>
             </div>
 
             {#if props.activePrompt && !props.activePrompt.isLocked}
               <div class="flex items-center gap-1">
-                <!-- Clear -->
                 <Button variant="ghost" size="sm" class="h-7 w-7 p-0" onclick={clearPrompt} disabled={isOperating}>
                   <X class="h-3 w-3" />
                 </Button>
 
-                <!-- Copy -->
                 <Button variant="ghost" size="sm" class="h-7 w-7 p-0" onclick={copyPrompt} disabled={isOperating}>
                   <Copy class="h-3 w-3" />
                 </Button>
 
-                <!-- Edit (only for custom prompts) -->
                 {#if props.activePrompt.isUserCustom}
                   <Button variant="ghost" size="sm" class="h-7 w-7 p-0" onclick={startEdit} disabled={isOperating}>
                     <Edit class="h-3 w-3" />
@@ -313,7 +371,6 @@
                   </Button>
                 {/if}
 
-                <!-- Drop -->
                 <Button size="sm" class="h-7 px-3 gap-1" onclick={dropPrompt} disabled={isOperating}>
                   <Play class="h-3 w-3" />
                   <span class="text-xs">Drop</span>
