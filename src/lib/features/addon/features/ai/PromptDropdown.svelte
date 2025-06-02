@@ -1,4 +1,4 @@
-<!-- src/lib/features/addon/features/ai/PromptDropdown.svelte - UX ENHANCED -->
+<!-- src/lib/features/addon/features/ai/PromptDropdown.svelte - WITH PROMPTCONTROLS -->
 <script lang="ts">
   import { slide, fade } from "svelte/transition";
   import { Button } from "$lib/components/ui/button";
@@ -15,155 +15,78 @@
     isOpen?: boolean;
     activePrompt?: any;
     onPromptSelect: (prompt: any) => void;
+    onPromptClear: () => void;
     onToggleOpen: () => void;
     onPromptsUpdate: () => void;
   }>();
 
   // State
   let editMode = $state(false);
-  let editingExisting = $state(false);
-  let selectedCategory = $state("all"); // Start with "All" open by default
+  let createMode = $state(false);
+  let selectedCategory = $state("all");
   let isOperating = $state(false);
   let includeCode = $state(false);
-  let editorRef = $state<any>(null);
 
-  // Get all prompts as regular array
-  function getAllPrompts() {
-    if (!props.prompts) return [];
-    return Object.values(props.prompts).flat();
-  }
-
-  // Categories for horizontal tabs (including Recently Deleted)
-  let categories = $derived(() => {
-    const counts: Record<string, number> = {};
-    Object.entries(props.prompts || {}).forEach(([category, prompts]) => {
-      counts[category] = prompts.length;
+  // Debug prompts
+  $effect(() => {
+    console.log('🔍 PromptDropdown Debug:', {
+      prompts: props.prompts,
+      promptsKeys: Object.keys(props.prompts || {}),
+      promptsCount: Object.values(props.prompts || {}).flat().length,
+      editMode,
+      createMode,
+      selectedCategory,
+      isOpen: props.isOpen
     });
-
-    const tabs = [
-      { id: "all", label: "All", count: getAllPrompts().length },
-      ...Object.entries(counts).map(([id, count]) => ({
-        id,
-        label: id.charAt(0).toUpperCase() + id.slice(1),
-        count
-      })),
-      { id: "deleted", label: "Deleted", count: 0 } // TODO: Get deleted count from API
-    ];
-
-    return tabs;
   });
 
-  // Get filtered prompts as regular array
-  async function getFilteredPrompts() {
-    if (selectedCategory === "all") {
-      return getAllPrompts();
-    } else if (selectedCategory === "deleted") {
-      // Load deleted prompts from API
-      try {
-        const response = await fetch('/api/prompts?deleted=true');
-        const result = await response.json();
-        if (result.success) {
-          return result.prompts.deleted || [];
-        }
-      } catch (error) {
-        console.error('Failed to load deleted prompts:', error);
-      }
-      return [];
-    } else {
-      return (props.prompts || {})[selectedCategory] || [];
-    }
-  }
-
-  // Track filtered prompts reactively
-  let filteredPrompts = $state<any[]>([]);
-  
-  // Update filtered prompts when category changes
-  $effect(async () => {
-    filteredPrompts = await getFilteredPrompts();
-  });
-
+  // Actions
   function selectPrompt(prompt) {
-    // Allow deselecting by clicking the same prompt
-    if (props.activePrompt?.id === prompt.id) {
-      console.log('🔄 Deselecting prompt');
-      props.onPromptSelect(null);
-    } else {
-      console.log('✅ Selected:', prompt.title);
-      props.onPromptSelect(prompt);
-    }
+    props.onPromptSelect(prompt);
     editMode = false;
+    createMode = false;
   }
 
-  function startCreate() {
-    console.log('➕ Create mode for category:', selectedCategory);
-    editMode = true;
-    editingExisting = false;
-    props.onPromptSelect(null);
+  function clearPrompt() {
+    props.onPromptClear();
+    editMode = false;
+    createMode = false;
   }
 
   function startEdit(prompt: any) {
-    console.log('✏️ Edit mode for prompt:', prompt.title);
     editMode = true;
-    editingExisting = true;
-    props.onPromptSelect(prompt); // Set as active prompt for editing
+    createMode = false;
+    props.onPromptSelect(prompt); // Set as active for editing
+  }
+
+  function startCreate() {
+    editMode = false;
+    createMode = true;
+    props.onPromptClear(); // Clear active prompt for new creation
   }
 
   function backToList() {
-    console.log('⬅️ Back to list');
     editMode = false;
-    editingExisting = false;
+    createMode = false;
+  }
+
+  function dropPrompt() {
+    if (!props.activePrompt) return;
+    props.onToggleOpen();
   }
 
   async function copyPrompt() {
     if (!props.activePrompt) return;
     try {
       await navigator.clipboard.writeText(props.activePrompt.content);
-      console.log('📋 Copied to clipboard');
+      console.log('📋 Copied prompt to clipboard');
     } catch (error) {
-      console.error('Failed to copy:', error);
-    }
-  }
-
-  async function dropPrompt() {
-    if (!props.activePrompt) return;
-    console.log('🎯 Dropping prompt:', { includeCode });
-    // TODO: Implement drop with code option
-    props.onToggleOpen();
-  }
-
-  async function savePrompt(promptData: any) {
-    if (isOperating) return;
-    
-    console.log('💾 Saving:', promptData);
-    
-    isOperating = true;
-    try {
-      const method = editingExisting ? 'PUT' : 'POST';
-      const response = await fetch('/api/prompts', {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(promptData)
-      });
-      
-      const result = await response.json();
-      if (result.success) {
-        await props.onPromptsUpdate();
-        // Refresh filtered prompts
-        filteredPrompts = await getFilteredPrompts();
-        backToList();
-        console.log(`✅ ${editingExisting ? 'Updated' : 'Created'} successfully`);
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (error) {
-      console.error(`❌ ${editingExisting ? 'Update' : 'Save'} failed:`, error);
-    } finally {
-      isOperating = false;
+      console.error('Failed to copy prompt:', error);
     }
   }
 
   async function deletePrompt(promptId: string) {
-    if (isOperating) return;
+    if (isOperating || !confirm('Delete this prompt permanently?')) return;
     
     isOperating = true;
     try {
@@ -174,47 +97,56 @@
       const result = await response.json();
       if (result.success) {
         if (props.activePrompt?.id === promptId) {
-          props.onPromptSelect(null);
+          clearPrompt();
         }
         await props.onPromptsUpdate();
-        // Refresh filtered prompts
-        filteredPrompts = await getFilteredPrompts();
-        console.log('🗑️ Deleted successfully');
       } else {
         throw new Error(result.error);
       }
     } catch (error) {
-      console.error('❌ Delete failed:', error);
+      console.error('Delete failed:', error);
     } finally {
       isOperating = false;
     }
   }
 
-  async function restorePrompt(promptId: string) {
+  async function savePrompt(promptData: any, isNew: boolean = false) {
     if (isOperating) return;
     
     isOperating = true;
     try {
-      const response = await fetch('/api/prompts?action=restore', {
-        method: 'PUT',
+      const method = isNew ? 'POST' : 'PUT';
+      const response = await fetch('/api/prompts', {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ promptId })
+        body: JSON.stringify(promptData)
       });
       
       const result = await response.json();
       if (result.success) {
         await props.onPromptsUpdate();
-        // Refresh filtered prompts
-        filteredPrompts = await getFilteredPrompts();
-        console.log('♻️ Restored successfully');
+        backToList();
+        
+        // Auto-select newly created prompt
+        if (isNew) {
+          setTimeout(() => {
+            const allPrompts = Object.values(props.prompts).flat();
+            const newPrompt = allPrompts.find(p => p.id === promptData.id);
+            if (newPrompt) selectPrompt(newPrompt);
+          }, 100);
+        }
       } else {
         throw new Error(result.error);
       }
     } catch (error) {
-      console.error('❌ Restore failed:', error);
+      console.error('Save failed:', error);
     } finally {
       isOperating = false;
     }
+  }
+
+  function handleCategoryChange(category: string) {
+    selectedCategory = category;
   }
 
   let buttonClass = $derived(cn(
@@ -227,96 +159,91 @@
   {#if props.isOpen}
     <div class="bg-background border rounded-lg shadow-sm overflow-hidden" transition:slide={{ duration: 200 }}>
       
-      {#if editMode}
-        <!-- Edit Mode (New or Existing) -->
-        <div transition:fade={{ duration: 150 }}>
-          <!-- Editor -->
+      {#if editMode && props.activePrompt}
+        <!-- Edit Mode -->
+        <div class="p-3" transition:fade={{ duration: 150 }}>
           <PromptEditor 
-            bind:this={editorRef}
-            prompt={editingExisting && props.activePrompt ? {
-              id: props.activePrompt.id,
-              title: props.activePrompt.title,
-              content: props.activePrompt.content,
-              category: props.activePrompt.category
-            } : {
+            prompt={props.activePrompt}
+            onBack={backToList}
+            onSave={(data) => savePrompt(data, false)}
+            onDrop={dropPrompt}
+            isProcessing={isOperating || props.isProcessing}
+          />
+        </div>
+
+        <!-- Edit Mode Controls -->
+        <PromptControls
+          mode="edit"
+          onBack={backToList}
+          onSave={() => {}}
+          onDrop={dropPrompt}
+          showCodeOption={true}
+          includeCode={includeCode}
+          onIncludeCodeChange={(value) => includeCode = value}
+          disabled={isOperating || props.isProcessing}
+        />
+
+      {:else if createMode}
+        <!-- Create Mode -->
+        <div class="p-3" transition:fade={{ duration: 150 }}>
+          <PromptEditor 
+            prompt={{
               id: '',
               title: '',
               content: '',
               category: selectedCategory === 'all' ? 'writing' : selectedCategory
             }}
-            selectedCategory={selectedCategory}
             onBack={backToList}
-            onSave={(data) => savePrompt(editingExisting ? data : { 
+            onSave={(data) => savePrompt({ 
               ...data, 
               id: data.title.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '-').substring(0, 50)
-            })}
+            }, true)}
+            onDrop={() => {}}
             isProcessing={isOperating || props.isProcessing}
-            isNew={!editingExisting}
-            compact={true}
-          />
-          
-          <!-- Editor Controls -->
-          <PromptControls
-            mode="edit"
-            onBack={backToList}
-            onSave={() => editorRef?.save()}
-            onDrop={() => editorRef?.saveAndDrop()}
-            showCodeOption={true}
-            includeCode={includeCode}
-            onIncludeCodeChange={(value) => includeCode = value}
-            disabled={isOperating || props.isProcessing}
+            isNew={true}
           />
         </div>
+
+        <!-- Create Mode Controls -->
+        <PromptControls
+          mode="edit"
+          onBack={backToList}
+          onSave={() => {}} 
+          onDrop={() => {}} 
+          showCodeOption={true}
+          includeCode={includeCode}
+          onIncludeCodeChange={(value) => includeCode = value}
+          disabled={isOperating || props.isProcessing}
+        />
 
       {:else if Object.keys(props.prompts || {}).length === 0}
         <!-- No prompts -->
         <div class="p-6 text-center">
           <p class="text-muted-foreground text-sm">No prompts available</p>
+          <p class="text-xs text-red-500 mt-1">Debug: Empty prompts object</p>
         </div>
 
       {:else}
-        <!-- Browse Mode -->
+        <!-- Browse Mode with PromptList (includes tabs) -->
         <div>
-          <!-- Horizontal Scrollable Category Tabs -->
-          <div class="border-b bg-muted/20">
-            <div class="flex overflow-x-auto scrollbar-none gap-1 p-1">
-              {#each categories as category}
-                <button
-                  class="flex-shrink-0 px-3 py-1.5 text-xs font-medium transition-colors rounded-sm
-                    {selectedCategory === category.id 
-                      ? 'bg-background text-foreground shadow-sm border' 
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                    }"
-                  onclick={() => selectedCategory = category.id}
-                >
-                  {category.label}
-                  {#if category.count > 0}
-                    <span class="ml-1 text-[0.6rem] opacity-60">({category.count})</span>
-                  {/if}
-                </button>
-              {/each}
-            </div>
-          </div>
-
-          <!-- Prompts List with New Prompt Option -->
           <PromptList 
-            prompts={filteredPrompts}
+            prompts={props.prompts}
             selectedPrompt={props.activePrompt}
             onPromptSelect={selectPrompt}
             onNewPrompt={startCreate}
             onDeletePrompt={deletePrompt}
             onEditPrompt={startEdit}
-            onRestorePrompt={restorePrompt}
             currentCategory={selectedCategory}
-            showNewPromptOption={selectedCategory !== 'deleted'}
+            onCategoryChange={handleCategoryChange}
             isOperating={isOperating}
           />
 
-          <!-- Action Controls (only show if prompt selected) -->
-          {#if props.activePrompt && selectedCategory !== 'deleted'}
+          <!-- Browse Mode Controls (only show if prompt selected) -->
+          {#if props.activePrompt}
             <PromptControls
               mode="view"
               onCopy={copyPrompt}
+              onEdit={() => startEdit(props.activePrompt)}
               onDrop={dropPrompt}
               showCodeOption={true}
               includeCode={includeCode}
@@ -329,7 +256,7 @@
     </div>
   {/if}
   
-  <!-- Main Toggle Button -->
+  <!-- Main Button -->
   <Button variant="outline" class={buttonClass} onclick={props.onToggleOpen} disabled={props.isProcessing || isOperating}>
     {#if props.activePrompt}
       <span class="font-medium text-foreground truncate">{props.activePrompt.title}</span>
@@ -339,14 +266,3 @@
     <ChevronDown class={cn("h-4 w-4 transition-transform duration-200 flex-shrink-0", props.isOpen && "rotate-180")} />
   </Button>
 </div>
-
-<style>
-  .scrollbar-none {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  
-  .scrollbar-none::-webkit-scrollbar {
-    display: none;
-  }
-</style>

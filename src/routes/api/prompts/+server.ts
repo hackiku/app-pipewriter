@@ -1,9 +1,9 @@
-// src/routes/api/prompts/+server.ts - NO DESCRIPTION VERSION
+// src/routes/api/prompts/+server.ts - USER PROMPTS ONLY VERSION
 import { json } from '@sveltejs/kit';
 import { adminFirestore } from '$lib/server/firebase-admin';
 
 /**
- * GET /api/prompts - Get user's prompts (merged with system prompts)
+ * GET /api/prompts - Get user's prompts (SIMPLIFIED - only user prompts)
  */
 export async function GET({ locals }) {
 	if (!locals.authenticated || !locals.user) {
@@ -12,63 +12,33 @@ export async function GET({ locals }) {
 
 	try {
 		const uid = locals.user.uid;
-		console.log('📦 Querying prompts collection...');
+		console.log('📦 Loading user prompts...');
 
-		// Get system prompts
-		const systemPromptsRef = adminFirestore.collection('prompts');
-		const systemSnapshot = await systemPromptsRef
-			.where('active', '==', true)
-			.where('isSystem', '==', true)
-			.get();
-
-		console.log(`📦 Found ${systemSnapshot.size} total active prompts`);
-
-		// Filter system prompts
-		const systemPrompts = systemSnapshot.docs.map(doc => ({
-			id: doc.id,
-			...doc.data(),
-			isSystem: true,
-			isUserCustom: false,
-			createdAt: doc.data().createdAt?.toDate()?.toISOString(),
-			updatedAt: doc.data().updatedAt?.toDate()?.toISOString(),
-		}));
-
-		console.log(`📦 Filtered to ${systemPrompts.length} system prompts`);
-
-		// Get user's custom prompts
+		// SIMPLIFIED: Only query user's prompts
 		const userPromptsRef = adminFirestore
 			.collection('users')
 			.doc(uid)
 			.collection('prompts');
+
 		const userSnapshot = await userPromptsRef
 			.where('active', '==', true)
+			.orderBy('category')
+			.orderBy('title')
 			.get();
 
-		console.log(`👤 Found ${userSnapshot.size} user custom prompts`);
+		console.log(`📦 Found ${userSnapshot.size} user prompts`);
 
-		// Merge prompts (user prompts override system prompts with same ID)
-		const allPrompts = new Map();
-
-		// Add system prompts first
-		systemPrompts.forEach(prompt => {
-			allPrompts.set(prompt.id, prompt);
-		});
-
-		// Override with user prompts
-		userSnapshot.docs.forEach(doc => {
-			allPrompts.set(doc.id, {
-				id: doc.id,
-				...doc.data(),
-				isSystem: false,
-				isUserCustom: true,
-				createdAt: doc.data().createdAt?.toDate()?.toISOString(),
-				updatedAt: doc.data().updatedAt?.toDate()?.toISOString(),
-			});
-		});
+		// Convert to serializable format
+		const allPrompts = userSnapshot.docs.map(doc => ({
+			id: doc.id,
+			...doc.data(),
+			createdAt: doc.data().createdAt?.toDate()?.toISOString(),
+			updatedAt: doc.data().updatedAt?.toDate()?.toISOString(),
+		}));
 
 		// Group by category
 		const promptsByCategory = {};
-		Array.from(allPrompts.values()).forEach(prompt => {
+		allPrompts.forEach(prompt => {
 			if (!promptsByCategory[prompt.category]) {
 				promptsByCategory[prompt.category] = [];
 			}
@@ -86,9 +56,7 @@ export async function GET({ locals }) {
 			success: true,
 			prompts: promptsByCategory,
 			stats: {
-				total: allPrompts.size,
-				system: systemPrompts.length,
-				custom: userSnapshot.size,
+				total: allPrompts.length,
 				categories: Object.keys(promptsByCategory).length
 			}
 		});
@@ -111,13 +79,12 @@ export async function POST({ request, locals }) {
 		const uid = locals.user.uid;
 		const data = await request.json();
 
-		// REMOVED description validation
 		const { id, title, content, category, metadata } = data;
 		if (!id || !title || !content || !category) {
 			return json({ error: 'Missing required fields: id, title, content, category' }, { status: 400 });
 		}
 
-		// Check if ID already exists in user's prompts
+		// Check if ID already exists
 		const userPromptRef = adminFirestore
 			.collection('users')
 			.doc(uid)
@@ -129,21 +96,20 @@ export async function POST({ request, locals }) {
 			return json({ error: 'Prompt with this ID already exists' }, { status: 409 });
 		}
 
-		// Create user prompt - REMOVED description
+		// Create prompt
 		const promptData = {
 			id,
 			title,
 			content,
 			category,
 			metadata: {
-				tier: 'free', // User prompts are always free
+				tier: 'free', // All user prompts are free
 				tags: metadata?.tags || [],
 				usage: 0,
+				isDefault: false, // User created, not from defaults
 				...metadata
 			},
 			active: true,
-			isSystem: false,
-			isUserCustom: true,
 			createdAt: new Date(),
 			updatedAt: new Date(),
 			createdBy: uid,
@@ -184,7 +150,6 @@ export async function PUT({ request, locals }) {
 		const uid = locals.user.uid;
 		const data = await request.json();
 
-		// REMOVED description from validation
 		const { id, title, content, category, metadata } = data;
 		if (!id) {
 			return json({ error: 'Prompt ID required' }, { status: 400 });
@@ -196,13 +161,13 @@ export async function PUT({ request, locals }) {
 			.collection('prompts')
 			.doc(id);
 
-		// Check if prompt exists and belongs to user
+		// Check if prompt exists
 		const existingDoc = await userPromptRef.get();
 		if (!existingDoc.exists) {
 			return json({ error: 'Prompt not found' }, { status: 404 });
 		}
 
-		// Update fields - REMOVED description
+		// Update fields
 		const updateData = {
 			...(title && { title }),
 			...(content && { content }),
@@ -234,7 +199,7 @@ export async function PUT({ request, locals }) {
 }
 
 /**
- * DELETE /api/prompts - Soft delete user prompt
+ * DELETE /api/prompts - HARD delete user prompt (no restore needed)
  */
 export async function DELETE({ url, locals }) {
 	if (!locals.authenticated || !locals.user) {
@@ -261,14 +226,10 @@ export async function DELETE({ url, locals }) {
 			return json({ error: 'Prompt not found' }, { status: 404 });
 		}
 
-		// Soft delete by marking inactive
-		await userPromptRef.update({
-			active: false,
-			deletedAt: new Date(),
-			updatedAt: new Date()
-		});
+		// Hard delete (no restore needed since users can recreate)
+		await userPromptRef.delete();
 
-		console.log(`🗑️ Soft deleted user prompt: ${promptId}`);
+		console.log(`🗑️ Deleted user prompt: ${promptId}`);
 
 		return json({
 			success: true,
@@ -280,3 +241,12 @@ export async function DELETE({ url, locals }) {
 		return json({ error: 'Failed to delete prompt' }, { status: 500 });
 	}
 }
+
+/**
+ * REMOVED:
+ * - All merging logic with system prompts
+ * - isSystem/isUserCustom flags
+ * - Restore endpoints (no longer needed)
+ * - Complex access control (all user prompts are editable)
+ * - Soft delete (users can just recreate prompts)
+ */
