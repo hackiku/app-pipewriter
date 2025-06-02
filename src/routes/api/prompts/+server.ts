@@ -1,4 +1,4 @@
-// src/routes/api/prompts/+server.ts - Clean CRUD operations
+// src/routes/api/prompts/+server.ts - NO DESCRIPTION VERSION
 import { json } from '@sveltejs/kit';
 import { adminFirestore } from '$lib/server/firebase-admin';
 
@@ -12,15 +12,28 @@ export async function GET({ locals }) {
 
 	try {
 		const uid = locals.user.uid;
+		console.log('📦 Querying prompts collection...');
 
 		// Get system prompts
 		const systemPromptsRef = adminFirestore.collection('prompts');
 		const systemSnapshot = await systemPromptsRef
 			.where('active', '==', true)
 			.where('isSystem', '==', true)
-			.orderBy('category')
-			.orderBy('title')
 			.get();
+
+		console.log(`📦 Found ${systemSnapshot.size} total active prompts`);
+
+		// Filter system prompts
+		const systemPrompts = systemSnapshot.docs.map(doc => ({
+			id: doc.id,
+			...doc.data(),
+			isSystem: true,
+			isUserCustom: false,
+			createdAt: doc.data().createdAt?.toDate()?.toISOString(),
+			updatedAt: doc.data().updatedAt?.toDate()?.toISOString(),
+		}));
+
+		console.log(`📦 Filtered to ${systemPrompts.length} system prompts`);
 
 		// Get user's custom prompts
 		const userPromptsRef = adminFirestore
@@ -29,23 +42,16 @@ export async function GET({ locals }) {
 			.collection('prompts');
 		const userSnapshot = await userPromptsRef
 			.where('active', '==', true)
-			.orderBy('category')
-			.orderBy('title')
 			.get();
+
+		console.log(`👤 Found ${userSnapshot.size} user custom prompts`);
 
 		// Merge prompts (user prompts override system prompts with same ID)
 		const allPrompts = new Map();
 
 		// Add system prompts first
-		systemSnapshot.docs.forEach(doc => {
-			allPrompts.set(doc.id, {
-				id: doc.id,
-				...doc.data(),
-				isSystem: true,
-				isUserCustom: false,
-				createdAt: doc.data().createdAt?.toDate()?.toISOString(),
-				updatedAt: doc.data().updatedAt?.toDate()?.toISOString(),
-			});
+		systemPrompts.forEach(prompt => {
+			allPrompts.set(prompt.id, prompt);
 		});
 
 		// Override with user prompts
@@ -69,12 +75,19 @@ export async function GET({ locals }) {
 			promptsByCategory[prompt.category].push(prompt);
 		});
 
+		// Sort within categories
+		Object.keys(promptsByCategory).forEach(category => {
+			promptsByCategory[category].sort((a, b) => a.title.localeCompare(b.title));
+		});
+
+		console.log(`✅ Loaded prompts: ${Object.entries(promptsByCategory).map(([cat, prompts]) => `${cat}:${prompts.length}`).join(', ')}`);
+
 		return json({
 			success: true,
 			prompts: promptsByCategory,
 			stats: {
 				total: allPrompts.size,
-				system: systemSnapshot.size,
+				system: systemPrompts.length,
 				custom: userSnapshot.size,
 				categories: Object.keys(promptsByCategory).length
 			}
@@ -98,45 +111,35 @@ export async function POST({ request, locals }) {
 		const uid = locals.user.uid;
 		const data = await request.json();
 
-		// Validate required fields
-		const { title, description, content, category } = data;
-		if (!title || !content || !category) {
-			return json({ error: 'Missing required fields: title, content, category' }, { status: 400 });
+		// REMOVED description validation
+		const { id, title, content, category, metadata } = data;
+		if (!id || !title || !content || !category) {
+			return json({ error: 'Missing required fields: id, title, content, category' }, { status: 400 });
 		}
 
-		// Generate ID from title
-		const id = title.toLowerCase()
-			.replace(/[^a-z0-9\s]/g, '')
-			.replace(/\s+/g, '-')
-			.substring(0, 50);
-
-		if (!id) {
-			return json({ error: 'Invalid title - cannot generate ID' }, { status: 400 });
-		}
-
-		// Create user prompt
+		// Check if ID already exists in user's prompts
 		const userPromptRef = adminFirestore
 			.collection('users')
 			.doc(uid)
 			.collection('prompts')
 			.doc(id);
 
-		// Check if ID already exists
 		const existingDoc = await userPromptRef.get();
 		if (existingDoc.exists) {
-			return json({ error: 'A prompt with this title already exists' }, { status: 409 });
+			return json({ error: 'Prompt with this ID already exists' }, { status: 409 });
 		}
 
+		// Create user prompt - REMOVED description
 		const promptData = {
 			id,
-			title: title.trim(),
-			description: (description || '').trim(),
-			content: content.trim(),
+			title,
+			content,
 			category,
 			metadata: {
 				tier: 'free', // User prompts are always free
-				tags: data.metadata?.tags || [],
-				usage: 0
+				tags: metadata?.tags || [],
+				usage: 0,
+				...metadata
 			},
 			active: true,
 			isSystem: false,
@@ -147,21 +150,19 @@ export async function POST({ request, locals }) {
 			searchTerms: [
 				id.toLowerCase(),
 				title.toLowerCase(),
-				(description || '').toLowerCase(),
+				content.toLowerCase(),
 				category.toLowerCase(),
-				...(data.metadata?.tags || [])
+				...(metadata?.tags || [])
 			].filter(Boolean)
 		};
 
 		await userPromptRef.set(promptData);
 
+		console.log(`✅ Created user prompt: ${title} (${category})`);
+
 		return json({
 			success: true,
-			prompt: {
-				...promptData,
-				createdAt: promptData.createdAt.toISOString(),
-				updatedAt: promptData.updatedAt.toISOString()
-			},
+			prompt: promptData,
 			message: 'Prompt created successfully'
 		});
 
@@ -183,7 +184,8 @@ export async function PUT({ request, locals }) {
 		const uid = locals.user.uid;
 		const data = await request.json();
 
-		const { id, title, description, content, category } = data;
+		// REMOVED description from validation
+		const { id, title, content, category, metadata } = data;
 		if (!id) {
 			return json({ error: 'Prompt ID required' }, { status: 400 });
 		}
@@ -200,29 +202,25 @@ export async function PUT({ request, locals }) {
 			return json({ error: 'Prompt not found' }, { status: 404 });
 		}
 
-		// Build update data
-		const updateData: any = {
-			updatedAt: new Date()
+		// Update fields - REMOVED description
+		const updateData = {
+			...(title && { title }),
+			...(content && { content }),
+			...(category && { category }),
+			...(metadata && { metadata: { ...existingDoc.data().metadata, ...metadata } }),
+			updatedAt: new Date(),
+			searchTerms: [
+				id.toLowerCase(),
+				(title || existingDoc.data().title).toLowerCase(),
+				(content || existingDoc.data().content || '').toLowerCase(),
+				(category || existingDoc.data().category).toLowerCase(),
+				...(metadata?.tags || existingDoc.data().metadata?.tags || [])
+			].filter(Boolean)
 		};
 
-		if (title) updateData.title = title.trim();
-		if (description !== undefined) updateData.description = description.trim();
-		if (content) updateData.content = content.trim();
-		if (category) updateData.category = category;
-
-		// Update search terms if any text fields changed
-		if (title || description !== undefined || content || category) {
-			const existingData = existingDoc.data();
-			updateData.searchTerms = [
-				id.toLowerCase(),
-				(title || existingData.title).toLowerCase(),
-				(description !== undefined ? description : existingData.description || '').toLowerCase(),
-				(category || existingData.category).toLowerCase(),
-				...(existingData.metadata?.tags || [])
-			].filter(Boolean);
-		}
-
 		await userPromptRef.update(updateData);
+
+		console.log(`✅ Updated user prompt: ${id}`);
 
 		return json({
 			success: true,
@@ -236,7 +234,7 @@ export async function PUT({ request, locals }) {
 }
 
 /**
- * DELETE /api/prompts - Delete user prompt
+ * DELETE /api/prompts - Soft delete user prompt
  */
 export async function DELETE({ url, locals }) {
 	if (!locals.authenticated || !locals.user) {
@@ -269,6 +267,8 @@ export async function DELETE({ url, locals }) {
 			deletedAt: new Date(),
 			updatedAt: new Date()
 		});
+
+		console.log(`🗑️ Soft deleted user prompt: ${promptId}`);
 
 		return json({
 			success: true,

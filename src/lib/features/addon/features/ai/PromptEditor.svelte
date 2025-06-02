@@ -1,9 +1,9 @@
-<!-- src/lib/features/addon/features/ai/PromptEditor.svelte - Compact Version -->
+<!-- src/lib/features/addon/features/ai/PromptEditor.svelte -->
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Textarea } from "$lib/components/ui/textarea";
-  import { ArrowLeft, Save, Play, Loader2 } from "lucide-svelte";
+  import { ArrowLeft, Save, Play, Loader2 } from "@lucide/svelte";
 
   const props = $props<{
     prompt: {
@@ -14,17 +14,22 @@
     };
     onBack: () => void;
     onSave: (updatedPrompt: any) => void;
-    onDrop?: () => void;
+    onDrop: () => void;
     isProcessing?: boolean;
     isNew?: boolean;
-    error?: string | null;
-    compact?: boolean;
   }>();
 
   // Editable state
   let editTitle = $state(props.prompt.title);
   let editContent = $state(props.prompt.content);
   let editCategory = $state(props.prompt.category || 'writing');
+
+  // Update local state when prompt changes (for editing different prompts)
+  $effect(() => {
+    editTitle = props.prompt.title;
+    editContent = props.prompt.content;
+    editCategory = props.prompt.category || 'writing';
+  });
 
   // Validation
   let isValid = $derived(
@@ -61,7 +66,9 @@
       ux: "text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-950",
       marketing: "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-950",
       structure: "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-950",
-      technical: "text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-950"
+      technical: "text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-950",
+      design: "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-950",
+      code: "text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-950"
     };
     return colors[category] || "text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-950";
   }
@@ -71,11 +78,13 @@
     { value: 'ux', label: 'UX/UI' },
     { value: 'marketing', label: 'Marketing' },
     { value: 'structure', label: 'Structure' },
-    { value: 'technical', label: 'Technical' }
+    { value: 'technical', label: 'Technical' },
+    { value: 'design', label: 'Design' },
+    { value: 'code', label: 'Code' }
   ];
 </script>
 
-<div class="space-y-{props.compact ? '2' : '3'}">
+<div class="space-y-3">
   <!-- Header -->
   <div class="flex items-center gap-2">
     <Button
@@ -97,31 +106,26 @@
     </span>
   </div>
 
-  <!-- Error Display -->
-  {#if props.error}
-    <div class="p-2 bg-destructive/10 border border-destructive/20 rounded text-destructive text-xs">
-      {props.error}
-    </div>
-  {/if}
-
   <!-- Title -->
   <div>
-    <label class="text-xs font-medium text-muted-foreground">Title *</label>
+    <label for="prompt-title" class="text-xs font-medium text-muted-foreground">Title *</label>
     <Input
+      id="prompt-title"
       bind:value={editTitle}
-      class="mt-1 h-{props.compact ? '7' : '8'} text-sm"
+      class="mt-1 h-8 text-sm"
       placeholder="Prompt title..."
       disabled={props.isProcessing}
     />
   </div>
 
-  <!-- Category (for new prompts or if compact) -->
-  {#if props.isNew || props.compact}
+  <!-- Category (for new prompts) -->
+  {#if props.isNew}
     <div>
-      <label class="text-xs font-medium text-muted-foreground">Category *</label>
+      <label for="prompt-category" class="text-xs font-medium text-muted-foreground">Category *</label>
       <select 
+        id="prompt-category"
         bind:value={editCategory}
-        class="w-full mt-1 h-{props.compact ? '7' : '8'} px-2 text-sm border border-border rounded-md bg-background"
+        class="w-full mt-1 h-8 px-2 text-sm border border-border rounded-md bg-background"
         disabled={props.isProcessing}
       >
         {#each categories as category}
@@ -131,14 +135,13 @@
     </div>
   {/if}
 
-  <!-- Description (optional in compact mode) -->
-
   <!-- Content -->
   <div>
-    <label class="text-xs font-medium text-muted-foreground">Content *</label>
+    <label for="prompt-content" class="text-xs font-medium text-muted-foreground">Content *</label>
     <Textarea
+      id="prompt-content"
       bind:value={editContent}
-      class="mt-1 {props.compact ? 'min-h-[60px]' : 'min-h-[80px]'} text-sm resize-none"
+      class="mt-1 min-h-[80px] text-sm resize-none"
       placeholder="Enter the full prompt content..."
       disabled={props.isProcessing}
     />
@@ -149,7 +152,7 @@
   </div>
 
   <!-- Actions -->
-  <div class="flex items-center justify-between pt-{props.compact ? '2' : '2'} border-t">
+  <div class="flex items-center justify-between pt-2 border-t">
     <div class="flex items-center gap-2">
       <!-- Save -->
       <Button
@@ -167,6 +170,7 @@
         <span class="text-xs">{props.isNew ? 'Create' : 'Save'}</span>
       </Button>
       
+      <!-- Status indicators -->
       {#if !props.isNew && hasChanges}
         <span class="text-[0.65rem] text-amber-600 dark:text-amber-400">unsaved</span>
       {/if}
@@ -178,8 +182,8 @@
       {/if}
     </div>
 
-    <!-- Drop (only for existing prompts and if onDrop provided) -->
-    {#if !props.isNew && props.onDrop}
+    <!-- Drop (only for existing prompts) -->
+    {#if !props.isNew}
       <Button
         size="sm"
         class="h-7 px-3 gap-1"

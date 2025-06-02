@@ -1,9 +1,10 @@
-// src/routes/api/prompts/restore/+server.ts - Restore system prompts
+// src/routes/api/prompts/restore/+server.ts
 import { json } from '@sveltejs/kit';
 import { adminFirestore } from '$lib/server/firebase-admin';
 
 /**
- * POST /api/prompts/restore - Restore system prompts
+ * POST /api/prompts/restore - Restore system prompts to defaults
+ * Body: { promptId?: string } - if promptId provided, restore specific prompt; otherwise restore all
  */
 export async function POST({ request, locals }) {
 	if (!locals.authenticated || !locals.user) {
@@ -12,10 +13,10 @@ export async function POST({ request, locals }) {
 
 	try {
 		const uid = locals.user.uid;
-		const { promptId } = await request.json();
+		const { promptId } = await request.json().catch(() => ({}));
 
 		if (promptId) {
-			// Restore specific system prompt
+			// Restore specific system prompt by deleting user's custom version
 			const systemPromptRef = adminFirestore.collection('prompts').doc(promptId);
 			const systemDoc = await systemPromptRef.get();
 
@@ -30,14 +31,12 @@ export async function POST({ request, locals }) {
 				.collection('prompts')
 				.doc(promptId);
 
-			const userDoc = await userPromptRef.get();
-			if (userDoc.exists) {
-				await userPromptRef.delete();
-			}
+			await userPromptRef.delete();
 
 			return json({
 				success: true,
-				message: 'Prompt restored to system default'
+				message: 'Prompt restored to system default',
+				promptId
 			});
 
 		} else {
@@ -48,15 +47,8 @@ export async function POST({ request, locals }) {
 				.collection('prompts');
 
 			const userSnapshot = await userPromptsRef.get();
-
-			if (userSnapshot.size === 0) {
-				return json({
-					success: true,
-					message: 'No custom prompts to restore'
-				});
-			}
-
 			const batch = adminFirestore.batch();
+
 			userSnapshot.docs.forEach(doc => {
 				batch.delete(doc.ref);
 			});
@@ -65,12 +57,16 @@ export async function POST({ request, locals }) {
 
 			return json({
 				success: true,
-				message: `Restored ${userSnapshot.size} prompts to system defaults`
+				message: `Restored ${userSnapshot.size} prompts to system defaults`,
+				count: userSnapshot.size
 			});
 		}
 
 	} catch (error) {
 		console.error('Error restoring prompts:', error);
-		return json({ error: 'Failed to restore prompts' }, { status: 500 });
+		return json({
+			error: 'Failed to restore prompts',
+			details: error.message
+		}, { status: 500 });
 	}
 }
