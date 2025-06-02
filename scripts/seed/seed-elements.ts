@@ -14,16 +14,16 @@ try {
 // Comprehensive elements data - includes your existing ones plus more
 const elementsData = [
 	// ===== CONTAINERS =====
-	{
-		id: 'container-center',
-		category: 'containers',
-		description: 'Centered container for content sections',
-		metadata: {
-			supports: { darkMode: true, customColors: true },
-			tier: 'free'
-		},
-		displayOrder: 1
-	},
+	// {
+	// 	id: 'container-center',
+	// 	category: 'containers',
+	// 	description: 'Centered container for content sections',
+	// 	metadata: {
+	// 		supports: { darkMode: true, customColors: true },
+	// 		tier: 'free'
+	// 	},
+	// 	displayOrder: 1
+	// },
 	{
 		id: 'background-empty',
 		category: 'containers',
