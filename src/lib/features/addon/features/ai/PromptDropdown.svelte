@@ -1,20 +1,12 @@
-<!-- src/lib/features/addon/features/ai/PromptDropdown.svelte - FINAL WORKING VERSION -->
+<!-- src/lib/features/addon/features/ai/PromptDropdown.svelte - ULTRA SIMPLE VERSION -->
 <script lang="ts">
   import { slide, fade } from "svelte/transition";
   import { Button } from "$lib/components/ui/button";
   import { cn } from "$lib/utils";
-  import { 
-    ChevronDown, 
-    X, 
-    Edit, 
-    Play, 
-    Copy,
-    Trash2,
-    Plus
-  } from "lucide-svelte";
+  import { ChevronDown, Plus } from "@lucide/svelte";
+  import PromptList from "./PromptList.svelte";
   import PromptEditor from "./PromptEditor.svelte";
-
-  // Props - EXACTLY like your working dropper pattern
+  
   const props = $props<{
     prompts: Record<string, any[]>;
     features: any;
@@ -27,135 +19,96 @@
   }>();
 
   // Simple state
-  let mode = $state<'list' | 'edit' | 'create'>('list');
-  let selectedPrompt = $state<any>(null);
+  let createMode = $state(false);
   let selectedCategory = $state("all");
+  let isOperating = $state(false);
 
-  // COPY the exact data processing pattern from your working dropper
-  let allPrompts = $derived(() => {
-    const promptsList: any[] = [];
-    
-    console.log('🔍 PromptDropdown processing props.prompts:', {
-      exists: !!props.prompts,
-      type: typeof props.prompts,
-      keys: props.prompts ? Object.keys(props.prompts) : []
+  // DEBUG
+  $effect(() => {
+    console.log('🔍 Simple PromptDropdown:', {
+      prompts: props.prompts,
+      totalPrompts: props.prompts ? Object.values(props.prompts).flat().length : 0,
+      selectedCategory,
+      isOpen: props.isOpen,
+      createMode
     });
-    
-    if (props.prompts && typeof props.prompts === 'object') {
-      // Use the EXACT same pattern as working dropper
-      Object.entries(props.prompts).forEach(([category, categoryPrompts]) => {
-        console.log(`📂 Processing category "${category}":`, {
-          isArray: Array.isArray(categoryPrompts),
-          length: Array.isArray(categoryPrompts) ? categoryPrompts.length : 'not array'
-        });
-        
-        if (Array.isArray(categoryPrompts)) {
-          categoryPrompts.forEach(prompt => {
-            promptsList.push(prompt);
-          });
-        }
-      });
-    }
-    
-    console.log(`✅ Total prompts processed: ${promptsList.length}`);
-    console.log('Sample prompts:', promptsList.slice(0, 2));
-    
-    return promptsList;
   });
 
+  // FIXED: Get all prompts as regular array, not derived
+  function getAllPrompts() {
+    if (!props.prompts) return [];
+    return Object.values(props.prompts).flat();
+  }
+
+  // Categories with simple names
   let categories = $derived(() => {
     const counts: Record<string, number> = {};
-    
-    allPrompts.forEach(prompt => {
-      if (prompt?.category) {
-        counts[prompt.category] = (counts[prompt.category] || 0) + 1;
-      }
+    Object.entries(props.prompts || {}).forEach(([category, prompts]) => {
+      counts[category] = prompts.length;
     });
 
-    const categoryList = [
-      { id: "all", label: "All", count: allPrompts.length },
+    return [
+      { id: "all", label: "All", count: getAllPrompts().length },
       ...Object.entries(counts).map(([id, count]) => ({
         id,
         label: id.charAt(0).toUpperCase() + id.slice(1),
         count
       }))
     ];
-    
-    console.log('📂 Categories:', categoryList);
-    return categoryList;
   });
 
-  let filteredPrompts = $derived(() => {
-    const filtered = selectedCategory === "all" 
-      ? allPrompts 
-      : allPrompts.filter(prompt => prompt?.category === selectedCategory);
-    
-    console.log(`🔍 Filtered for "${selectedCategory}": ${filtered.length} prompts`);
-    return filtered;
-  });
-
-  // Actions
-  function selectPrompt(prompt: any) {
-    selectedPrompt = prompt;
-    console.log(`✅ Selected: ${prompt?.title}`);
-  }
-
-  function activatePrompt() {
-    if (!selectedPrompt) return;
-    props.onPromptSelect(selectedPrompt);
-    selectedPrompt = null;
-    props.onToggleOpen();
-    console.log(`🎯 Activated: ${selectedPrompt?.title}`);
-  }
-
-  function clearSelection() {
-    selectedPrompt = null;
-  }
-
-  function startEdit() {
-    if (!selectedPrompt) return;
-    mode = 'edit';
-  }
-
-  function startCreate() {
-    mode = 'create';
-    selectedPrompt = null;
-  }
-
-  function backToList() {
-    mode = 'list';
-    selectedPrompt = null;
-  }
-
-  function handleSave(promptData: any) {
-    console.log('💾 Save:', promptData);
-    // TODO: Connect to API for user actions
-    backToList();
-  }
-
-  async function handleCopy() {
-    if (!selectedPrompt?.content) return;
-    try {
-      await navigator.clipboard.writeText(selectedPrompt.content);
-    } catch (error) {
-      console.error('Copy failed:', error);
+  // FIXED: Get filtered prompts as regular array
+  function getFilteredPrompts() {
+    if (selectedCategory === "all") {
+      return getAllPrompts();
+    } else {
+      return (props.prompts || {})[selectedCategory] || [];
     }
   }
 
-  function getCategoryColor(category: string) {
-    const colors = {
-      writing: "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950",
-      ux: "text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-950", 
-      marketing: "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-950",
-      structure: "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-950",
-      technical: "text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-950"
-    };
-    return colors[category] || "text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-950";
+  function selectPrompt(prompt) {
+    console.log('✅ Selected:', prompt.title);
+    props.onPromptSelect(prompt);
+    createMode = false;
   }
 
-  function truncateContent(content: string, maxLength: number = 80): string {
-    if (!content || content.length <= maxLength) return content || '';
-    return content.substring(0, maxLength).trim() + '...';
+  function startCreate() {
+    console.log('➕ Create mode');
+    createMode = true;
+    props.onPromptSelect(null);
+  }
+
+  function backToList() {
+    console.log('⬅️ Back to list');
+    createMode = false;
+  }
+
+  async function savePrompt(promptData: any) {
+    if (isOperating) return;
+    
+    console.log('💾 Saving:', promptData);
+    
+    isOperating = true;
+    try {
+      const response = await fetch('/api/prompts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(promptData)
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        await props.onPromptsUpdate();
+        backToList();
+        console.log('✅ Saved successfully');
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('❌ Save failed:', error);
+    } finally {
+      isOperating = false;
+    }
   }
 
   let buttonClass = $derived(cn(
@@ -165,53 +118,38 @@
 </script>
 
 <div class="space-y-2">
-  <!-- Debug Info -->
-  <div class="p-2 bg-blue-50 dark:bg-blue-950 rounded text-xs border border-blue-200 dark:border-blue-800">
-    <strong>Server Data:</strong> 
-    {allPrompts.length} total prompts, 
-    {filteredPrompts.length} in "{selectedCategory}",
-    {Object.keys(props.prompts || {}).length} categories
-    {#if selectedPrompt}
-      <br><strong>Selected:</strong> {selectedPrompt.title}
-    {/if}
-  </div>
-
   {#if props.isOpen}
     <div class="bg-background border rounded-lg shadow-sm overflow-hidden" transition:slide={{ duration: 200 }}>
       
-      {#if mode === 'edit' && selectedPrompt}
-        <!-- Edit Mode -->
-        <div class="p-3" transition:fade={{ duration: 150 }}>
-          <PromptEditor 
-            prompt={selectedPrompt}
-            onBack={backToList}
-            onSave={handleSave}
-            isProcessing={false}
-            compact={true}
-          />
-        </div>
-
-      {:else if mode === 'create'}
+      {#if createMode}
         <!-- Create Mode -->
         <div class="p-3" transition:fade={{ duration: 150 }}>
           <PromptEditor 
             prompt={{
               id: '',
               title: '',
-              description: '',
               content: '',
               category: 'writing'
             }}
             onBack={backToList}
-            onSave={handleSave}
-            isProcessing={false}
+            onSave={(data) => savePrompt({ 
+              ...data, 
+              id: data.title.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '-').substring(0, 50)
+            })}
+            isProcessing={isOperating || props.isProcessing}
             isNew={true}
             compact={true}
           />
         </div>
 
+      {:else if Object.keys(props.prompts || {}).length === 0}
+        <!-- No prompts -->
+        <div class="p-6 text-center">
+          <p class="text-muted-foreground text-sm">No prompts available</p>
+        </div>
+
       {:else}
-        <!-- List Mode -->
+        <!-- Browse Mode with PromptList -->
         <div>
           <!-- Category Tabs -->
           <div class="flex border-b bg-muted/30 overflow-x-auto">
@@ -223,8 +161,8 @@
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                   }"
                 onclick={() => {
+                  console.log('📂 Switching to:', category.id);
                   selectedCategory = category.id;
-                  selectedPrompt = null;
                 }}
               >
                 {category.label} ({category.count})
@@ -232,94 +170,33 @@
             {/each}
           </div>
 
-          <!-- Prompts List -->
-          <div class="h-[180px] overflow-y-auto scrollbar-hide">
-            {#if filteredPrompts.length === 0}
-              <div class="p-4 text-center">
-                <p class="text-muted-foreground text-sm">No prompts in this category</p>
-                <p class="text-xs text-gray-500 mt-1">
-                  Total loaded: {allPrompts.length}, 
-                  Available categories: {Object.keys(props.prompts || {}).join(', ')}
-                </p>
-              </div>
-            {:else}
-              {#each filteredPrompts as prompt (prompt?.id || Math.random())}
-                <button
-                  class="w-full p-3 text-left hover:bg-muted/50 transition-colors border-b border-border/30 last:border-b-0
-                    {selectedPrompt?.id === prompt?.id ? 'bg-primary/10 border-primary/30' : ''}"
-                  onclick={() => selectPrompt(prompt)}
-                >
-                  <div class="flex items-start justify-between gap-3">
-                    <!-- Left: Title + Content -->
-                    <div class="flex-1 min-w-0">
-                      <h4 class="font-medium text-sm mb-1 truncate">
-                        {prompt?.title || 'Untitled'}
-                      </h4>
-                      <p class="text-xs text-muted-foreground leading-relaxed">
-                        {truncateContent(prompt?.content || prompt?.description || '')}
-                      </p>
-                    </div>
-                    
-                    <!-- Right: Category -->
-                    <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                      <span class="text-[0.6rem] px-1.5 py-0.5 rounded font-medium {getCategoryColor(prompt?.category || 'writing')}">
-                        {prompt?.category || 'uncategorized'}
-                      </span>
-                      <span class="text-[0.5rem] text-muted-foreground">
-                        {prompt?.metadata?.tier || 'free'}
-                      </span>
-                    </div>
-                  </div>
-                </button>
-              {/each}
-            {/if}
-          </div>
+          <!-- FIXED: Use PromptList component -->
+          <PromptList 
+            prompts={getFilteredPrompts()}
+            selectedPrompt={props.activePrompt}
+            onPromptSelect={selectPrompt}
+          />
 
-          <!-- Action Buttons -->
+          <!-- Action Bar -->
           <div class="p-2 border-t bg-muted/20 flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="sm"
-              class="h-7 px-2 gap-1 text-xs"
+            <button
+              class="h-7 px-3 gap-1 text-xs flex items-center border border-border rounded hover:bg-muted"
               onclick={startCreate}
+              disabled={isOperating}
             >
               <Plus class="h-3 w-3" />
-              <span>New</span>
-            </Button>
+              <span>New Prompt</span>
+            </button>
 
-            {#if selectedPrompt}
-              <div class="flex items-center gap-1">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  class="h-7 w-7 p-0" 
-                  onclick={clearSelection}
-                >
-                  <X class="h-3 w-3" />
-                </Button>
-
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  class="h-7 w-7 p-0" 
-                  onclick={handleCopy}
-                >
-                  <Copy class="h-3 w-3" />
-                </Button>
-
-                <Button 
-                  size="sm" 
-                  class="h-7 px-3 gap-1" 
-                  onclick={activatePrompt}
-                >
-                  <Play class="h-3 w-3" />
-                  <span class="text-xs">Drop</span>
-                </Button>
-              </div>
-            {:else}
-              <span class="text-xs text-muted-foreground">
-                Select a prompt
-              </span>
+            {#if props.activePrompt}
+              <Button 
+                size="sm" 
+                class="h-7 px-3 gap-1" 
+                onclick={props.onToggleOpen}
+                disabled={isOperating}
+              >
+                <span class="text-xs">Use This</span>
+              </Button>
             {/if}
           </div>
         </div>
@@ -328,11 +205,7 @@
   {/if}
   
   <!-- Main Button -->
-  <Button 
-    variant="outline" 
-    class={buttonClass} 
-    onclick={props.onToggleOpen}
-  >
+  <Button variant="outline" class={buttonClass} onclick={props.onToggleOpen} disabled={props.isProcessing || isOperating}>
     {#if props.activePrompt}
       <span class="font-medium text-foreground truncate">{props.activePrompt.title}</span>
     {:else}
@@ -341,14 +214,3 @@
     <ChevronDown class={cn("h-4 w-4 transition-transform duration-200 flex-shrink-0", props.isOpen && "rotate-180")} />
   </Button>
 </div>
-
-<style>
-  .scrollbar-hide {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-</style>

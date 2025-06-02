@@ -22,6 +22,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 	// For addon route, check authentication
 	if (url.pathname === '/addon') {
 		if (!locals.authenticated || !locals.user) {
+			console.log('[ADDON] Not authenticated, redirecting');
 			return {
 				route: 'addon-redirect',
 				showLogin: false,
@@ -32,17 +33,35 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 
 		try {
 			const uid = locals.user.uid;
+			console.log(`[ADDON] Loading data for user: ${uid}`);
 
-			// FIXED: Load user features first, then use the tier
+			// Load user features first
 			const userFeatures = await getUserWithFeatures(uid);
+			console.log(`[ADDON] User tier: ${userFeatures.tier}`);
 
-			// FIXED: Use the tier from userFeatures directly
-			const [elements, prompts] = await Promise.all([
-				getFilteredElements(userFeatures.tier),
-				getFilteredPrompts(userFeatures.tier, uid)
-			]);
+			// Load data - elements first (known working), then prompts with fallback
+			console.log('[ADDON] Loading elements...');
+			const elements = await getFilteredElements(userFeatures.tier);
+			console.log(`[ADDON] Elements loaded: ${Object.keys(elements).length} categories`);
 
-			console.log(`[ADDON] User loaded: ${locals.user.email}, Tier: ${userFeatures.tier}, Elements: ${Object.keys(elements).length} categories`);
+			console.log('[ADDON] Loading prompts...');
+			let prompts = {};
+			try {
+				prompts = await getFilteredPrompts(userFeatures.tier, uid);
+				console.log(`[ADDON] Prompts loaded: ${Object.keys(prompts).length} categories`);
+			} catch (error) {
+				console.error('[ADDON] Prompts loading failed:', error);
+				console.error('[ADDON] Prompts error stack:', error.stack);
+				prompts = {}; // Fallback to empty
+			}
+
+			// Log what we got
+			const elementCount = Object.values(elements).flat().length;
+			const promptCount = Object.values(prompts).flat().length;
+
+			console.log(`[ADDON] Loaded ${elementCount} elements, ${promptCount} prompts`);
+			console.log(`[ADDON] Element categories: ${Object.keys(elements).join(', ')}`);
+			console.log(`[ADDON] Prompt categories: ${Object.keys(prompts).join(', ')}`);
 
 			return {
 				route: 'addon',
@@ -61,11 +80,13 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 
 		} catch (error) {
 			console.error('[ADDON] Error loading user data:', error);
+			console.error('[ADDON] Error details:', error.message);
 			return {
 				route: 'addon-error',
 				showLogin: false,
 				showApp: false,
-				redirectTo: '/gdocs-login'
+				redirectTo: '/gdocs-login',
+				error: error.message
 			};
 		}
 	}

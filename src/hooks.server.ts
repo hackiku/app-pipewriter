@@ -1,7 +1,8 @@
-// src/hooks.server.ts - Enhanced version
+// src/hooks.server.ts - Enhanced version with debug routes
 import { adminAuth } from "$lib/server/firebase-admin";
 import type { Handle } from "@sveltejs/kit";
 import { sequence } from "@sveltejs/kit/hooks";
+import { dev } from '$app/environment';
 
 const auth: Handle = async ({ event, resolve }) => {
 	const sessionCookie = event.cookies.get("__session");
@@ -44,17 +45,32 @@ const auth: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
-// SECURITY: Protect ALL API routes
+// SECURITY: Protect API routes (with debug exceptions in dev)
 const apiGuard: Handle = async ({ event, resolve }) => {
-	if (event.url.pathname.startsWith('/api/') &&
-		!event.url.pathname.startsWith('/api/auth/') &&
-		!event.locals.authenticated) {
+	if (event.url.pathname.startsWith('/api/')) {
+		// Allow auth routes
+		if (event.url.pathname.startsWith('/api/auth/')) {
+			return resolve(event);
+		}
 
-		console.warn(`Unauthorized API access attempt: ${event.url.pathname}`);
-		return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-			status: 401,
-			headers: { 'Content-Type': 'application/json' }
-		});
+		// Allow debug routes in development
+		if (dev && event.url.pathname.startsWith('/api/debug')) {
+			return resolve(event);
+		}
+
+		// Allow test routes in development  
+		if (dev && event.url.pathname.startsWith('/api/test')) {
+			return resolve(event);
+		}
+
+		// Block everything else if not authenticated
+		if (!event.locals.authenticated) {
+			console.warn(`Unauthorized API access attempt: ${event.url.pathname}`);
+			return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+				status: 401,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
 	}
 
 	return resolve(event);

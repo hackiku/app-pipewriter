@@ -10,7 +10,6 @@
       id: string;
       category: string;
       title: string;
-      description?: string;
       content: string;
     };
     onBack: () => void;
@@ -24,7 +23,6 @@
 
   // Editable state
   let editTitle = $state(props.prompt.title);
-  let editDescription = $state(props.prompt.description || '');
   let editContent = $state(props.prompt.content);
   let editCategory = $state(props.prompt.category || 'writing');
 
@@ -39,7 +37,6 @@
   let hasChanges = $derived(
     props.isNew || (
       editTitle !== props.prompt.title ||
-      editDescription !== (props.prompt.description || '') ||
       editContent !== props.prompt.content ||
       editCategory !== props.prompt.category
     )
@@ -51,7 +48,6 @@
     const updatedPrompt = {
       ...(props.isNew ? {} : { id: props.prompt.id }),
       title: editTitle.trim(),
-      description: editDescription.trim(),
       content: editContent.trim(),
       category: editCategory
     };
@@ -136,17 +132,6 @@
   {/if}
 
   <!-- Description (optional in compact mode) -->
-  {#if !props.compact}
-    <div>
-      <label class="text-xs font-medium text-muted-foreground">Description</label>
-      <Input
-        bind:value={editDescription}
-        class="mt-1 h-8 text-sm"
-        placeholder="Brief description..."
-        disabled={props.isProcessing}
-      />
-    </div>
-  {/if}
 
   <!-- Content -->
   <div>
