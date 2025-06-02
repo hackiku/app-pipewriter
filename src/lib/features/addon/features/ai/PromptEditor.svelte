@@ -1,28 +1,30 @@
-<!-- src/lib/features/addon/features/ai/PromptEditor.svelte -->
+<!-- src/lib/features/addon/features/ai/PromptEditor.svelte - Compact Version -->
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Textarea } from "$lib/components/ui/textarea";
-  import { ArrowLeft, Save, Play, Loader2 } from "@lucide/svelte";
+  import { ArrowLeft, Save, Play, Loader2 } from "lucide-svelte";
 
   const props = $props<{
     prompt: {
       id: string;
       category: string;
       title: string;
-      description: string;
+      description?: string;
       content: string;
     };
     onBack: () => void;
     onSave: (updatedPrompt: any) => void;
-    onDrop: () => void;
+    onDrop?: () => void;
     isProcessing?: boolean;
     isNew?: boolean;
+    error?: string | null;
+    compact?: boolean;
   }>();
 
   // Editable state
   let editTitle = $state(props.prompt.title);
-  let editDescription = $state(props.prompt.description);
+  let editDescription = $state(props.prompt.description || '');
   let editContent = $state(props.prompt.content);
   let editCategory = $state(props.prompt.category || 'writing');
 
@@ -37,7 +39,7 @@
   let hasChanges = $derived(
     props.isNew || (
       editTitle !== props.prompt.title ||
-      editDescription !== props.prompt.description ||
+      editDescription !== (props.prompt.description || '') ||
       editContent !== props.prompt.content ||
       editCategory !== props.prompt.category
     )
@@ -77,7 +79,7 @@
   ];
 </script>
 
-<div class="space-y-3">
+<div class="space-y-{props.compact ? '2' : '3'}">
   <!-- Header -->
   <div class="flex items-center gap-2">
     <Button
@@ -99,24 +101,31 @@
     </span>
   </div>
 
+  <!-- Error Display -->
+  {#if props.error}
+    <div class="p-2 bg-destructive/10 border border-destructive/20 rounded text-destructive text-xs">
+      {props.error}
+    </div>
+  {/if}
+
   <!-- Title -->
   <div>
     <label class="text-xs font-medium text-muted-foreground">Title *</label>
     <Input
       bind:value={editTitle}
-      class="mt-1 h-8 text-sm"
+      class="mt-1 h-{props.compact ? '7' : '8'} text-sm"
       placeholder="Prompt title..."
       disabled={props.isProcessing}
     />
   </div>
 
-  <!-- Category (for new prompts) -->
-  {#if props.isNew}
+  <!-- Category (for new prompts or if compact) -->
+  {#if props.isNew || props.compact}
     <div>
       <label class="text-xs font-medium text-muted-foreground">Category *</label>
       <select 
         bind:value={editCategory}
-        class="w-full mt-1 h-8 px-2 text-sm border border-border rounded-md bg-background"
+        class="w-full mt-1 h-{props.compact ? '7' : '8'} px-2 text-sm border border-border rounded-md bg-background"
         disabled={props.isProcessing}
       >
         {#each categories as category}
@@ -126,23 +135,25 @@
     </div>
   {/if}
 
-  <!-- Description -->
-  <div>
-    <label class="text-xs font-medium text-muted-foreground">Description</label>
-    <Input
-      bind:value={editDescription}
-      class="mt-1 h-8 text-sm"
-      placeholder="Brief description..."
-      disabled={props.isProcessing}
-    />
-  </div>
+  <!-- Description (optional in compact mode) -->
+  {#if !props.compact}
+    <div>
+      <label class="text-xs font-medium text-muted-foreground">Description</label>
+      <Input
+        bind:value={editDescription}
+        class="mt-1 h-8 text-sm"
+        placeholder="Brief description..."
+        disabled={props.isProcessing}
+      />
+    </div>
+  {/if}
 
   <!-- Content -->
   <div>
     <label class="text-xs font-medium text-muted-foreground">Content *</label>
     <Textarea
       bind:value={editContent}
-      class="mt-1 min-h-[60px] text-sm resize-none"
+      class="mt-1 {props.compact ? 'min-h-[60px]' : 'min-h-[80px]'} text-sm resize-none"
       placeholder="Enter the full prompt content..."
       disabled={props.isProcessing}
     />
@@ -153,7 +164,7 @@
   </div>
 
   <!-- Actions -->
-  <div class="flex items-center justify-between pt-2 border-t">
+  <div class="flex items-center justify-between pt-{props.compact ? '2' : '2'} border-t">
     <div class="flex items-center gap-2">
       <!-- Save -->
       <Button
@@ -182,8 +193,8 @@
       {/if}
     </div>
 
-    <!-- Drop (only for existing prompts) -->
-    {#if !props.isNew}
+    <!-- Drop (only for existing prompts and if onDrop provided) -->
+    {#if !props.isNew && props.onDrop}
       <Button
         size="sm"
         class="h-7 px-3 gap-1"

@@ -121,11 +121,11 @@
 	</div>
 
 	<!-- TrialBanner -->
-	<TrialBanner 
+	<!-- <TrialBanner 
 		isPro={data.userFeatures.isPro}
 		trialActive={data.userFeatures.trialActive} 
 		trialDaysLeft={data.userFeatures.trialDaysLeft}
-	/>
+	/> -->
 
 	<!-- BottomBar -->
 	<div class="px-2 border-t border-gray-200 dark:border-gray-700">

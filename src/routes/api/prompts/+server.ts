@@ -1,4 +1,4 @@
-// src/routes/api/prompts/+server.ts - Complete CRUD for user prompts
+// src/routes/api/prompts/+server.ts - Clean CRUD operations
 import { json } from '@sveltejs/kit';
 import { adminFirestore } from '$lib/server/firebase-admin';
 
@@ -18,6 +18,8 @@ export async function GET({ locals }) {
 		const systemSnapshot = await systemPromptsRef
 			.where('active', '==', true)
 			.where('isSystem', '==', true)
+			.orderBy('category')
+			.orderBy('title')
 			.get();
 
 		// Get user's custom prompts
@@ -27,6 +29,8 @@ export async function GET({ locals }) {
 			.collection('prompts');
 		const userSnapshot = await userPromptsRef
 			.where('active', '==', true)
+			.orderBy('category')
+			.orderBy('title')
 			.get();
 
 		// Merge prompts (user prompts override system prompts with same ID)
@@ -95,9 +99,19 @@ export async function POST({ request, locals }) {
 		const data = await request.json();
 
 		// Validate required fields
-		const { id, title, description, content, category, metadata } = data;
-		if (!id || !title || !content || !category) {
-			return json({ error: 'Missing required fields' }, { status: 400 });
+		const { title, description, content, category } = data;
+		if (!title || !content || !category) {
+			return json({ error: 'Missing required fields: title, content, category' }, { status: 400 });
+		}
+
+		// Generate ID from title
+		const id = title.toLowerCase()
+			.replace(/[^a-z0-9\s]/g, '')
+			.replace(/\s+/g, '-')
+			.substring(0, 50);
+
+		if (!id) {
+			return json({ error: 'Invalid title - cannot generate ID' }, { status: 400 });
 		}
 
 		// Create user prompt
@@ -107,17 +121,22 @@ export async function POST({ request, locals }) {
 			.collection('prompts')
 			.doc(id);
 
+		// Check if ID already exists
+		const existingDoc = await userPromptRef.get();
+		if (existingDoc.exists) {
+			return json({ error: 'A prompt with this title already exists' }, { status: 409 });
+		}
+
 		const promptData = {
 			id,
-			title,
-			description: description || '',
-			content,
+			title: title.trim(),
+			description: (description || '').trim(),
+			content: content.trim(),
 			category,
 			metadata: {
 				tier: 'free', // User prompts are always free
-				tags: metadata?.tags || [],
-				usage: 0,
-				...metadata
+				tags: data.metadata?.tags || [],
+				usage: 0
 			},
 			active: true,
 			isSystem: false,
@@ -130,7 +149,7 @@ export async function POST({ request, locals }) {
 				title.toLowerCase(),
 				(description || '').toLowerCase(),
 				category.toLowerCase(),
-				...(metadata?.tags || [])
+				...(data.metadata?.tags || [])
 			].filter(Boolean)
 		};
 
@@ -138,7 +157,11 @@ export async function POST({ request, locals }) {
 
 		return json({
 			success: true,
-			prompt: promptData,
+			prompt: {
+				...promptData,
+				createdAt: promptData.createdAt.toISOString(),
+				updatedAt: promptData.updatedAt.toISOString()
+			},
 			message: 'Prompt created successfully'
 		});
 
@@ -160,7 +183,7 @@ export async function PUT({ request, locals }) {
 		const uid = locals.user.uid;
 		const data = await request.json();
 
-		const { id, title, description, content, category, metadata } = data;
+		const { id, title, description, content, category } = data;
 		if (!id) {
 			return json({ error: 'Prompt ID required' }, { status: 400 });
 		}
@@ -177,22 +200,27 @@ export async function PUT({ request, locals }) {
 			return json({ error: 'Prompt not found' }, { status: 404 });
 		}
 
-		// Update fields
-		const updateData = {
-			...(title && { title }),
-			...(description !== undefined && { description }),
-			...(content && { content }),
-			...(category && { category }),
-			...(metadata && { metadata: { ...existingDoc.data().metadata, ...metadata } }),
-			updatedAt: new Date(),
-			searchTerms: [
-				id.toLowerCase(),
-				(title || existingDoc.data().title).toLowerCase(),
-				(description || existingDoc.data().description || '').toLowerCase(),
-				(category || existingDoc.data().category).toLowerCase(),
-				...(metadata?.tags || existingDoc.data().metadata?.tags || [])
-			].filter(Boolean)
+		// Build update data
+		const updateData: any = {
+			updatedAt: new Date()
 		};
+
+		if (title) updateData.title = title.trim();
+		if (description !== undefined) updateData.description = description.trim();
+		if (content) updateData.content = content.trim();
+		if (category) updateData.category = category;
+
+		// Update search terms if any text fields changed
+		if (title || description !== undefined || content || category) {
+			const existingData = existingDoc.data();
+			updateData.searchTerms = [
+				id.toLowerCase(),
+				(title || existingData.title).toLowerCase(),
+				(description !== undefined ? description : existingData.description || '').toLowerCase(),
+				(category || existingData.category).toLowerCase(),
+				...(existingData.metadata?.tags || [])
+			].filter(Boolean);
+		}
 
 		await userPromptRef.update(updateData);
 
@@ -229,6 +257,12 @@ export async function DELETE({ url, locals }) {
 			.collection('prompts')
 			.doc(promptId);
 
+		// Check if prompt exists
+		const existingDoc = await userPromptRef.get();
+		if (!existingDoc.exists) {
+			return json({ error: 'Prompt not found' }, { status: 404 });
+		}
+
 		// Soft delete by marking inactive
 		await userPromptRef.update({
 			active: false,
@@ -244,66 +278,5 @@ export async function DELETE({ url, locals }) {
 	} catch (error) {
 		console.error('Error deleting user prompt:', error);
 		return json({ error: 'Failed to delete prompt' }, { status: 500 });
-	}
-}
-
-// src/routes/api/prompts/restore/+server.ts - Restore system prompts
-export async function POST({ request, locals }) {
-	if (!locals.authenticated || !locals.user) {
-		return json({ error: 'Unauthorized' }, { status: 401 });
-	}
-
-	try {
-		const uid = locals.user.uid;
-		const { promptId } = await request.json();
-
-		if (promptId) {
-			// Restore specific system prompt
-			const systemPromptRef = adminFirestore.collection('prompts').doc(promptId);
-			const systemDoc = await systemPromptRef.get();
-
-			if (!systemDoc.exists || !systemDoc.data().isSystem) {
-				return json({ error: 'System prompt not found' }, { status: 404 });
-			}
-
-			// Delete user's custom version (if exists)
-			const userPromptRef = adminFirestore
-				.collection('users')
-				.doc(uid)
-				.collection('prompts')
-				.doc(promptId);
-
-			await userPromptRef.delete();
-
-			return json({
-				success: true,
-				message: 'Prompt restored to system default'
-			});
-
-		} else {
-			// Restore all system prompts (delete all user customizations)
-			const userPromptsRef = adminFirestore
-				.collection('users')
-				.doc(uid)
-				.collection('prompts');
-
-			const userSnapshot = await userPromptsRef.get();
-			const batch = adminFirestore.batch();
-
-			userSnapshot.docs.forEach(doc => {
-				batch.delete(doc.ref);
-			});
-
-			await batch.commit();
-
-			return json({
-				success: true,
-				message: `Restored ${userSnapshot.size} prompts to system defaults`
-			});
-		}
-
-	} catch (error) {
-		console.error('Error restoring prompts:', error);
-		return json({ error: 'Failed to restore prompts' }, { status: 500 });
 	}
 }
