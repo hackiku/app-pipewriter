@@ -218,7 +218,7 @@
   </div>
 
   <!-- Prompts List - Fixed height with scroll -->
-  <div class="h-[200px] overflow-y-auto scrollbar-hide">
+  <div class="h-12 overflow-y-auto scrollbar-hide">
     <!-- DEBUG: Show what we're trying to render -->
     <div class="bg-blue-50 p-2 text-xs border-b">
       Rendering {filteredPrompts.length} prompts for category "{selectedCategory}"<br>
