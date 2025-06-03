@@ -1,9 +1,10 @@
-<!-- $lib/iframe/features/text/TextTab.svelte -->
+<!-- Updated src/lib/features/addon/features/text/TextTab.svelte -->
 <script lang="ts">
   import TextDropdown from "./TextDropdown.svelte";
   import TextActions from "./TextActions.svelte";
   import { insertElement } from "$lib/services/google/docs";
-  import type { ElementTheme } from '$lib/data/addon/types';
+  import type { ElementTheme } from '$lib/types/elements';
+  import { onMount, onDestroy } from 'svelte';
   
   // Props using SvelteKit 5 syntax
   const props = $props<{
@@ -28,8 +29,42 @@
     fontSize?: number;
   } | null>(null);
   let elementsTheme = $state<ElementTheme>('light');
+  let appTheme = $state<ElementTheme>('light');
+  let observer: MutationObserver | null = null;
 
-  // Toggle theme function
+  // Setup mutation observer to detect app theme changes (same as ElementCard)
+  onMount(() => {
+    // Initial dark mode check
+    appTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+
+    // Watch for dark mode changes
+    observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.attributeName === 'class') {
+          const newAppTheme = document.documentElement.classList.contains('dark')
+            ? 'dark'
+            : 'light';
+          if (appTheme !== newAppTheme) {
+            appTheme = newAppTheme;
+          }
+        }
+      }
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+  });
+
+  // Clean up observer
+  onDestroy(() => {
+    if (observer) {
+      observer.disconnect();
+    }
+  });
+
+  // Toggle theme function - creates contrast with app theme
   function toggleTheme() {
     elementsTheme = elementsTheme === 'light' ? 'dark' : 'light';
     
@@ -44,7 +79,7 @@
     selectedStyle = style;
   }
 
-  // Handle styleguide insertion
+  // Handle styleguide insertion with smart SVG contrast logic
   async function handleStyleGuideInsert() {
     if (isProcessing) return;
     
@@ -86,45 +121,7 @@
     }
   }
 
-  // Extract style from current selection (simulated for now)
-  function extractStyle() {
-    if (isProcessing) return;
-    
-    isProcessing = true;
-    props.onProcessingStart();
-    
-    props.onStatusUpdate({
-      type: 'processing',
-      message: 'Extracting text style...'
-    });
-    
-    // Simulate a delay
-    setTimeout(() => {
-      // Randomly pick a style for simulation
-      const randomIndex = Math.floor(Math.random() * 7);
-      const styles = [
-        { headingType: 'NORMAL', tag: 'p', label: 'Normal text', fontSize: 11 },
-        { headingType: 'HEADING1', tag: 'h1', label: 'Heading 1', fontSize: 24 },
-        { headingType: 'HEADING2', tag: 'h2', label: 'Heading 2', fontSize: 20 },
-        { headingType: 'HEADING3', tag: 'h3', label: 'Heading 3', fontSize: 16 },
-        { headingType: 'HEADING4', tag: 'h4', label: 'Heading 4', fontSize: 14 },
-        { headingType: 'HEADING5', tag: 'h5', label: 'Heading 5', fontSize: 12 },
-        { headingType: 'HEADING6', tag: 'h6', label: 'Heading 6', fontSize: 11 }
-      ];
-      selectedStyle = styles[randomIndex];
-      
-      props.onStatusUpdate({
-        type: 'success',
-        message: `Extracted ${selectedStyle.label} style`,
-        executionTime: 350
-      });
-      
-      isProcessing = false;
-      props.onProcessingEnd();
-    }, 350);
-  }
-
-  // Apply style to current selection
+  // Apply style to current selection (where cursor is)
   async function applyStyle() {
     if (!selectedStyle || isProcessing) return;
     
@@ -137,7 +134,7 @@
     });
 
     try {
-      // Simulate an API call
+      // TODO: Connect to actual Google Docs API
       await new Promise(resolve => setTimeout(resolve, 300));
       
       props.onStatusUpdate({
@@ -157,6 +154,39 @@
     }
   }
 
+  // Apply style to all matching text in document
+  async function updateAllStyles() {
+    if (!selectedStyle || isProcessing) return;
+    
+    isProcessing = true;
+    props.onProcessingStart();
+    
+    props.onStatusUpdate({
+      type: 'processing',
+      message: `Updating all ${selectedStyle.label} styles...`
+    });
+
+    try {
+      // TODO: Connect to actual Google Docs API for "update all"
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      props.onStatusUpdate({
+        type: 'success',
+        message: `All ${selectedStyle.label} styles updated`,
+        executionTime: 500
+      });
+    } catch (error) {
+      console.error("Failed to update all styles:", error);
+      props.onStatusUpdate({
+        type: 'error',
+        message: error instanceof Error ? error.message : "Failed to update all styles"
+      });
+    } finally {
+      isProcessing = false;
+      props.onProcessingEnd();
+    }
+  }
+
   // Reset style selection
   function resetStyle() {
     selectedStyle = null;
@@ -165,6 +195,20 @@
       type: 'success',
       message: 'Style selection cleared'
     });
+  }
+
+  // Get SVG URL with contrast logic (same as ElementCard)
+  function getSvgUrl(): string {
+    const baseId = 'styleguide';
+    
+    // CONTRAST LOGIC: If elementsTheme !== appTheme → use dark SVG
+    // This makes the styleguide element contrast with the app background
+    const shouldUseDarkVariant = elementsTheme !== appTheme;
+    
+    if (shouldUseDarkVariant) {
+      return `/elements/${baseId}-dark.svg`;
+    }
+    return `/elements/${baseId}.svg`;
   }
 </script>
 
@@ -176,14 +220,15 @@
     onSelect={selectStyle}
   />
 
-  <!-- Actions with Resizable Layout -->
+  <!-- Actions - Updated to remove Get button and add Update All -->
   <TextActions
     isProcessing={isProcessing}
     selectedStyle={selectedStyle}
     theme={elementsTheme}
+    svgUrl={getSvgUrl()}
     onStyleGuideInsert={handleStyleGuideInsert}
-    onExtractStyle={extractStyle}
     onApplyStyle={applyStyle}
+    onUpdateAll={updateAllStyles}
     onResetStyle={resetStyle}
     onToggleTheme={toggleTheme}
   />

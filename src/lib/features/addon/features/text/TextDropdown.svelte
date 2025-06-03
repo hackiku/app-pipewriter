@@ -1,7 +1,7 @@
-<!-- $lib/iframe/features/text/TextDropdown.svelte -->
+<!-- Updated src/lib/features/addon/features/text/TextDropdown.svelte -->
 <script lang="ts">
   import { slide } from "svelte/transition";
-  import { ChevronUp } from "lucide-svelte";
+  import { ChevronUp } from "@lucide/svelte";
   import { cn } from "$lib/utils";
 
   // Props with SvelteKit 5 syntax
@@ -41,8 +41,8 @@
   function getStyleItemClass(style: any) {
     return cn(
       "flex items-center justify-between px-2 py-1.5 rounded-sm transition-colors",
-      props.selectedStyle?.headingType === style.headingType && "bg-gray-100 dark:bg-gray-700",
-      "hover:bg-gray-50 dark:hover:bg-gray-700"
+      props.selectedStyle?.headingType === style.headingType && "bg-accent text-accent-foreground",
+      "hover:bg-accent hover:text-accent-foreground"
     );
   }
 </script>
@@ -51,8 +51,8 @@
   {#if showOptions}
     <!-- Styles Options Panel -->
     <div 
-      class="w-full p-2 bg-white dark:bg-gray-800 
-             rounded-lg border border-gray-200 dark:border-gray-600 shadow-md mb-2"
+      class="w-full p-2 bg-popover text-popover-foreground
+             rounded-lg border border-border shadow-md mb-2"
       transition:slide={{ duration: 150 }}
     >
       <div class="flex flex-col gap-0.5">
@@ -62,9 +62,9 @@
             onclick={() => handleSelect(style)}
           >
             <div class="flex items-center gap-2">
-              <span class="opacity-70 text-xs">{style.tag}</span>
+              <span class="text-muted-foreground text-xs">{style.tag}</span>
               <span 
-                class="text-muted-foreground"
+                class="text-foreground"
                 style={style.fontSize ? `font-size: ${style.fontSize}px` : ''}
               >
                 {style.label}
@@ -79,16 +79,17 @@
   <!-- Main selector button -->
   <button
     class="w-full h-10 px-3 flex items-center justify-between rounded-lg
-           border border-input bg-white dark:bg-gray-800 text-sm shadow-sm 
-           transition-all duration-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+           border border-input bg-background text-sm shadow-sm 
+           transition-all duration-200 hover:bg-accent hover:text-accent-foreground
+           disabled:cursor-not-allowed disabled:opacity-50"
     onclick={toggleOptions}
     disabled={props.disabled}
   >
     {#if props.selectedStyle}
       <div class="flex items-center gap-2">
-        <span class="opacity-70">{props.selectedStyle.tag}</span>
+        <span class="text-muted-foreground">{props.selectedStyle.tag}</span>
         <span 
-          class="text-muted-foreground"
+          class="text-foreground"
           style={props.selectedStyle.fontSize ? `font-size: ${props.selectedStyle.fontSize}px` : ''}
         >
           {props.selectedStyle.label}
@@ -99,7 +100,7 @@
     {/if}
     <ChevronUp
       class={cn(
-        "h-4 w-4 transition-transform duration-200",
+        "h-4 w-4 transition-transform duration-200 text-muted-foreground",
         !showOptions && "rotate-180"
       )}
     />
