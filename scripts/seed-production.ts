@@ -1,50 +1,30 @@
-// scripts/seed-production.ts
-// IMPORTANT: Set environment BEFORE any Firebase imports
+// scripts/seed-production.js
 process.env.USE_FIREBASE_EMULATOR = 'false';
-process.env.NODE_ENV = 'production';
 
-import { seedElements } from './seed/seed-elements.js';
-import { seedSimplePrompts } from './seed/simple-prompts.js';
+async function seed() {
+	console.log('🚀 Seeding Production');
 
-async function seedProduction() {
-	console.log('🚀 SEEDING PRODUCTION FIREBASE');
-	console.log('⚠️  This will add data to your live Firestore database');
-	console.log('');
-
-	// Confirm this is what we want
-	const projectId = process.env.FIREBASE_PROJECT_ID || 'pipewriter';
-	console.log(`📍 Target: ${projectId} (PRODUCTION)`);
-	console.log('');
-
-	// Wait a moment for user to cancel if needed
-	await new Promise((resolve) => setTimeout(resolve, 3000));
+	if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+		console.error('❌ FIREBASE_SERVICE_ACCOUNT not set');
+		process.exit(1);
+	}
 
 	try {
-		// Seed elements first
-		console.log('1️⃣ Seeding elements...');
+		const { seedElements } = await import('./seed/seed-elements.js');
+		const { seedSimplePrompts } = await import('./seed/simple-prompts.js');
+
+		console.log('📦 Seeding elements...');
 		await seedElements();
-		console.log('');
 
-		// Seed system prompts
-		console.log('2️⃣ Seeding system prompts...');
+		console.log('📝 Seeding prompts...');
 		await seedSimplePrompts();
-		console.log('');
 
-		console.log('🎉 PRODUCTION SEEDING COMPLETE!');
-		console.log('');
-		console.log('✅ Your Firebase Console should now show:');
-		console.log('   📦 Elements collection with 25+ items');
-		console.log('   📝 Prompts collection with 6+ system prompts');
-		console.log('');
-		console.log('🔗 Check your data:');
-		console.log(`   https://console.firebase.google.com/project/${projectId}/firestore`);
-		console.log('');
-		console.log('🚀 Test your app:');
-		console.log('   https://app-pipewriter.vercel.app/');
-	} catch (error) {
-		console.error('💥 Production seeding failed:', error);
+		console.log('✅ Production seeded!');
+		console.log('🔗 https://console.firebase.google.com/project/pipewriter/firestore');
+	} catch (e) {
+		console.error('💥 Seeding failed:', e.message);
 		process.exit(1);
 	}
 }
 
-seedProduction();
+seed();
