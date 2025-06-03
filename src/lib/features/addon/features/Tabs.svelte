@@ -1,7 +1,6 @@
-<!-- Fixed src/lib/features/addon/features/Tabs.svelte -->
+<!-- Updated src/lib/features/addon/features/Tabs.svelte -->
 <script lang="ts">
 	import { fade } from "svelte/transition";
-	// Import components
 	import { Button } from "$lib/components/ui/button";
 	import {
 		Table,
@@ -20,12 +19,12 @@
 	import TextTab from "./text/TextTab.svelte";
 	import AiTab from "./ai/AiTab.svelte";
 
-	// FIXED: Accept props instead of using context
+	// Props
 	const { 
 		context, 
 		prompts,
 		features,
-		showInfo = false  // Add showInfo as prop with default
+		showInfo = false
 	} = $props<{ 
 		context: any;
 		prompts: any;
@@ -36,6 +35,7 @@
 	// Local state
 	let activeTab = $state<string | null>(null);
 	let isProcessing = $state(false);
+	let isHovering = $state(false);
 	let status = $state<{
 		type: "processing" | "success" | "error";
 		message: string;
@@ -47,31 +47,35 @@
 
 	const BG_STYLE = "bg-neutral-50 dark:bg-neutral-900";
 
-	// Tab definitions
+	// Tab definitions with keyboard shortcuts
 	const tabs = {
 		table: {
 			icon: Table,
 			title: "Table Editor",
 			description: "Edit currently selected table",
 			component: TableTab,
+			shortcut: "1"
 		},
 		color: {
 			icon: Palette,
-			title: "Background Color",
+			title: "Background Color", 
 			description: "Change document background color",
 			component: ColorTab,
+			shortcut: "2"
 		},
 		ai: {
 			icon: Code,
 			title: "AI Assistant",
 			description: "Convert formats and generate content",
 			component: AiTab,
+			shortcut: "3"
 		},
 		text: {
 			icon: Type,
 			title: "Text Formatting",
-			description: "Format text and update styles",
+			description: "Format text and update styles", 
 			component: TextTab,
+			shortcut: "4"
 		},
 	};
 
@@ -100,12 +104,51 @@
 		}
 	}
 
-	// Use $effect for cleanup instead of onDestroy
+	// Keyboard event handler
+	function handleKeydown(event: KeyboardEvent) {
+		// ESC to close tab
+		if (event.key === 'Escape' && activeTab) {
+			activeTab = null;
+			event.preventDefault();
+			return;
+		}
+
+		// Number keys 1-4 for tab shortcuts
+		if (['1', '2', '3', '4'].includes(event.key)) {
+			const tabEntries = Object.entries(tabs);
+			const tabIndex = parseInt(event.key) - 1;
+			if (tabIndex >= 0 && tabIndex < tabEntries.length) {
+				const [tabKey] = tabEntries[tabIndex];
+				toggleTab(tabKey);
+				event.preventDefault();
+			}
+		}
+	}
+
+	// Mouse enter/leave handlers
+	function handleMouseEnter() {
+		isHovering = true;
+	}
+
+	function handleMouseLeave() {
+		isHovering = false;
+	}
+
+	// Cleanup effect
 	$effect(() => {
-		// Cleanup when component is destroyed
 		return () => {
 			clearStatusTimeout();
 		};
+	});
+
+	// Add keyboard listeners
+	$effect(() => {
+		if (typeof window !== 'undefined') {
+			window.addEventListener('keydown', handleKeydown);
+			return () => {
+				window.removeEventListener('keydown', handleKeydown);
+			};
+		}
 	});
 
 	// Function to generate button class based on active state
@@ -127,9 +170,19 @@
 	function handleProcessingEnd() {
 		isProcessing = false;
 	}
+
+	// Get tab shortcut for display
+	function getTabShortcut(tabKey: string): string {
+		return tabs[tabKey]?.shortcut || '';
+	}
 </script>
 
-<div class="flex flex-col w-full relative">
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div 
+	class="flex flex-col w-full relative"
+	onmouseenter={handleMouseEnter}
+	onmouseleave={handleMouseLeave}
+>
 	<!-- Status Bar -->
 	{#if status}
 		<div
@@ -189,7 +242,6 @@
 						onProcessingStart={handleProcessingStart}
 						onProcessingEnd={handleProcessingEnd}
 					/>
-
 				{:else if activeTab === "color"}
 					<ColorTab
 						{context}
@@ -222,6 +274,7 @@
 	<div class="flex justify-between items-center">
 		<div class="flex relative gap-2">
 			{#each Object.entries(tabs) as [tabKey, tabData]}
+				{@const IconComponent = tabData.icon}
 				<Button
 					variant="ghost"
 					size="icon"
@@ -229,10 +282,26 @@
 					onclick={() => toggleTab(tabKey)}
 					disabled={isProcessing}
 				>
-					<svelte:component this={tabData.icon} class="h-4 w-4" />
+					<div class="relative">
+						<IconComponent class="h-4 w-4" />
+						
+						<!-- Keyboard shortcut indicator on hover -->
+						{#if isHovering && !activeTab}
+							<div 
+								class="absolute -bottom-3 -right-2 border border-border bg-background/50
+								       text-muted-foreground rounded-sm px-1
+								       text-[0.5em] font-medium leading-none min-w-[12px] h-3 
+								       flex items-center justify-center"
+								transition:fade={{ duration: 150 }}
+							>
+								{getTabShortcut(tabKey)}
+							</div>
+						{/if}
+					</div>
 				</Button>
 			{/each}
 		</div>
+		
 		{#if activeTab}
 			<Button
 				variant="ghost"
@@ -242,7 +311,7 @@
 				disabled={isProcessing}
 				title="Close tab (Esc)"
 			>
-				<span class="text-xs font-mono">ESC</span>
+				<span class="text-[0.65em] font-mono">ESC</span>
 				<X class="w-3.5 h-3.5" />
 			</Button>
 		{/if}

@@ -161,13 +161,4 @@
     />
   </div>
 
-  <!-- Info Text -->
-  <div class="text-xs text-center text-muted-foreground space-y-1">
-    <p>Place cursor in table cell before applying</p>
-    {#if scope === 'cell'}
-      <p class="text-orange-600 dark:text-orange-400">⚡ Will apply to selected cell only</p>
-    {:else}
-      <p class="text-blue-600 dark:text-blue-400">🌐 Will apply to entire table</p>
-    {/if}
-  </div>
 </div>
