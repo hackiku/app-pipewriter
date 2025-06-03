@@ -1,6 +1,6 @@
 <!-- src/lib/features/dashboard/Dashboard.svelte -->
 <script lang="ts">
-  import { getUser } from '$lib/services/firebase/auth.svelte';
+  // import { getUser } from '$lib/services/auth';
   import { fade } from 'svelte/transition';
   
   // Import dashboard components
@@ -11,18 +11,17 @@
   
   // State
   let loading = $state(true);
-  let user = $state(getUser());
+  // let user = $state(getUser());
   
   // Load data on mount
-  $effect(() => {
-    // Simulate loading data
-    setTimeout(() => {
-      loading = false;
-    }, 500);
+  // $effect(() => {
+  //   setTimeout(() => {
+  //     loading = false;
+  //   }, 500);
     
-    // Keep user updated
-    user = getUser();
-  });
+  //   // Keep user updated
+  //   user = getUser();
+  // });
   
   // Mock data for initial render
   const stats = [
@@ -53,19 +52,19 @@
     </div>
   {:else}
     <!-- Welcome section for logged in users -->
-    {#if user}
+    <!-- {#if user}
       <div class="mb-8">
         <h1 class="text-3xl font-bold tracking-tight">
           Welcome back, {user.displayName?.split(' ')[0] || 'Writer'}
         </h1>
         <p class="text-muted-foreground mt-1">Here's what's happening with your projects.</p>
       </div>
-    {:else}
+    {:else} -->
       <div class="mb-8">
         <h1 class="text-3xl font-bold tracking-tight">Welcome to Pipewriter</h1>
         <p class="text-muted-foreground mt-1">Sign in to access your projects and templates.</p>
       </div>
-    {/if}
+    <!-- {/if} -->
     
     <!-- Stats Cards Row -->
     <StatsCards stats={stats} />

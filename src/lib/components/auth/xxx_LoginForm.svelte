@@ -2,7 +2,7 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Card from "$lib/components/ui/card/index.js";
-  import { signIn, getError } from '$lib/services/firebase/auth.svelte';
+  import { signIn, getError } from '$lib/services/auth';
   import { goto } from '$app/navigation';
   
   // Props using proper Svelte 5 runes syntax

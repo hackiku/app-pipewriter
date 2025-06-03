@@ -1,14 +1,13 @@
 <!-- src/routes/(dash)/+layout.svelte -->
 <script lang="ts">
   import * as Resizable from "$lib/components/ui/resizable";
-  import { getUser } from '$lib/services/firebase/auth.svelte';
-  // import Header from '$lib/features/dashboard/layout/Header.svelte';
   import Sidebar from '$lib/features/dashboard/layout/Sidebar.svelte';
   import { ModeWatcher } from "mode-watcher";
   import { setContext } from 'svelte';
-  import { page } from '$app/stores'; // FIXED: Use stores, not state
-  import AuthModal from '$lib/components/auth/AuthModal.svelte';
+  import { page } from '$app/state';
+  // import AuthModal from '$lib/components/auth/AuthModal.svelte';
   import { createTrialContext } from '$lib/context/trial.svelte';
+  import { goto } from '$app/navigation';
 
   // Props for getting data and children - proper Runes syntax
   const { data, children } = $props();
@@ -27,6 +26,14 @@
     const sidebarSize = sizes[0];
     isCollapsed = sidebarSize < collapseThreshold;
   }
+  
+  // Handle redirects from server
+  $effect(() => {
+    if (data?.redirectTo) {
+      console.log(`[DASH LAYOUT] Redirecting to: ${data.redirectTo}`);
+      goto(data.redirectTo, { replaceState: true });
+    }
+  });
   
   // Initialize features whenever data changes
   $effect(() => {
@@ -52,9 +59,9 @@
 
 <ModeWatcher />
 
-{#if showAuthModal}
+<!-- {#if showAuthModal}
   <AuthModal />
-{/if}
+{/if} -->
 
 <div class="flex h-screen flex-col overflow-hidden bg-background text-foreground">
   <!-- <Header /> -->
