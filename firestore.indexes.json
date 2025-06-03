@@ -1,4 +1,55 @@
 {
-  "indexes": [],
-  "fieldOverrides": []
+	"indexes": [
+		{
+			"collectionGroup": "elements",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "active",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "displayOrder",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "prompts",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "active",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "category",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "title",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "prompts",
+			"queryScope": "COLLECTION_GROUP",
+			"fields": [
+				{
+					"fieldPath": "active",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "category",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "title",
+					"order": "ASCENDING"
+				}
+			]
+		}
+	],
+	"fieldOverrides": []
 }
