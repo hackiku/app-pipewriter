@@ -1,10 +1,10 @@
 // scripts/seed-production.ts
-import { seedElements } from './seed/seed-elements.ts';
-import { seedSimplePrompts } from './seed/simple-prompts.ts';
-
-// Force production environment
+// IMPORTANT: Set environment BEFORE any Firebase imports
 process.env.USE_FIREBASE_EMULATOR = 'false';
 process.env.NODE_ENV = 'production';
+
+import { seedElements } from './seed/seed-elements.js';
+import { seedSimplePrompts } from './seed/simple-prompts.js';
 
 async function seedProduction() {
 	console.log('🚀 SEEDING PRODUCTION FIREBASE');

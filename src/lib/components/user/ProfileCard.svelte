@@ -152,7 +152,7 @@
       <!-- Action Buttons -->
       <div class="space-y-3">
         <!-- Status Dropdown (Dev) / Upgrade Button (Prod) -->
-				{#if dev}
+				<!-- {#if dev} -->
 					<StatusDropdown 
 						currentStatus={currentStatus}
 						isPro={props.isPro}
@@ -160,7 +160,7 @@
 						trialDaysLeft={props.trialDaysLeft}
 						disabled={isLoggingOut || isSwitching}
 					/>
-				{/if}
+				<!-- {/if} -->
 
         <!-- Account Switch Button -->
         <Button 
