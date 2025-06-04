@@ -1,7 +1,8 @@
 <!-- src/lib/features/addon/features/table/TableTab.svelte -->
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
-	import { Save, Loader2, RotateCcw } from '@lucide/svelte';
+	import { Save, Loader2, RotateCcw, Table, Focus } from '@lucide/svelte';
+	import { cn } from '$lib/utils';
 	import InteractiveTable from './InteractiveTable.svelte';
 	import AlignmentButtonGrid from './AlignmentButtonGrid.svelte';
 	import PaddingControls from './PaddingControls.svelte';
@@ -64,6 +65,7 @@
 		cellAlignment = value as 'top' | 'middle' | 'bottom';
 	}
 
+	// MOVED FROM CHILD: Scope toggle handler
 	function handleScopeToggle() {
 		scope = scope === 'cell' ? 'table' : 'cell';
 	}
@@ -90,7 +92,7 @@
 		backgroundColor = defaultState.backgroundColor;
 	}
 
-	// Main apply function
+	// ENHANCED: Main apply function with proper Google service integration
 	async function handleApply() {
 		if (isProcessing || !hasChanges) return;
 
@@ -133,13 +135,13 @@
 				operations.push({ name: 'padding', success: paddingResponse.success });
 			}
 
-			// Apply borders if changed
+			// Apply borders if changed (always table-wide)
 			if (borderWidth !== defaultState.borderWidth) {
 				const borderResponse = await client.sendMessage(
 					'tableOps',
 					{
 						action: 'setBorders',
-						scope: 'table', // borders are always table-wide
+						scope: 'table', // borders are always table-wide per Google Apps Script
 						borderWidth: borderWidth,
 						borderColor: borderColor
 					},
@@ -185,25 +187,55 @@
 			props.onProcessingEnd?.();
 		}
 	}
+
+	// Get scope toggle class
+	function getScopeToggleClass() {
+		return cn(
+			'flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs transition-colors hover:bg-accent',
+			scope === 'table' ? 'bg-primary/5 border-primary/30' : 'bg-muted/30'
+		);
+	}
 </script>
 
-<div class="flex w-full flex-col gap-3">
-	<!-- Row 1: Preview + Alignment Controls -->
-	<div class="grid grid-cols-2 gap-3">
-		<!-- Left: Interactive Table Preview -->
-		<div class="space-y-2">
-			<InteractiveTable
-				{cellAlignment}
-				{scope}
-				{borderWidth}
-				{borderColor}
-				{backgroundColor}
-				{cellPadding}
-			/>
+<!-- ENHANCED: Better grid layout with stretched spacing -->
+<div class="flex w-full flex-col gap-3 h-full">
+	<!-- Row 1: Preview + Controls - ENHANCED GRID STRETCHING -->
+	<div class="grid grid-cols-2 gap-3 flex-1">
+		<!-- Left: Interactive Table Preview + Scope Toggle -->
+		<div class="flex flex-col gap-2 justify-between">
+			<!-- Table preview - grows to fill space -->
+			<div class="flex-1 flex items-center justify-center">
+				<InteractiveTable
+					{cellAlignment}
+					{scope}
+					{borderWidth}
+					{borderColor}
+					{backgroundColor}
+					{cellPadding}
+				/>
+			</div>
+			
+			<!-- MOVED FROM CHILD: Scope Toggle -->
+			<div class="flex items-center justify-center">
+				<button
+					class={getScopeToggleClass()}
+					onclick={handleScopeToggle}
+					disabled={isProcessing}
+					title={`Currently applying to ${scope}. Click to toggle.`}
+				>
+					{#if scope === 'table'}
+						<Table class="h-3 w-3" />
+						<span class="font-medium text-primary">Whole Table</span>
+					{:else}
+						<Focus class="h-3 w-3" />
+						<span class="font-medium">Selected Cell</span>
+					{/if}
+				</button>
+			</div>
 		</div>
 
-		<!-- Right: Alignment + Scope Controls -->
-		<div class="space-y-2">
+		<!-- Right: Alignment + Padding Controls - STRETCHED -->
+		<div class="flex flex-col gap-2 justify-between h-full">
 			<AlignmentButtonGrid
 				{cellAlignment}
 				{scope}
@@ -212,56 +244,58 @@
 				onScopeToggle={handleScopeToggle}
 			/>
 
-			<hr>
+			<hr class="border-border">
 
-			<PaddingControls 
-				{cellPadding}
-				{isProcessing}
-				onPaddingChange={handlePaddingChange}
-			/>
+			<!-- ENHANCED: PaddingControls fills remaining space -->
+			<div class="flex-1">
+				<PaddingControls 
+					{cellPadding}
+					{isProcessing}
+					onPaddingChange={handlePaddingChange}
+				/>
+			</div>
 		</div>
 	</div>
 
-	<!-- Row 2: Padding Controls -->
-	<!-- <PaddingControls {cellPadding} {isProcessing} onPaddingChange={handlePaddingChange} /> -->
-
-	<!-- Row 3: Border Controls -->
+	<!-- Row 2: Border Controls -->
 	<BorderControls {borderWidth} {borderColor} {isProcessing} onBorderChange={handleBorderChange} />
 
-	<!-- Row 4: Color Controls -->
+	<!-- Row 3: Color Controls -->
 	<ColorControls {backgroundColor} {isProcessing} onColorChange={handleColorChange} />
 
-	<!-- Row 5: Action Buttons + Summary -->
+	<!-- Row 4: Action Buttons -->
 	<div class="flex items-center gap-2">
-		<!-- Left: Reset + Apply buttons -->
-		<div class="flex items-center gap-2">
-			<Button
-				variant="outline"
-				size="icon"
-				class="h-8 w-8"
-				onclick={handleReset}
-				disabled={isProcessing || !hasChanges}
-				title="Reset to defaults"
-			>
-				<RotateCcw class="h-3 w-3" />
-			</Button>
+		<Button
+			variant="outline"
+			size="icon"
+			class="h-8 w-8"
+			onclick={handleReset}
+			disabled={isProcessing || !hasChanges}
+			title="Reset to defaults"
+		>
+			<RotateCcw class="h-3 w-3" />
+		</Button>
 
-			<Button
-				variant="default"
-				class="flex h-8 items-center gap-1.5 px-3 text-xs"
-				onclick={handleApply}
-				disabled={isProcessing || !hasChanges}
-			>
-				{#if isProcessing}
-					<Loader2 class="h-3 w-3 animate-spin" />
-					<span>Applying...</span>
-				{:else}
-					<Save class="h-3 w-3" />
-					<span>Apply</span>
-				{/if}
-			</Button>
-		</div>
+		<Button
+			variant="default"
+			class="flex h-8 items-center gap-1.5 px-3 text-xs"
+			onclick={handleApply}
+			disabled={isProcessing || !hasChanges}
+		>
+			{#if isProcessing}
+				<Loader2 class="h-3 w-3 animate-spin" />
+				<span>Applying...</span>
+			{:else}
+				<Save class="h-3 w-3" />
+				<span>Apply</span>
+			{/if}
+		</Button>
 
-
+		<!-- Changes summary - as requested, keep commented parts commented -->
+		<!-- {#if changesSummary && !isProcessing}
+			<span class="text-[0.6rem] text-muted-foreground ml-auto text-right leading-tight">
+				{changesSummary}
+			</span>
+		{/if} -->
 	</div>
 </div>

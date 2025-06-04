@@ -21,7 +21,7 @@
   function getPresetClass(points: number) {
     const isSelected = props.cellPadding === points;
     return cn(
-      "px-2 py-1 text-[0.5em] border rounded-md transition-colors",
+      "px-2 py-1 text-[0.5em] border rounded-md transition-colors flex-1",
       isSelected 
         ? "bg-primary/10 border-primary text-primary" 
         : "border-border hover:bg-accent",
@@ -46,10 +46,10 @@
   }
 </script>
 
-<!-- Full width row layout -->
-<div class="flex flex-col items-start gap-1">
-  <!-- Left: Label and Input -->
-  <div class="flex items-center gap-1 min-w-0 flex-shrink">
+<!-- FIXED: Full width layout with proper spacing -->
+<div class="flex flex-col gap-1 h-full">
+  <!-- Top row: Label and Input with FULL SPACE between them -->
+  <div class="flex items-center justify-between w-full">
     <h3 class="text-[0.6em] font-medium text-muted-foreground whitespace-nowrap">
       Padding
     </h3>
@@ -67,8 +67,8 @@
     </div>
   </div>
 
-  <!-- Right: Preset Buttons -->
-  <div class="flex gap-0.5">
+  <!-- Bottom row: Preset Buttons that FILL THE SPACE -->
+  <div class="flex gap-0.5 w-full">
     {#each presets as preset}
       <button
         class={getPresetClass(preset.points)}

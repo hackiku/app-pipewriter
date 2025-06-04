@@ -5,18 +5,16 @@
 		AlignStartHorizontal,
 		AlignCenterHorizontal,
 		AlignEndHorizontal,
-		Loader2,
-		Table,
-		Focus
+		Loader2
 	} from '@lucide/svelte';
 
-	// Props
+	// Props - REMOVED scope toggle (moved to parent)
 	const props = $props<{
 		cellAlignment: 'top' | 'middle' | 'bottom';
 		scope: 'cell' | 'table';
 		isProcessing: boolean;
 		onAlignmentChange: (value: string) => void;
-		onScopeToggle: () => void;
+		onScopeToggle: () => void; // Keep for compatibility but not used here
 	}>();
 
 	// Cell content alignment options with better labels
@@ -40,14 +38,6 @@
 		);
 	}
 
-	// Get scope toggle class
-	function getScopeToggleClass() {
-		return cn(
-			'flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs transition-colors hover:bg-accent',
-			props.scope === 'table' ? 'bg-primary/5 border-primary/30' : 'bg-muted/30'
-		);
-	}
-
 	function handleClick(value: string) {
 		if (!props.isProcessing) {
 			props.onAlignmentChange(value);
@@ -55,8 +45,8 @@
 	}
 </script>
 
+<!-- SIMPLIFIED: Just cell content alignment, scope toggle moved to parent -->
 <div class="space-y-2">
-	<!-- Cell Content Alignment -->
 	<div>
 		<h3 class="mb-1 text-[0.6em] font-medium text-muted-foreground">Cell Content</h3>
 		<div class="grid grid-cols-3 gap-2">
@@ -77,22 +67,4 @@
 			{/each}
 		</div>
 	</div>
-
-	<!-- Scope Toggle with relevant icons -->
-	<!-- <div class="flex items-center justify-center">
-		<button
-			class={getScopeToggleClass()}
-			onclick={props.onScopeToggle}
-			disabled={props.isProcessing}
-			title={`Currently applying to ${props.scope}. Click to toggle.`}
-		>
-			{#if props.scope === 'table'}
-				<Table class="h-3 w-3" />
-				<span class="font-medium text-primary">Whole Table</span>
-			{:else}
-				<Focus class="h-3 w-3" />
-				<span class="font-medium">Selected Cell</span>
-			{/if}
-		</button>
-	</div> -->
 </div>

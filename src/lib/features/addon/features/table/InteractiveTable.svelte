@@ -1,9 +1,8 @@
 <!-- src/lib/features/addon/features/table/InteractiveTable.svelte -->
 <script lang="ts">
   import { cn } from "$lib/utils";
-  import { Table, Focus } from "@lucide/svelte";
 
-  // Props - now showing actual table features + scope toggle
+  // Props - scope toggle moved to parent
   const props = $props<{
     cellAlignment: 'top' | 'middle' | 'bottom';
     scope: 'cell' | 'table';
@@ -11,20 +10,19 @@
     borderColor: string;
     backgroundColor: string;
     cellPadding: number; // in points
-    onScopeToggle: () => void;
   }>();
 
-  // Get cell content alignment class - hook to controls
+  // Get cell content alignment class - ENHANCED for better visual feedback
   function getCellAlignClass() {
     switch (props.cellAlignment) {
-      case 'top': return 'justify-start items-start';
+      case 'top': return 'justify-start items-start pt-1';
       case 'middle': return 'justify-start items-center'; 
-      case 'bottom': return 'justify-start items-end';
+      case 'bottom': return 'justify-start items-end pb-1';
       default: return 'justify-start items-center';
     }
   }
 
-  // Get border style based on settings
+  // Get border style - ALL DASHED when no border (as requested)
   function getBorderStyle() {
     if (props.borderWidth === 0) {
       return 'border-dashed border-neutral-300 dark:border-neutral-600';
@@ -51,19 +49,11 @@
     }
   }
 
-  // Get cell padding in pixels (smaller effect - don't let content disappear)
+  // Get cell padding in pixels - ENHANCED to maintain visibility at all levels
   function getCellPadding() {
-    // Smaller conversion: 1 point ≈ 0.8 pixels so 20pt doesn't make content disappear
-    const paddingPx = Math.round(props.cellPadding * 0.8);
-    return `${Math.min(paddingPx, 12)}px`; // Cap at 12px max
-  }
-
-  // Get scope toggle class
-  function getScopeToggleClass() {
-    return cn(
-      'flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs transition-colors hover:bg-accent mt-2',
-      props.scope === 'table' ? 'bg-primary/5 border-primary/30' : 'bg-muted/30'
-    );
+    // Better conversion that maintains content visibility
+    const paddingPx = Math.round(props.cellPadding * 0.6);
+    return `${Math.min(paddingPx, 8)}px`; // Cap at 8px for UI
   }
 
   // Check if cell should be highlighted (selected cell scope)
@@ -71,64 +61,62 @@
     return props.scope === 'cell' && cellIndex === 0;
   }
 
-  // Fixed 2x2 table for compact view
+  // ENHANCED: Get cell content positioning based on alignment and padding
+  function getContentClass(cellIndex: number) {
+    const baseClasses = "w-6 h-2 bg-neutral-400 dark:bg-neutral-500 rounded transition-all duration-200";
+    
+    // Show alignment effect on all cells or just selected cell
+    const shouldShowAlignment = props.scope === 'table' || (props.scope === 'cell' && cellIndex === 0);
+    
+    if (shouldShowAlignment) {
+      return `${baseClasses} flex-shrink-0`;
+    }
+    
+    // Default centered positioning for non-affected cells
+    return `${baseClasses} self-center justify-self-start flex-shrink-0`;
+  }
+
+  // Fixed 2x2 table for compact view but TALLER cells for better alignment visibility
   const rows = 2;
   const cols = 2;
   const totalCells = rows * cols;
 </script>
 
-<!-- Bigger preview container for better visibility -->
-<!-- <div class="bg-neutral-100 dark:bg-neutral-800 rounded-lg p-4 border border-dashed border-neutral-400 dark:border-neutral-500"> -->
-  <!-- Table mockup with realistic sizing -->
-  <div class="flex justify-center">
+<!-- ENHANCED: Taller cells for better alignment visibility -->
+<div class="flex justify-center">
+  <div 
+    class="border rounded-sm shadow-sm {getBorderStyle()}"
+    style="{getBorderColor()} {props.backgroundColor && props.scope === 'table' ? `background-color: ${props.backgroundColor};` : 'background-color: white;'}"
+  >
+    <!-- Dynamic grid with TALLER cells -->
     <div 
-      class="border rounded-sm shadow-sm {getBorderStyle()}"
-      style="{getBorderColor()} {props.backgroundColor && props.scope === 'table' ? `background-color: ${props.backgroundColor};` : 'background-color: white;'} {props.backgroundColor && props.scope === 'table' ? '' : ''}"
+      class="grid"
+      style="grid-template-columns: repeat({cols}, minmax(0, 1fr));"
     >
-      <!-- Dynamic grid based on columns -->
-      <div 
-        class="grid"
-        style="grid-template-columns: repeat({cols}, minmax(0, 1fr));"
-      >
-        {#each Array(totalCells) as _, index}
-          {@const row = Math.floor(index / cols)}
-          {@const col = index % cols}
+      {#each Array(totalCells) as _, index}
+        {@const row = Math.floor(index / cols)}
+        {@const col = index % cols}
+        
+        <div 
+          class={cn(
+            // ENHANCED: Taller cells (min-h-16 instead of min-h-12) and all borders dashed when no border
+            "min-w-16 min-h-16 flex transition-all duration-200 relative",
+            props.borderWidth === 0 ? "border border-dashed border-neutral-300 dark:border-neutral-600" : "border border-neutral-300 dark:border-neutral-600",
+            getCellAlignClass(),
+            getBackgroundColor(index),
+            isCellHighlighted(index) && "ring-2 ring-primary/50 ring-inset"
+          )}
+          style="padding: {getCellPadding()}; {props.backgroundColor && ((props.scope === 'table') || (props.scope === 'cell' && index === 0)) ? `background-color: ${props.backgroundColor};` : ''}"
+        >
+          <!-- ENHANCED: Cell content that moves based on alignment -->
+          <div class={getContentClass(index)}></div>
           
-          <div 
-            class={cn(
-              "min-w-14 min-h-12 border border-neutral-300 dark:border-neutral-600 flex transition-all duration-200 relative",
-              getCellAlignClass(),
-              getBackgroundColor(index),
-              isCellHighlighted(index) && "ring-2 ring-primary/50 ring-inset"
-            )}
-            style="padding: {getCellPadding()}; {props.backgroundColor && ((props.scope === 'table') || (props.scope === 'cell' && index === 0)) ? `background-color: ${props.backgroundColor};` : ''}"
-          >
-            <!-- Cell content - represents text/content -->
-            <div class="w-8 h-3 bg-neutral-400 dark:bg-neutral-500 rounded transition-all duration-200 self-center justify-self-start"></div>
-            
-            <!-- Cell selection indicator -->
-            {#if isCellHighlighted(index)}
-              <div class="absolute -top-1 -left-1 w-2 h-2 bg-primary rounded-full"></div>
-            {/if}
-          </div>
-        {/each}
-      </div>
+          <!-- Cell selection indicator -->
+          {#if isCellHighlighted(index)}
+            <div class="absolute -top-1 -left-1 w-2 h-2 bg-primary rounded-full"></div>
+          {/if}
+        </div>
+      {/each}
     </div>
   </div>
-
-		<div class="flex items-center justify-center">
-		<button
-			class={getScopeToggleClass()}
-			onclick={props.onScopeToggle}
-			disabled={props.isProcessing}
-			title={`Currently applying to ${props.scope}. Click to toggle.`}
-		>
-			{#if props.scope === 'table'}
-				<Table class="h-3 w-3" />
-				<span class="font-medium text-primary">Whole Table</span>
-			{:else}
-				<Focus class="h-3 w-3" />
-				<span class="font-medium">Selected Cell</span>
-			{/if}
-		</button>
-	</div>
+</div>
