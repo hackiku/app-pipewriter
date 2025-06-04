@@ -140,23 +140,23 @@ const elementsData = [
 		displayOrder: 10
 	},
 	{
-		id: 'list-3',
+		id: 'list-2',
 		category: 'lists',
-		description: '2x2 grid list layout for organized content',
+		description: 'Two column list for comparison or features',
 		metadata: {
 			cols: 2,
-			rows: 2,
 			supports: { darkMode: true, customText: true },
 			tier: 'pro'
 		},
 		displayOrder: 11
 	},
 	{
-		id: 'list-2',
+		id: 'list-3',
 		category: 'lists',
-		description: 'Two column list for comparison or features',
+		description: '2x2 grid list layout for organized content',
 		metadata: {
 			cols: 2,
+			rows: 2,
 			supports: { darkMode: true, customText: true },
 			tier: 'pro'
 		},
