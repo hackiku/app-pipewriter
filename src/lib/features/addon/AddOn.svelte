@@ -26,7 +26,12 @@
 	let showInfo = $state(false);
 	let googleService = $state<any>(null);
 	let dropperRef = $state<any>(null);
-	let chainModeState = $state({ chainMode: false, queuedElements: [], queueCount: 0 });
+	let chainModeState = $state({ 
+		chainMode: false, 
+		queuedElements: [], 
+		queueCount: 0,
+		theme: 'light' // Add theme to state tracking
+	});
 	
 	// Google service initialization
 	$effect(() => {
@@ -40,10 +45,13 @@
 		}
 	});
 	
-	// Chain mode tracking
+	// Chain mode tracking - get theme from dropper
 	$effect(() => {
 		if (dropperRef && typeof dropperRef.getChainModeState === 'function') {
-			chainModeState = dropperRef.getChainModeState();
+			const state = dropperRef.getChainModeState();
+			// Also get the current theme if available
+			const theme = dropperRef.getTheme ? dropperRef.getTheme() : 'light';
+			chainModeState = { ...state, theme };
 		}
 	});
 	
@@ -120,11 +128,11 @@
 			{#if !zenMode}
 				<Resizable.Handle withHandle />
 				<Resizable.Pane defaultSize={35} minSize={20} maxSize={60}>
-					<!-- DropperQueue - Improved Version -->
+					<!-- DropperQueue - Pass correct theme and processing state -->
 					{#if chainModeState.chainMode}
 						<DropperQueue 
 							queuedElements={chainModeState.queuedElements}
-							theme="light"
+							theme={chainModeState.theme}
 							isProcessing={false}
 							onRemoveFromQueue={handleRemoveFromQueue}
 							onApplyQueue={handleApplyQueue}

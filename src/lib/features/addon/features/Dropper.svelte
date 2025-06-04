@@ -224,12 +224,14 @@
     gridColumns = cols;
   }
 
-  // Export for parent component
+  // Export for parent component - including theme
   export const getChainModeState = () => ({
     chainMode,
     queuedElements,
     queueCount: queuedElements.length
   });
+
+  export const getTheme = () => elementsTheme;
   
   // Export queue management methods for parent using different names
   export const removeFromQueue = handleRemoveFromQueue;

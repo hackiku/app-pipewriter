@@ -75,18 +75,19 @@
 </script>
 
 <!-- Simple card container - no button wrapper, no hover effects -->
-<div class="relative w-full aspect-[4/2] overflow-hidden rounded-lg {cardStyles[props.theme]}">
+<div class="relative w-full aspect-[4/2] overflow-hidden rounded-lg {cardStyles[props.theme]} select-none">
   {#if imageError}
     <div class="flex h-full flex-col items-center justify-center p-2 text-center">
       <AlertCircle class="mb-1 h-6 w-6 text-neutral-400" />
       <span class="text-xs text-neutral-500">{props.element.id}</span>
     </div>
   {:else}
-    <!-- Element Image - clean, no opacity transitions -->
+    <!-- Element Image - FIXED: Add draggable="false" to prevent interference with SortableJS -->
     <img
       src={getSvgUrl()}
       alt={props.element.description}
-      class="w-full h-full object-contain"
+      class="w-full h-full object-contain pointer-events-none"
+      draggable="false"
       onerror={handleImageError}
       loading="lazy"
     />
