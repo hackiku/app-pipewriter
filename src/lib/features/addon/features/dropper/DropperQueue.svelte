@@ -20,9 +20,8 @@
 	let queuedElementDetails = $state<ElementWithAccess[]>([]);
 	let loading = $state(false);
 	
-	// Drag state
-	let draggedIndex = $state<number | null>(null);
-	let dragOverIndex = $state<number | null>(null);
+	// Simplified drag state - just track what's being dragged
+	let draggedElementId = $state<string | null>(null);
 
 	// Load element details when queue changes
 	$effect(async () => {
@@ -52,66 +51,69 @@
 		return element.svgPath;
 	}
 
-	// Handle remove element from queue
-	function handleRemove(elementId: string, event?: MouseEvent) {
-		if (event) {
-			event.stopPropagation();
-		}
+	// Handle remove element from queue - simplified
+	function handleRemove(elementId: string) {
 		if (!props.isProcessing) {
 			props.onRemoveFromQueue(elementId);
 		}
 	}
 
-	// Drag and drop handlers
-	function handleDragStart(event: DragEvent, index: number) {
+	// Simplified drag handlers
+	function handleDragStart(event: DragEvent, elementId: string) {
 		if (!event.dataTransfer) return;
 		
-		draggedIndex = index;
+		draggedElementId = elementId;
 		event.dataTransfer.effectAllowed = 'move';
-		event.dataTransfer.setData('text/plain', index.toString());
+		event.dataTransfer.setData('text/plain', elementId);
+		
+		// Simple visual feedback
+		if (event.target instanceof HTMLElement) {
+			event.target.style.opacity = '0.5';
+		}
 	}
 
 	function handleDragEnd(event: DragEvent) {
-		draggedIndex = null;
-		dragOverIndex = null;
+		draggedElementId = null;
+		
+		// Reset visual feedback
+		if (event.target instanceof HTMLElement) {
+			event.target.style.opacity = '';
+		}
 	}
 
-	function handleDragOver(event: DragEvent, index: number) {
-		event.preventDefault();
-		dragOverIndex = index;
+	function handleDragOver(event: DragEvent) {
+		event.preventDefault(); // Allow drop
 	}
 
-	function handleDragLeave() {
-		dragOverIndex = null;
-	}
-
-	function handleDrop(event: DragEvent, dropIndex: number) {
+	function handleDrop(event: DragEvent, dropElementId: string) {
 		event.preventDefault();
 		
-		if (draggedIndex === null || draggedIndex === dropIndex) {
-			draggedIndex = null;
-			dragOverIndex = null;
+		if (!draggedElementId || draggedElementId === dropElementId) {
 			return;
 		}
 
-		// Reorder the elements
+		// Find current positions
+		const draggedIndex = props.queuedElements.indexOf(draggedElementId);
+		const dropIndex = props.queuedElements.indexOf(dropElementId);
+		
+		if (draggedIndex === -1 || dropIndex === -1) return;
+
+		// Create new order
 		const newOrder = [...props.queuedElements];
-		const draggedElement = newOrder[draggedIndex];
 		
 		// Remove dragged element
 		newOrder.splice(draggedIndex, 1);
 		
 		// Insert at new position
 		const insertIndex = draggedIndex < dropIndex ? dropIndex - 1 : dropIndex;
-		newOrder.splice(insertIndex, 0, draggedElement);
+		newOrder.splice(insertIndex, 0, draggedElementId);
 
-		// Call the reorder callback if provided
+		// Call reorder callback
 		if (props.onReorderQueue) {
 			props.onReorderQueue(newOrder);
 		}
 
-		draggedIndex = null;
-		dragOverIndex = null;
+		draggedElementId = null;
 	}
 </script>
 
@@ -131,54 +133,41 @@
 					<div class="h-4 w-4 border-2 border-t-transparent border-primary rounded-full animate-spin"></div>
 				</div>
 			{:else}
-				<!-- Queued Elements Grid with Vertical Scroll -->
+				<!-- Simplified Grid with Scroll -->
 				<div class="h-full overflow-y-auto queue-scroll">
 					<div class="grid grid-cols-3 gap-2 auto-rows-max pb-4">
-						{#each queuedElementDetails as element, index (element.id)}
-							{@const isBeingDragged = draggedIndex === index}
-							{@const isDragTarget = dragOverIndex === index}
-							
-							<!-- svelte-ignore a11y_no_static_element_interactions -->
+						{#each queuedElementDetails as element (element.id)}
+							<!-- Single draggable wrapper - no complex nesting -->
 							<div
+								class="relative group cursor-grab active:cursor-grabbing"
 								draggable="true"
-								ondragstart={(e) => handleDragStart(e, index)}
+								ondragstart={(e) => handleDragStart(e, element.id)}
 								ondragend={handleDragEnd}
-								ondragover={(e) => handleDragOver(e, index)}
-								ondragleave={handleDragLeave}
-								ondrop={(e) => handleDrop(e, index)}
-								class={cn(
-									"group relative flex-none cursor-grab active:cursor-grabbing",
-									"transition-all duration-200 hover:scale-105",
-									isBeingDragged && "opacity-50 scale-95",
-									isDragTarget && "scale-110 z-10"
-								)}
+								ondragover={handleDragOver}
+								ondrop={(e) => handleDrop(e, element.id)}
 							>
-								<!-- Scaled Element Card -->
-								<div
-									class="relative aspect-[4/2] overflow-hidden rounded-lg border border-border bg-background transition-all duration-200 hover:shadow-md"
-								>
+								<!-- Element Card -->
+								<div class="relative aspect-[4/2] overflow-hidden rounded-lg border border-border bg-background hover:shadow-md transition-shadow">
 									<img
 										src={getSvgUrl(element)}
 										alt={element.description}
 										class="h-full w-full object-cover"
 										loading="lazy"
 									/>
-
-
-								<!-- Delete Button - High Z-Index -->
 								</div>
+
+								<!-- Remove Button - Outside the card -->
 								<button
 									class="absolute right-0.5 top-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground
-																 hover:bg-destructive/90 active:scale-95 transition-all z-10 shadow-sm
-																 flex items-center justify-center"
-									onclick={(e) => handleRemove(element.id, e)}
+									       hover:bg-destructive/90 transition-colors z-10 shadow-sm flex items-center justify-center"
+									onclick={() => handleRemove(element.id)}
 									disabled={props.isProcessing}
 									title="Remove from queue"
 								>
 									<X size={10} />
 								</button>
 
-								<!-- Element Name - Capitalized -->
+								<!-- Element Name -->
 								<p class="mt-0.5 w-full truncate text-center text-[0.5rem] text-muted-foreground">
 									{element.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
 								</p>
@@ -194,20 +183,15 @@
 <style>
 	/* Hide scrollbar completely */
 	.queue-scroll {
-		-ms-overflow-style: none;  /* Internet Explorer 10+ */
-		scrollbar-width: none;  /* Firefox */
+		-ms-overflow-style: none;
+		scrollbar-width: none;
 	}
 	
 	.queue-scroll::-webkit-scrollbar {
-		display: none;  /* Safari and Chrome */
+		display: none;
 	}
 
-	/* Smooth drag transitions */
-	[draggable="true"] {
-		transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
-	}
-	
-	/* Cursor styles for drag feedback */
+	/* Simple cursor feedback */
 	.cursor-grab:hover {
 		cursor: grab;
 	}
