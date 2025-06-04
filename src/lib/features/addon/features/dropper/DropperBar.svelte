@@ -1,12 +1,12 @@
-<!-- Fixed src/lib/features/addon/features/dropper/DropperBar.svelte -->
+<!-- src/lib/features/addon/features/dropper/DropperBar.svelte -->
 <script lang="ts">
-	import { Link2, PaintBucket, X, Plus } from '@lucide/svelte';
+	import { Link2, X, Plus } from '@lucide/svelte';
 	import type { ElementTheme } from '$lib/types/elements';
 
-	// Props - FIXED: theme should be ElementTheme, not string
+	// Props
 	const props = $props<{
 		isProcessing: boolean;
-		theme: ElementTheme; // Changed from string to ElementTheme
+		theme: ElementTheme;
 		selectedElements: string[];
 		chainMode: boolean;
 		queuedElements?: string[];
@@ -27,13 +27,13 @@
 	// Current grid size (read-only in this component, set only on cycleGridColumns)
 	let gridColumns = $state(3);
 
-	// Themes configuration (these won't change)
-	const themes: Array<{ id: ElementTheme; color: string; label: string }> = [
-		{ id: 'light', color: '#FFFFFF', label: 'Light' },
-		{ id: 'dark', color: '#171717', label: 'Dark' }
+	// Themes configuration
+	const themes: Array<{ id: ElementTheme; symbol: string; label: string }> = [
+		{ id: 'light', symbol: '○', label: 'Light' },
+		{ id: 'dark', symbol: '●', label: 'Dark' }
 	];
 
-	// Current theme - FIXED: proper type checking
+	// Current theme
 	let currentTheme = $derived(() => {
 		return themes.find((t) => t.id === props.theme) || themes[0];
 	});
@@ -84,13 +84,13 @@
 	<div class="absolute bottom-2 -left-1 right-0 z-20 px-5 pb-0">
 		<div class="flex items-center justify-between">
 			<!-- Left Side Controls -->
-			<div class="flex items-center gap-1.5">
+			<div class="flex items-center gap-2">
 				<!-- Chain Mode Toggle Button -->
 				<button
-					class="h-7 w-7 rounded-full border transition-all duration-150 active:scale-95
+					class="h-8 w-8 rounded-full border-2 transition-all duration-150 active:scale-95 backdrop-blur-sm
                  {props.chainMode
-						? 'border-border bg-primary text-primary-foreground shadow-sm'
-						: 'border-border bg-accent/40 hover:border-primary/60 hover:shadow-sm dark:hover:border-primary/80'}"
+						? 'border-primary bg-primary text-primary-foreground shadow-md'
+						: 'border-border bg-background/90 hover:border-primary/60 hover:bg-accent hover:shadow-sm'}"
 					disabled={props.isProcessing}
 					onclick={props.onToggleChainMode}
 					title={props.chainMode
@@ -98,7 +98,7 @@
 						: 'Enter chain mode - queue elements before inserting'}
 				>
 					<Link2
-						size={14}
+						size={16}
 						class="mx-auto {props.chainMode
 							? 'text-primary-foreground'
 							: 'text-muted-foreground hover:text-foreground'}"
@@ -106,31 +106,37 @@
 					<span class="sr-only">{props.chainMode ? 'Exit chain mode' : 'Enter chain mode'}</span>
 				</button>
 				
-				<!-- Theme Toggle Button -->
+				<!-- Theme Toggle Button with Yin-Yang -->
 				<button
-					class="h-7 w-7 rounded-full border-2 border-border/60
-					transition-all duration-150
-					hover:border-primary/60 hover:shadow-sm active:scale-95 dark:hover:border-primary/80"
-					style={`background-color: ${currentTheme.color}`}
+					class="h-8 w-8 rounded-full border-2 border-border bg-background/90 backdrop-blur-sm
+					transition-all duration-150 hover:border-primary/60 hover:bg-accent hover:shadow-sm active:scale-95"
 					disabled={props.isProcessing}
 					onclick={props.onToggleTheme}
 					title={`Switch to ${nextTheme.label} theme`}
 				>
-					<PaintBucket
-						size={14}
-						class="mx-auto text-muted-foreground hover:text-foreground"
-					/>
+					<div class="mx-auto flex items-center justify-center">
+						{#if props.theme === 'light'}
+							<!-- Light theme: white circle with black dot -->
+							<div class="relative">
+								<div class="w-4 h-4 rounded-full bg-foreground/10 border border-foreground/20"></div>
+								<div class="absolute top-1 left-1 w-2 h-2 rounded-full bg-foreground/80"></div>
+							</div>
+						{:else}
+							<!-- Dark theme: black circle with white dot -->
+							<div class="relative">
+								<div class="w-4 h-4 rounded-full bg-foreground/80 border border-foreground/60"></div>
+								<div class="absolute top-1 left-1 w-2 h-2 rounded-full bg-background"></div>
+							</div>
+						{/if}
+					</div>
 					<span class="sr-only">Switch to {nextTheme.label} theme</span>
 				</button>
 
 				<!-- Grid Size Button -->
 				<button
-					class="h-6 w-6 rounded-full border-2 border-border/60 bg-background/80 text-xs
-                 font-medium text-muted-foreground
-                 backdrop-blur-sm transition-all duration-150
-                 hover:border-primary/60 hover:bg-accent/20
-                 hover:text-foreground hover:shadow-sm
-                 active:scale-95 dark:hover:border-primary/80"
+					class="h-7 w-7 rounded-full border-2 border-border bg-background/90 backdrop-blur-sm
+					text-xs font-medium text-muted-foreground transition-all duration-150
+					hover:border-primary/60 hover:bg-accent hover:text-foreground hover:shadow-sm active:scale-95"
 					disabled={props.isProcessing}
 					title={`Switch to ${nextGridSize.label} grid`}
 					onclick={cycleGridColumns}
@@ -142,36 +148,31 @@
 			<!-- Chain Mode Actions -->
 			{#if props.chainMode}
 				<div class="flex items-center gap-2">
-					<!-- Clear/Reset Button -->
+					<!-- Clear Button -->
 					<button
-						class="h-6 w-6 rounded-full border-2 border-border/60
-		       bg-background/80 text-muted-foreground
-		       backdrop-blur-sm transition-all
-		       duration-150 hover:border-destructive/60
-		       hover:bg-destructive/10 hover:text-destructive
-		       hover:shadow-sm active:scale-95
+						class="h-7 w-7 rounded-full border-2 border-border bg-background/90 backdrop-blur-sm
+		       text-muted-foreground transition-all duration-150 hover:border-destructive/60
+		       hover:bg-destructive/10 hover:text-destructive hover:shadow-sm active:scale-95
 		       disabled:cursor-not-allowed disabled:opacity-50"
 						onclick={props.onDiscardQueue}
 						disabled={props.isProcessing || !props.queuedElements?.length}
-						title="Clear queue"
+						title="Clear queue and exit chain mode"
 					>
-						<X size={12} class="mx-auto" />
+						<X size={14} class="mx-auto" />
 					</button>
 
-					<!-- Drop Button -->
+					<!-- Drop Button with text -->
 					<button
-						class="h-6 w-6 rounded-full border-2 border-primary/60
-		       bg-primary/10 text-primary
-		       backdrop-blur-sm transition-all
-		       duration-150 hover:border-primary
-		       hover:bg-primary/20 hover:text-primary
-		       hover:shadow-sm active:scale-95
-		       disabled:cursor-not-allowed disabled:opacity-50"
+						class="h-7 px-3 rounded-full border-2 border-primary bg-primary/10 backdrop-blur-sm
+		       text-primary transition-all duration-150 hover:border-primary hover:bg-primary/20
+		       hover:shadow-sm active:scale-95 disabled:cursor-not-allowed disabled:opacity-50
+		       flex items-center gap-1 text-xs font-medium"
 						onclick={props.onApplyQueue}
 						disabled={props.isProcessing || !props.queuedElements?.length}
 						title={`Drop ${props.queuedElements?.length || 0} elements`}
 					>
-						<Plus size={12} class="mx-auto" />
+						<Plus size={12} />
+						<span>Drop</span>
 					</button>
 				</div>
 			{/if}

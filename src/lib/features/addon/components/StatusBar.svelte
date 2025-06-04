@@ -1,4 +1,4 @@
-<!-- $lib/iframe/components/StatusBar.svelte -->
+<!-- $lib/features/addon/components/StatusBar.svelte -->
 <script lang="ts">
   import { fade } from "svelte/transition";
   import { Loader2, ThumbsUp, AlertCircle, ChevronDown, ChevronUp } from "@lucide/svelte";

@@ -4,7 +4,7 @@
   import type { ElementTheme, StatusUpdate } from '$lib/types/elements';
   import { insertElement } from "$lib/services/google/docs";
   
-  import StatusBar from "../components/StatusBar.svelte";
+  import StatusSonner from "../components/StatusSonner.svelte";
   import DropperGrid from "./dropper/DropperGrid.svelte";
   import DropperBar from "./dropper/DropperBar.svelte";
   
@@ -29,7 +29,7 @@
   
   console.log("Dropper mounted with elements:", Object.keys(elements).length, "categories");
   
-  // Status bar management
+  // Status management
   function handleStatusClose() {
     status = null;
   }
@@ -111,12 +111,7 @@
       queuedElements = [...queuedElements, elementId];
     }
     
-    setStatusWithTimeout({
-      type: "success",
-      message: currentIndex >= 0 ? `Removed from chain` : `Added to chain`,
-      details: `Chain now has ${queuedElements.length} elements`,
-      elementId
-    }, 1000);
+    // No status messages - keep chain operations silent
   }
   
   function getChainPosition(elementId: string): number {
@@ -128,18 +123,18 @@
   function handleAddToQueue(elementId: string) {
     if (!queuedElements.includes(elementId)) {
       queuedElements = [...queuedElements, elementId];
-      
-      setStatusWithTimeout({
-        type: "success",
-        message: `Added to queue`,
-        details: `${elementId} added to queue (${queuedElements.length} total)`,
-        elementId
-      }, 1000);
+      // No status message - just add silently
     }
   }
   
   function handleRemoveFromQueue(elementId: string) {
     queuedElements = queuedElements.filter(id => id !== elementId);
+    // No status message - keep it minimal
+  }
+  
+  function handleReorderQueue(newOrder: string[]) {
+    queuedElements = newOrder;
+    // No status message - silent reordering
   }
   
   async function handleApplyQueue() {
@@ -206,26 +201,19 @@
   function handleDiscardQueue() {
     const count = queuedElements.length;
     queuedElements = [];
+    chainMode = false; // Also exit chain mode
     
-    setStatusWithTimeout({
-      type: "success",
-      message: "Queue discarded",
-      details: `Removed ${count} elements from queue`
-    }, 1000);
+    // No status message - just silently clear
   }
   
   function toggleChainMode() {
     chainMode = !chainMode;
     
     if (!chainMode && queuedElements.length > 0) {
-      handleDiscardQueue();
+      queuedElements = [];
     }
     
-    setStatusWithTimeout({
-      type: "success",
-      message: chainMode ? "Chain mode enabled" : "Chain mode disabled",
-      details: chainMode ? "Click elements to add to chain" : "Click elements to insert directly"
-    }, 1500);
+    // No status messages - keep it clean
   }
   
   function toggleTheme() {
@@ -242,16 +230,15 @@
     queuedElements,
     queueCount: queuedElements.length
   });
+  
+  // Export queue management methods for parent using different names
+  export const removeFromQueue = handleRemoveFromQueue;
+  export const applyQueue = handleApplyQueue;  
+  export const discardQueue = handleDiscardQueue;
+  export const reorderQueue = handleReorderQueue;
 </script>
 
 <div class="relative h-full z-0 bg-neutral-100/50 dark:bg-neutral-800/50">
-  <!-- Status Bar -->
-  {#if status}
-    <div class="fixed top-3 w-full z-20">
-      <StatusBar {status} onStatusClose={handleStatusClose} />
-    </div>
-  {/if}
-  
   <!-- Main Container -->
   <div class="h-full pb-8 pt-2 overflow-y-auto scrollbar-none">
     <DropperGrid 
@@ -285,6 +272,9 @@
       onDiscardQueue={handleDiscardQueue}
     />
   </div>
+  
+  <!-- Status Sonner - Fixed positioned, will appear in bottom-right -->
+  <StatusSonner {status} onStatusClose={handleStatusClose} />
 </div>
 
 <style>

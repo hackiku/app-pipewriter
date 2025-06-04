@@ -58,6 +58,31 @@
 	function toggleZenMode() {
 		zenMode = !zenMode;
 	}
+	
+	// Queue management functions - pass through to Dropper
+	function handleRemoveFromQueue(elementId: string) {
+		if (dropperRef && typeof dropperRef.removeFromQueue === 'function') {
+			dropperRef.removeFromQueue(elementId);
+		}
+	}
+	
+	function handleApplyQueue() {
+		if (dropperRef && typeof dropperRef.applyQueue === 'function') {
+			dropperRef.applyQueue();
+		}
+	}
+	
+	function handleDiscardQueue() {
+		if (dropperRef && typeof dropperRef.discardQueue === 'function') {
+			dropperRef.discardQueue();
+		}
+	}
+	
+	function handleReorderQueue(newOrder: string[]) {
+		if (dropperRef && typeof dropperRef.reorderQueue === 'function') {
+			dropperRef.reorderQueue(newOrder);
+		}
+	}
 </script>
 
 <main class="flex flex-col h-full overflow-hidden">
@@ -94,17 +119,23 @@
 
 			{#if !zenMode}
 				<Resizable.Handle withHandle />
-				<Resizable.Pane defaultSize={35} minSize={0}>
-					<!-- DropperQueue -->
+				<Resizable.Pane defaultSize={35} minSize={20} maxSize={60}>
+					<!-- DropperQueue - Improved Version -->
 					{#if chainModeState.chainMode}
 						<DropperQueue 
 							queuedElements={chainModeState.queuedElements}
 							theme="light"
 							isProcessing={false}
-							onRemoveFromQueue={() => {}}
-							onApplyQueue={() => {}}
-							onDiscardQueue={() => {}}
+							onRemoveFromQueue={handleRemoveFromQueue}
+							onApplyQueue={handleApplyQueue}
+							onDiscardQueue={handleDiscardQueue}
+							onReorderQueue={handleReorderQueue}
 						/>
+					{:else}
+						<!-- Empty state when not in chain mode - minimal -->
+						<div class="h-full flex items-center justify-center text-muted-foreground/40">
+							<p class="text-xs">Chain mode off</p>
+						</div>
 					{/if}
 				</Resizable.Pane>
 			{/if}
