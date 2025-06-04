@@ -6,10 +6,21 @@
 	import { elementsService } from '$lib/services/firestore/elements';
 	import { useSortable, reorder } from './useSortable.svelte';
 
-	// Props
-	const props = $props<{
-		queuedElements: string[];
+	// Enhanced interface for queue items with themes
+	interface QueueItem {
+		id: string;
 		theme: ElementTheme;
+	}
+
+	interface ElementWithFrozenTheme extends ElementWithAccess {
+		frozenTheme: ElementTheme; // The theme this element was created with
+	}
+
+	// Props - keep it simple but add frozen themes
+	const props = $props<{
+		queuedElements: string[]; // For backward compatibility
+		queuedItems?: QueueItem[]; // Enhanced queue with individual themes
+		theme: ElementTheme; // Current dropper theme
 		isProcessing: boolean;
 		onRemoveFromQueue: (elementId: string) => void;
 		onApplyQueue: () => void;
@@ -18,9 +29,12 @@
 	}>();
 
 	// State
-	let queuedElementDetails = $state<ElementWithAccess[]>([]);
+	let queuedElementDetails = $state<ElementWithFrozenTheme[]>([]);
 	let loading = $state(false);
 	let containerElement = $state<HTMLElement | null>(null);
+
+	// Map to store frozen themes for each element
+	let frozenThemes = $state<Map<string, ElementTheme>>(new Map());
 
 	// SortableJS setup using the clean hook
 	useSortable(() => containerElement, {
@@ -28,7 +42,6 @@
 		ghostClass: 'queue-ghost',
 		chosenClass: 'queue-chosen',
 		dragClass: 'queue-drag',
-		// Better iframe compatibility
 		forceFallback: true,
 		fallbackClass: 'queue-fallback',
 		fallbackOnBody: true,
@@ -48,6 +61,17 @@
 			if (props.onReorderQueue) {
 				const newOrder = reorder(props.queuedElements, evt);
 				props.onReorderQueue(newOrder);
+			}
+		}
+	});
+
+	// Update frozen themes when queuedItems changes
+	$effect(() => {
+		if (props.queuedItems) {
+			for (const item of props.queuedItems) {
+				if (!frozenThemes.has(item.id)) {
+					frozenThemes.set(item.id, item.theme);
+				}
 			}
 		}
 	});
@@ -72,12 +96,19 @@
 	// Separate async function for loading elements
 	async function loadElements(elementIds: string[]) {
 		try {
-			const elementPromises = elementIds.map(id => 
-				elementsService.getElementById(id, 'trial')
-			);
+			const elementPromises = elementIds.map(async (id) => {
+				const element = await elementsService.getElementById(id, 'trial');
+				if (element) {
+					return {
+						...element,
+						frozenTheme: frozenThemes.get(id) || props.theme // Use frozen theme or fallback
+					} as ElementWithFrozenTheme;
+				}
+				return null;
+			});
 			
 			const elements = await Promise.all(elementPromises);
-			queuedElementDetails = elements.filter(Boolean) as ElementWithAccess[];
+			queuedElementDetails = elements.filter(Boolean) as ElementWithFrozenTheme[];
 		} catch (error) {
 			console.error('Error loading queued elements:', error);
 			queuedElementDetails = [];
@@ -93,6 +124,8 @@
 			event.preventDefault();
 		}
 		if (!props.isProcessing) {
+			// Also remove frozen theme
+			frozenThemes.delete(elementId);
 			props.onRemoveFromQueue(elementId);
 		}
 	}
@@ -121,17 +154,17 @@
 						class="grid grid-cols-3 gap-2 auto-rows-max"
 					>
 						{#each queuedElementDetails as element (element.id)}
-							<!-- Sortable Item - simplified -->
+							<!-- Sortable Item - with frozen theme -->
 							<div 
 								class="queue-item relative select-none touch-none transition-transform duration-150"
 								class:cursor-grab={!props.isProcessing}
 								class:opacity-50={props.isProcessing}
 								data-id={element.id}
 							>
-								<!-- QueueCard -->
+								<!-- QueueCard with FROZEN theme (doesn't change when user toggles) -->
 								<QueueCard 
 									element={element} 
-									theme={props.theme} 
+									theme={element.frozenTheme}
 								/>
 
 								<!-- Remove Button -->
@@ -146,10 +179,17 @@
 									<X size={10} />
 								</button>
 
-								<!-- Element Name -->
-								<p class="mt-0.5 w-full truncate text-center text-[0.5rem] text-muted-foreground pointer-events-none">
-									{element.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-								</p>
+								<!-- Element Name with frozen theme indicator -->
+								<div class="mt-0.5 w-full flex items-center justify-center gap-1">
+									<p class="truncate text-center text-[0.5rem] text-muted-foreground pointer-events-none">
+										{element.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+									</p>
+									<!-- Theme indicator dot - shows frozen theme -->
+									<div 
+										class="w-1 h-1 rounded-full {element.frozenTheme === 'dark' ? 'bg-foreground' : 'bg-foreground/30'}"
+										title="{element.frozenTheme} theme (frozen)"
+									></div>
+								</div>
 							</div>
 						{/each}
 					</div>
