@@ -1,164 +1,277 @@
 <!-- src/lib/features/addon/features/table/TableTab.svelte -->
-
 <script lang="ts">
-  import InteractiveTable from './InteractiveTable.svelte';
-  import AlignmentButtonGrid from './AlignmentButtonGrid.svelte';
-  import SizeControls from './SizeControls.svelte';
-  import { getGoogleService } from '$lib/services/google/client';
+	import { Button } from '$lib/components/ui/button';
+	import { Save, Loader2, RotateCcw } from '@lucide/svelte';
+	import InteractiveTable from './InteractiveTable.svelte';
+	import AlignmentButtonGrid from './AlignmentButtonGrid.svelte';
+	import PaddingControls from './PaddingControls.svelte';
+	import ColorControls from './ColorControls.svelte';
+	import BorderControls from './BorderControls.svelte';
+	import { getGoogleService } from '$lib/services/google/client';
 
-  // Props
-  const props = $props<{
-    context?: any;
-    onStatusUpdate?: (status: {
-      type: 'processing' | 'success' | 'error';
-      message: string;
-      details?: string;
-      executionTime?: number;
-      error?: any;
-    }) => void;
-    onProcessingStart?: () => void;
-    onProcessingEnd?: () => void;
-  }>();
+	// Props
+	const props = $props<{
+		context?: any;
+		onStatusUpdate?: (status: {
+			type: 'processing' | 'success' | 'error';
+			message: string;
+			details?: string;
+			executionTime?: number;
+			error?: any;
+		}) => void;
+		onProcessingStart?: () => void;
+		onProcessingEnd?: () => void;
+	}>();
 
-  // Internal state - no external context needed
-  let tableAlignment = $state<'left' | 'center' | 'right'>('center');
-  let cellAlignment = $state<'top' | 'middle' | 'bottom'>('middle');
-  let isProcessing = $state(false);
+	// State - all table properties
+	let cellAlignment = $state<'top' | 'middle' | 'bottom'>('middle');
+	let scope = $state<'cell' | 'table'>('table');
+	let cellPadding = $state(0); // in points
+	let borderWidth = $state(0); // in pixels
+	let borderColor = $state('#000000');
+	let backgroundColor = $state('');
+	let isProcessing = $state(false);
 
-  // Scope selection (cell vs table)
-  let scope = $state<'cell' | 'table'>('table');
+	// Default state for reset
+	const defaultState = {
+		cellAlignment: 'middle' as const,
+		scope: 'table' as const,
+		cellPadding: 0,
+		borderWidth: 0,
+		borderColor: '#000000',
+		backgroundColor: ''
+	};
 
-  // Cell padding in points (converted from inches)
-  let cellPadding = $state(0); // 0 points = no padding
+	// Derived state for summary
+	let hasChanges = $derived(
+		cellAlignment !== defaultState.cellAlignment ||
+			cellPadding !== defaultState.cellPadding ||
+			borderWidth !== defaultState.borderWidth ||
+			backgroundColor !== defaultState.backgroundColor
+	);
 
-  // Handle alignment changes - just update local state (no API calls)
-  function handleAlignmentChange(type: 'table' | 'cell', value: string) {
-    if (type === 'table') {
-      tableAlignment = value as 'left' | 'center' | 'right';
-    } else {
-      cellAlignment = value as 'top' | 'middle' | 'bottom';
-    }
-  }
+	let changesSummary = $derived(() => {
+		const changes = [];
+		if (cellAlignment !== defaultState.cellAlignment) changes.push(`${cellAlignment} align`);
+		if (cellPadding > 0) changes.push(`${cellPadding}pt padding`);
+		if (borderWidth > 0) changes.push(`${borderWidth}pt border`);
+		if (backgroundColor) changes.push('background');
+		return changes.length > 0 ? changes.join(', ') : 'No changes';
+	});
 
-  // Handle scope change
-  function toggleScope() {
-    scope = scope === 'cell' ? 'table' : 'cell';
-  }
+	// Event handlers
+	function handleAlignmentChange(value: string) {
+		cellAlignment = value as 'top' | 'middle' | 'bottom';
+	}
 
-  // Convert inches to points for padding input
-  function inchesToPoints(inches: number): number {
-    return Math.round(inches * 72); // 1 inch = 72 points
-  }
+	function handleScopeToggle() {
+		scope = scope === 'cell' ? 'table' : 'cell';
+	}
 
-  // Handle cell padding change (convert inches to points)
-  function handlePaddingChange(inches: number) {
-    cellPadding = inchesToPoints(inches);
-  }
+	function handlePaddingChange(points: number) {
+		cellPadding = points;
+	}
 
-  // Main apply function - sends all settings to backend
-  async function handleApply() {
-    if (isProcessing) return;
+	function handleColorChange(color: string) {
+		backgroundColor = color;
+	}
 
-    isProcessing = true;
-    props.onProcessingStart?.();
-    props.onStatusUpdate?.({
-      type: 'processing',
-      message: 'Applying table properties...'
-    });
+	function handleBorderChange(width: number, color: string = '#000000') {
+		borderWidth = width;
+		borderColor = color;
+	}
 
-    try {
-      const client = getGoogleService();
-      
-      // Apply table positioning (with limitations noted)
-      const positionResponse = await client.sendMessage('tableOps', {
-        action: 'setTablePosition',
-        alignment: tableAlignment
-      }, props.onStatusUpdate);
+	function handleReset() {
+		cellAlignment = defaultState.cellAlignment;
+		scope = defaultState.scope;
+		cellPadding = defaultState.cellPadding;
+		borderWidth = defaultState.borderWidth;
+		borderColor = defaultState.borderColor;
+		backgroundColor = defaultState.backgroundColor;
+	}
 
-      // Apply cell content alignment  
-      const alignmentResponse = await client.sendMessage('tableOps', {
-        action: 'setCellAlignment',
-        scope: scope,
-        alignment: cellAlignment
-      }, props.onStatusUpdate);
+	// Main apply function
+	async function handleApply() {
+		if (isProcessing || !hasChanges) return;
 
-      // Apply cell padding
-      const paddingResponse = await client.sendMessage('tableOps', {
-        action: 'setCellPadding',
-        scope: scope,
-        padding: cellPadding
-      }, props.onStatusUpdate);
+		isProcessing = true;
+		props.onProcessingStart?.();
+		props.onStatusUpdate?.({
+			type: 'processing',
+			message: 'Applying table settings...'
+		});
 
-      // Check if all operations succeeded
-      if (!positionResponse.success || !alignmentResponse.success || !paddingResponse.success) {
-        throw new Error('Some table operations failed');
-      }
+		try {
+			const client = getGoogleService();
+			const operations = [];
 
-      props.onStatusUpdate?.({
-        type: 'success',
-        message: 'Table properties applied successfully'
-      });
+			// Apply cell content alignment if changed
+			if (cellAlignment !== defaultState.cellAlignment) {
+				const alignmentResponse = await client.sendMessage(
+					'tableOps',
+					{
+						action: 'setCellAlignment',
+						scope: scope,
+						alignment: cellAlignment
+					},
+					props.onStatusUpdate
+				);
+				operations.push({ name: 'alignment', success: alignmentResponse.success });
+			}
 
-    } catch (error) {
-      console.error('Apply error:', error);
-      props.onStatusUpdate?.({
-        type: 'error',
-        message: 'Failed to apply table properties',
-        error
-      });
-    } finally {
-      isProcessing = false;
-      props.onProcessingEnd?.();
-    }
-  }
+			// Apply cell padding if changed
+			if (cellPadding !== defaultState.cellPadding) {
+				const paddingResponse = await client.sendMessage(
+					'tableOps',
+					{
+						action: 'setCellPadding',
+						scope: scope,
+						padding: cellPadding
+					},
+					props.onStatusUpdate
+				);
+				operations.push({ name: 'padding', success: paddingResponse.success });
+			}
+
+			// Apply borders if changed
+			if (borderWidth !== defaultState.borderWidth) {
+				const borderResponse = await client.sendMessage(
+					'tableOps',
+					{
+						action: 'setBorders',
+						scope: 'table', // borders are always table-wide
+						borderWidth: borderWidth,
+						borderColor: borderColor
+					},
+					props.onStatusUpdate
+				);
+				operations.push({ name: 'borders', success: borderResponse.success });
+			}
+
+			// Apply background color if changed
+			if (backgroundColor !== defaultState.backgroundColor) {
+				const backgroundResponse = await client.sendMessage(
+					'tableOps',
+					{
+						action: 'setCellBackground',
+						scope: scope,
+						backgroundColor: backgroundColor || null
+					},
+					props.onStatusUpdate
+				);
+				operations.push({ name: 'background', success: backgroundResponse.success });
+			}
+
+			// Check if all operations succeeded
+			const failedOps = operations.filter((op) => !op.success);
+			if (failedOps.length > 0) {
+				throw new Error(`Failed operations: ${failedOps.map((op) => op.name).join(', ')}`);
+			}
+
+			props.onStatusUpdate?.({
+				type: 'success',
+				message: `Applied ${operations.length} table changes`,
+				details: changesSummary
+			});
+		} catch (error) {
+			console.error('Apply error:', error);
+			props.onStatusUpdate?.({
+				type: 'error',
+				message: 'Failed to apply table settings',
+				error
+			});
+		} finally {
+			isProcessing = false;
+			props.onProcessingEnd?.();
+		}
+	}
 </script>
 
-<div class="flex flex-col w-full gap-4">
-  <!-- Row 1: Interactive Table + Alignment Controls -->
-  <div class="grid grid-cols-2 gap-4">
-    <!-- Left: Interactive Table Preview -->
-    <div>
-      <InteractiveTable 
-        {tableAlignment} 
-        {cellAlignment}
-      />
-    </div>
-    
-    <!-- Right: Alignment Button Grid -->
-    <div>
-      <AlignmentButtonGrid
-        {tableAlignment}
-        {cellAlignment}
-        {isProcessing}
-        onAlignmentChange={handleAlignmentChange}
-      />
-    </div>
-  </div>
+<div class="flex w-full flex-col gap-3">
+	<!-- Row 1: Preview + Alignment Controls -->
+	<div class="grid grid-cols-2 gap-3">
+		<!-- Left: Interactive Table Preview -->
+		<div class="space-y-2">
+			<InteractiveTable
+				{cellAlignment}
+				{scope}
+				{borderWidth}
+				{borderColor}
+				{backgroundColor}
+				{cellPadding}
+			/>
+		</div>
 
-  <!-- Row 2: Scope Selector + Controls -->
-  <div class="space-y-3">
-    <!-- Scope Toggle -->
-    <div class="flex items-center justify-center">
-      <button
-        class="flex items-center gap-2 px-3 py-1.5 text-xs border border-border rounded-md hover:bg-accent transition-colors"
-        onclick={toggleScope}
-        disabled={isProcessing}
-      >
-        <span class="font-medium">Apply to:</span>
-        <span class={scope === 'table' ? 'text-primary font-semibold' : 'text-muted-foreground'}>
-          {scope === 'table' ? '📋 Whole Table' : '🎯 Selected Cell'}
-        </span>
-        <span class="text-xs opacity-60">(click to toggle)</span>
-      </button>
-    </div>
+		<!-- Right: Alignment + Scope Controls -->
+		<div class="space-y-2">
+			<AlignmentButtonGrid
+				{cellAlignment}
+				{scope}
+				{isProcessing}
+				onAlignmentChange={handleAlignmentChange}
+				onScopeToggle={handleScopeToggle}
+			/>
 
-    <!-- Size Controls -->
-    <SizeControls
-      {cellPadding}
-      {isProcessing}
-      onCellPaddingChange={handlePaddingChange}
-      onApply={handleApply}
-    />
-  </div>
+			<hr>
 
+			<PaddingControls 
+				{cellPadding}
+				{isProcessing}
+				onPaddingChange={handlePaddingChange}
+			/>
+		</div>
+	</div>
+
+	<!-- Row 2: Padding Controls -->
+	<!-- <PaddingControls {cellPadding} {isProcessing} onPaddingChange={handlePaddingChange} /> -->
+
+	<!-- Row 3: Border Controls -->
+	<BorderControls {borderWidth} {borderColor} {isProcessing} onBorderChange={handleBorderChange} />
+
+	<!-- Row 4: Color Controls -->
+	<ColorControls {backgroundColor} {isProcessing} onColorChange={handleColorChange} />
+
+	<!-- Row 5: Action Buttons + Summary -->
+	<div class="flex items-center gap-2">
+		<!-- Left: Reset + Apply buttons -->
+		<div class="flex items-center gap-2">
+			<Button
+				variant="outline"
+				size="icon"
+				class="h-8 w-8"
+				onclick={handleReset}
+				disabled={isProcessing || !hasChanges}
+				title="Reset to defaults"
+			>
+				<RotateCcw class="h-3 w-3" />
+			</Button>
+
+			<Button
+				variant="default"
+				class="flex h-8 items-center gap-1.5 px-3 text-xs"
+				onclick={handleApply}
+				disabled={isProcessing || !hasChanges}
+			>
+				{#if isProcessing}
+					<Loader2 class="h-3 w-3 animate-spin" />
+					<span>Applying...</span>
+				{:else}
+					<Save class="h-3 w-3" />
+					<span>Apply</span>
+				{/if}
+			</Button>
+		</div>
+
+		<!-- Right: Changes Summary -->
+		<!-- <div class="flex-1 text-right">
+      <div class="text-[0.6rem] text-muted-foreground">
+        {changesSummary}
+      </div>
+      {#if scope === 'cell'}
+        <div class="text-[0.55rem] text-muted-foreground/70">
+          to selected cell
+        </div>
+      {/if}
+    </div> -->
+	</div>
 </div>

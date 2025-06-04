@@ -1,100 +1,70 @@
 <!-- src/lib/features/addon/features/table/SizeControls.svelte -->
-
 <script lang="ts">
-  import { Button } from "$lib/components/ui/button";
-  import { Loader2, Save } from "@lucide/svelte";
-
-  // Props - updated for points instead of inches
+  // Props - focused on padding with full row layout
   const props = $props<{
-    cellPadding: number; // Now in points
+    cellPadding: number; // in points
     isProcessing: boolean;
-    onCellPaddingChange: (inches: number) => void; // Still takes inches, converts internally
-    onApply: () => void;
+    onCellPaddingChange: (inches: number) => void;
   }>();
-
-  // Input and label styles using shadcn colors
-  const inputClass = "w-15 h-8 px-1 text-center text-xs border border-input rounded-md bg-background";
-  const labelClass = "text-[0.6em] font-medium text-muted-foreground";
 
   // Convert points back to inches for display
   function pointsToInches(points: number): number {
-    return Math.round((points / 72) * 100) / 100; // Round to 2 decimal places
+    return Math.round((points / 72) * 100) / 100;
   }
 
   // Current padding in inches for display
   let paddingInches = $derived(pointsToInches(props.cellPadding));
 
-  // Quick preset buttons (in inches, converted to points)
+  // Quick preset buttons (in inches, will be converted to points)
   const presets = [
-    { label: "None", inches: 0 },
-    { label: "Small", inches: 0.07 }, // ~5pt
-    { label: "Medium", inches: 0.14 }, // ~10pt  
-    { label: "Large", inches: 0.28 }   // ~20pt
+    { label: "0pt", inches: 0, points: 0 },
+    { label: "5pt", inches: 0.07, points: 5 },
+    { label: "10pt", inches: 0.14, points: 10 },
+    { label: "20pt", inches: 0.28, points: 20 }
   ];
+
+  // Check if current padding matches a preset
+  function isPresetSelected(presetPoints: number) {
+    return Math.abs(props.cellPadding - presetPoints) < 1; // Allow 1pt tolerance
+  }
 </script>
 
-<!-- Follow same 2-column layout as above -->
-<div class="grid grid-cols-2 gap-4">
-  <!-- Left: Cell Padding Control -->
-  <div class="space-y-1.5">
-    <h3 class={labelClass}>
-      Cell Padding
-    </h3>
-    <div class="space-y-2">
-      <!-- Input field -->
-      <div class="flex items-center gap-2">
-        <input 
-          type="number" 
-          step="0.01" 
-          min="0" 
-          max="1"
-          value={paddingInches}
-          onchange={(e) => props.onCellPaddingChange(parseFloat(e.target.value) || 0)}
-          class={inputClass}
-          disabled={props.isProcessing}
-        />
-        <span class="text-xs text-muted-foreground">in</span>
-      </div>
-      
-      <!-- Preset buttons -->
-      <div class="grid grid-cols-2 gap-1">
-        {#each presets as preset}
-          <button
-            class="px-2 py-1 text-[0.6rem] border border-border rounded hover:bg-accent transition-colors disabled:opacity-50"
-            onclick={() => props.onCellPaddingChange(preset.inches)}
-            disabled={props.isProcessing}
-            title={`${preset.inches}" (${Math.round(preset.inches * 72)}pt)`}
-          >
-            {preset.label}
-          </button>
-        {/each}
-      </div>
-    </div>
-  </div>
-
-  <!-- Right: Apply Button -->
-  <div class="space-y-1.5">
-    <h3 class={labelClass}>
-      Apply to table at cursor
-    </h3>
-    <Button 
-      variant="default" 
-      class="w-full h-8 text-xs flex items-center justify-center gap-2"
-      onclick={props.onApply}
+<!-- Full row layout - efficient use of 300px width -->
+<div class="flex items-center gap-3">
+  <!-- Label -->
+  <h3 class="text-[0.6em] font-medium text-muted-foreground whitespace-nowrap flex-shrink-0">
+    Padding
+  </h3>
+  
+  <!-- Input field with unit -->
+  <div class="flex items-center gap-1 flex-shrink-0">
+    <input 
+      type="number" 
+      step="0.01" 
+      min="0" 
+      max="1"
+      value={paddingInches}
+      onchange={(e) => props.onCellPaddingChange(parseFloat(e.target.value) || 0)}
+      class="w-12 h-6 px-1 text-center text-xs border border-input rounded bg-background disabled:opacity-50"
       disabled={props.isProcessing}
-    >
-      {#if props.isProcessing}
-        <Loader2 class="h-3 w-3 animate-spin" />
-        <span>Applying...</span>
-      {:else}
-        <Save class="h-3 w-3" />
-        <span>Apply</span>
-      {/if}
-    </Button>
-    
-    <!-- Current values display -->
-    <div class="text-[0.6rem] text-muted-foreground text-center space-y-0.5">
-      <div>Padding: {paddingInches}" ({props.cellPadding}pt)</div>
-    </div>
+    />
+    <span class="text-[0.6rem] text-muted-foreground">in</span>
+  </div>
+  
+  <!-- Preset buttons - 4 options that should fit -->
+  <div class="flex gap-1 ml-auto">
+    {#each presets as preset}
+      <button
+        class="px-1.5 py-1 text-[0.6rem] border rounded transition-colors disabled:opacity-50 min-w-[28px] text-center
+               {isPresetSelected(preset.points) 
+                 ? 'border-primary bg-primary/10 text-primary' 
+                 : 'border-border hover:bg-accent'}"
+        onclick={() => props.onCellPaddingChange(preset.inches)}
+        disabled={props.isProcessing}
+        title={`${preset.inches}" (${preset.points}pt)`}
+      >
+        {preset.label}
+      </button>
+    {/each}
   </div>
 </div>
