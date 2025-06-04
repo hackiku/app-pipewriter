@@ -1,49 +1,27 @@
 // src/lib/services/google/table.ts
 import { getGoogleService } from './client';
 import type { StatusCallback } from './client';
-import type { ApiResponse } from '$lib/data/addon/types';
-
-/**
- * Apply table horizontal alignment (table position in document)
- */
-export async function setTableAlignment(
-	alignment: 'left' | 'center' | 'right',
-	onStatus?: StatusCallback
-): Promise<ApiResponse> {
-	try {
-		const client = getGoogleService();
-
-		if (!client) {
-			throw new Error('Google Apps Service is not available');
-		}
-
-		return client.sendMessage('tableOps', {
-			action: 'tableAlignHorizontal',
-			payload: { alignment }
-		}, onStatus);
-	} catch (error) {
-		console.error('Error in setTableAlignment:', error);
-		throw error;
-	}
-}
+// TODO separate response types
+import type { ApiResponse } from '$lib/types/elements';
 
 /**
  * Apply cell vertical alignment (content position within cells)
  */
 export async function setCellAlignment(
 	alignment: 'top' | 'middle' | 'bottom',
+	scope: 'cell' | 'table',
 	onStatus?: StatusCallback
 ): Promise<ApiResponse> {
 	try {
 		const client = getGoogleService();
-
 		if (!client) {
 			throw new Error('Google Apps Service is not available');
 		}
 
 		return client.sendMessage('tableOps', {
-			action: 'tableAlignVertical',
-			payload: { alignment }
+			action: 'setCellAlignment',
+			scope,
+			alignment
 		}, onStatus);
 	} catch (error) {
 		console.error('Error in setCellAlignment:', error);
@@ -52,54 +30,98 @@ export async function setCellAlignment(
 }
 
 /**
- * Apply table size properties
+ * Apply cell padding
  */
-export async function setTableProperties(
-	properties: {
-		columns?: number;
-		rows?: number;
-		columnWidth?: number;
-		rowHeight?: number;
-		cellPadding?: number;
-	},
+export async function setCellPadding(
+	padding: number,
+	scope: 'cell' | 'table',
 	onStatus?: StatusCallback
 ): Promise<ApiResponse> {
 	try {
 		const client = getGoogleService();
-
 		if (!client) {
 			throw new Error('Google Apps Service is not available');
 		}
 
 		return client.sendMessage('tableOps', {
-			action: 'tableSetProperties',
-			payload: properties
+			action: 'setCellPadding',
+			scope,
+			padding
 		}, onStatus);
 	} catch (error) {
-		console.error('Error in setTableProperties:', error);
+		console.error('Error in setCellPadding:', error);
 		throw error;
 	}
 }
 
 /**
- * Get current table properties
+ * Apply table borders (table-wide only)
  */
-export async function getTableProperties(
+export async function setTableBorders(
+	borderWidth: number,
+	borderColor?: string,
 	onStatus?: StatusCallback
 ): Promise<ApiResponse> {
 	try {
 		const client = getGoogleService();
-
 		if (!client) {
 			throw new Error('Google Apps Service is not available');
 		}
 
 		return client.sendMessage('tableOps', {
-			action: 'tableGetProperties',
-			payload: {}
+			action: 'setBorders',
+			scope: 'table',
+			borderWidth,
+			borderColor: borderColor || '#000000'
 		}, onStatus);
 	} catch (error) {
-		console.error('Error in getTableProperties:', error);
+		console.error('Error in setTableBorders:', error);
+		throw error;
+	}
+}
+
+/**
+ * Apply cell background color
+ */
+export async function setCellBackground(
+	backgroundColor: string,
+	scope: 'cell' | 'table',
+	onStatus?: StatusCallback
+): Promise<ApiResponse> {
+	try {
+		const client = getGoogleService();
+		if (!client) {
+			throw new Error('Google Apps Service is not available');
+		}
+
+		return client.sendMessage('tableOps', {
+			action: 'setCellBackground',
+			scope,
+			backgroundColor
+		}, onStatus);
+	} catch (error) {
+		console.error('Error in setCellBackground:', error);
+		throw error;
+	}
+}
+
+/**
+ * Select whole table
+ */
+export async function selectWholeTable(
+	onStatus?: StatusCallback
+): Promise<ApiResponse> {
+	try {
+		const client = getGoogleService();
+		if (!client) {
+			throw new Error('Google Apps Service is not available');
+		}
+
+		return client.sendMessage('tableOps', {
+			action: 'selectWholeTable'
+		}, onStatus);
+	} catch (error) {
+		console.error('Error in selectWholeTable:', error);
 		throw error;
 	}
 }
