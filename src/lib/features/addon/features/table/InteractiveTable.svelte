@@ -76,19 +76,19 @@
     return `${baseClasses} self-center justify-self-start flex-shrink-0`;
   }
 
-  // Fixed 2x2 table for compact view but TALLER cells for better alignment visibility
+  // Fixed 2x2 table for compact view - SHORTER cells for better fit
   const rows = 2;
   const cols = 2;
   const totalCells = rows * cols;
 </script>
 
-<!-- ENHANCED: Taller cells for better alignment visibility -->
+<!-- FIXED: Shorter cells for better layout balance -->
 <div class="flex justify-center">
   <div 
-    class="border rounded-sm shadow-sm {getBorderStyle()}"
+    class="rounded-sm shadow-sm {getBorderStyle()}"
     style="{getBorderColor()} {props.backgroundColor && props.scope === 'table' ? `background-color: ${props.backgroundColor};` : 'background-color: white;'}"
   >
-    <!-- Dynamic grid with TALLER cells -->
+    <!-- Dynamic grid with SHORTER cells for layout balance -->
     <div 
       class="grid"
       style="grid-template-columns: repeat({cols}, minmax(0, 1fr));"
@@ -99,14 +99,14 @@
         
         <div 
           class={cn(
-            // ENHANCED: Taller cells (min-h-16 instead of min-h-12) and all borders dashed when no border
-            "min-w-16 min-h-16 flex transition-all duration-200 relative",
-            props.borderWidth === 0 ? "border border-dashed border-neutral-300 dark:border-neutral-600" : "border border-neutral-300 dark:border-neutral-600",
+            // FIXED: Shorter cells (min-h-12) and NO DOUBLE BORDERS
+            "min-w-14 min-h-12 flex transition-all duration-200 relative",
+            props.borderWidth === 0 ? "border-dashed border-neutral-300 dark:border-neutral-600" : "border-solid border-neutral-300 dark:border-neutral-600",
             getCellAlignClass(),
             getBackgroundColor(index),
             isCellHighlighted(index) && "ring-2 ring-primary/50 ring-inset"
           )}
-          style="padding: {getCellPadding()}; {props.backgroundColor && ((props.scope === 'table') || (props.scope === 'cell' && index === 0)) ? `background-color: ${props.backgroundColor};` : ''}"
+          style="padding: {getCellPadding()}; border-width: {props.borderWidth === 0 ? '1px' : props.borderWidth + 'px'}; {getBorderColor()} {props.backgroundColor && ((props.scope === 'table') || (props.scope === 'cell' && index === 0)) ? `background-color: ${props.backgroundColor};` : ''}"
         >
           <!-- ENHANCED: Cell content that moves based on alignment -->
           <div class={getContentClass(index)}></div>

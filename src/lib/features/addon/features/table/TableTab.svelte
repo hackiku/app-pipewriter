@@ -92,7 +92,7 @@
 		backgroundColor = defaultState.backgroundColor;
 	}
 
-	// ENHANCED: Main apply function with proper Google service integration
+	// FIXED: Main apply function with proper parameter validation
 	async function handleApply() {
 		if (isProcessing || !hasChanges) return;
 
@@ -107,8 +107,9 @@
 			const client = getGoogleService();
 			const operations = [];
 
-			// Apply cell content alignment if changed
+			// FIXED: Apply cell content alignment if changed
 			if (cellAlignment !== defaultState.cellAlignment) {
+				console.log('Sending alignment:', { action: 'setCellAlignment', scope, alignment: cellAlignment });
 				const alignmentResponse = await client.sendMessage(
 					'tableOps',
 					{
@@ -121,50 +122,72 @@
 				operations.push({ name: 'alignment', success: alignmentResponse.success });
 			}
 
-			// Apply cell padding if changed
+			// FIXED: Apply cell padding if changed - ONLY IF ACTUALLY DIFFERENT
 			if (cellPadding !== defaultState.cellPadding) {
-				const paddingResponse = await client.sendMessage(
-					'tableOps',
-					{
-						action: 'setCellPadding',
-						scope: scope,
-						padding: cellPadding
-					},
-					props.onStatusUpdate
-				);
-				operations.push({ name: 'padding', success: paddingResponse.success });
+				const paddingValue = Number(cellPadding); // Ensure it's a number
+				if (!isNaN(paddingValue) && paddingValue >= 0) { // Only send if valid
+					console.log('Sending padding:', { action: 'setCellPadding', scope, padding: paddingValue });
+					const paddingResponse = await client.sendMessage(
+						'tableOps',
+						{
+							action: 'setCellPadding',
+							scope: scope,
+							padding: paddingValue
+						},
+						props.onStatusUpdate
+					);
+					operations.push({ name: 'padding', success: paddingResponse.success });
+				}
 			}
 
-			// Apply borders if changed (always table-wide)
+			// FIXED: Apply borders if changed - ONLY IF ACTUALLY DIFFERENT  
 			if (borderWidth !== defaultState.borderWidth) {
-				const borderResponse = await client.sendMessage(
-					'tableOps',
-					{
-						action: 'setBorders',
-						scope: 'table', // borders are always table-wide per Google Apps Script
-						borderWidth: borderWidth,
-						borderColor: borderColor
-					},
-					props.onStatusUpdate
-				);
-				operations.push({ name: 'borders', success: borderResponse.success });
+				const borderWidthValue = Number(borderWidth);
+				if (!isNaN(borderWidthValue) && borderWidthValue >= 0) { // Only send if valid
+					const borderColorValue = borderColor || '#000000';
+					console.log('Sending borders:', { action: 'setBorders', scope: 'table', borderWidth: borderWidthValue, borderColor: borderColorValue });
+					const borderResponse = await client.sendMessage(
+						'tableOps',
+						{
+							action: 'setBorders',
+							scope: 'table', // borders are always table-wide per Google Apps Script
+							borderWidth: borderWidthValue,
+							borderColor: borderColorValue
+						},
+						props.onStatusUpdate
+					);
+					operations.push({ name: 'borders', success: borderResponse.success });
+				}
 			}
 
-			// Apply background color if changed
+			// FIXED: Apply background color if changed - ONLY SEND IF NOT EMPTY
 			if (backgroundColor !== defaultState.backgroundColor) {
-				const backgroundResponse = await client.sendMessage(
-					'tableOps',
-					{
-						action: 'setCellBackground',
-						scope: scope,
-						backgroundColor: backgroundColor || null
-					},
-					props.onStatusUpdate
-				);
-				operations.push({ name: 'background', success: backgroundResponse.success });
+				// Only send background change if there's actually a color (don't send empty string)
+				if (backgroundColor) {
+					console.log('Sending background:', { action: 'setCellBackground', scope, backgroundColor });
+					const backgroundResponse = await client.sendMessage(
+						'tableOps',
+						{
+							action: 'setCellBackground',
+							scope: scope,
+							backgroundColor: backgroundColor
+						},
+						props.onStatusUpdate
+					);
+					operations.push({ name: 'background', success: backgroundResponse.success });
+				}
 			}
 
 			// Check if all operations succeeded
+			if (operations.length === 0) {
+				props.onStatusUpdate?.({
+					type: 'success',
+					message: 'No valid changes to apply',
+					details: 'All values are at their defaults or invalid'
+				});
+				return;
+			}
+
 			const failedOps = operations.filter((op) => !op.success);
 			if (failedOps.length > 0) {
 				throw new Error(`Failed operations: ${failedOps.map((op) => op.name).join(', ')}`);

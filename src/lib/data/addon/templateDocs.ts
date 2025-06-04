@@ -7,28 +7,23 @@ export interface DocLink {
 	// type: string = 'drive'; // 
 }
 
-export const DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1k3ZaPn-J_xHSUV0YrpyvAvNuD-uFsuu_";
+export const DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/0APK23drQdIekUk9PVA";
 
 export const docLinks: DocLink[] = [
 	{
-		title: "tableOps",
-		desc: "Scripty thingy",
-		url: "https://docs.google.com/document/d/1tTGB_CkcwggSImc6NsoBga-TKsJXxR3NPwx_7NzWrx8/edit?tab=t.0#heading=h.4zw3ivdqe6q4"
-	},
-	{
-		title: "Blank",
+		title: "Blank (old)",
 		desc: "Start with a blank document",
 		url: "https://docs.google.com/document/d/1w8qegZlVeY9Lk7MKTu2WhYBrmEjAYvx1yHxPsEIWEDo/"
 	},
 	{
 		title: "Elements",
 		desc: "All design elements",
-		url: "https://docs.google.com/document/d/1J47oXlR-oRwmiRy7wUBlZGzt6mr5rXo_FBuXvtk5854/"
+		url: "https://docs.google.com/document/d/1hjIdUjCRPGLFJhK6NNmV24zxZxGivWOQX959aUPfXR0"
 	},
 	{
 		title: "Dark Mode",
 		desc: "Dark theme template",
-		url: "https://docs.google.com/document/d/1auVORPLHk1I5JPn4FAh3nYvBSoDHvWT0eCB8TsYm524/"
+		url: "https://docs.google.com/document/d/1MBSDZ7EDJ4JBenwoUnna5dbbXr7oCAOv1__m8LVJfSA"
 	},
 	// {
 	// 	title: "Master docs drive",
