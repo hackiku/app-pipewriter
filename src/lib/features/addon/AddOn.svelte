@@ -117,7 +117,8 @@
 	</section>
 	<hr />
 
-	<div class="flex-1 overflow-hidden">
+	<!-- FIXED: Isolated stacking context for resizable area -->
+	<div class="flex-1 overflow-hidden resizable-container">
 		<Resizable.PaneGroup direction="vertical" class="h-full">
 			<Resizable.Pane defaultSize={55} minSize={30} maxSize={80}>
 				<!-- Dropper with server data -->
@@ -188,11 +189,34 @@
 </main>
 
 <style>
-	:global(.resizable-handle) {
+	/* FIXED: Create isolated stacking context for resizable area */
+	.resizable-container {
+		/* Create new stacking context - isolates z-index within this container */
+		isolation: isolate;
+		position: relative;
+		z-index: 0;
+	}
+
+	/* FIXED: Constrain resizable handle z-index to local context */
+	:global(.resizable-container .resizable-handle) {
+		/* Keep it above resizable content but below global UI */
+		z-index: 10 !important;
+		/* Remove global positioning conflicts */
 		margin-bottom: 4rem;
 	}
 
+	/* Ensure resizable panes stay in local context */
+	:global(.resizable-container [data-panel]) {
+		z-index: 1;
+	}
+
+	/* Keep existing firebase warning hidden */
 	:global(.firebase-emulator-warning) {
 		display: none !important;
 	}
+
+	/* Optional: Debug stacking context boundaries in dev */
+	/* .resizable-container {
+		border: 1px dashed rgba(255, 0, 0, 0.2);
+	} */
 </style>

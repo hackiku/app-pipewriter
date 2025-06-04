@@ -170,7 +170,7 @@
 								<!-- Remove Button -->
 								<button
 									class="absolute right-0.5 top-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground
-									       hover:bg-destructive/90 transition-colors z-20 __shadow-sm flex items-center justify-center
+									       hover:bg-destructive/90 transition-colors ___z-20 __shadow-sm flex items-center justify-center
 									       disabled:pointer-events-none disabled:opacity-50"
 									onclick={(e) => handleRemove(element.id, e)}
 									disabled={props.isProcessing}
