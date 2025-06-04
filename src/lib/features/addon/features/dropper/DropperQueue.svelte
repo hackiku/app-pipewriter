@@ -135,11 +135,11 @@
 	<!-- Queue Content with matching scrollbar style -->
 	<div class="flex-1 p-3 space-y-3">
 		<!-- Draggable Pad Container -->
-		<div class="flex-1 rounded-2xl border-2 border-dashed border-muted bg-muted/20 p-3">
+		<div class="flex-1 rounded-2xl border border-dashed border-foreground/20 bg-muted/20 p-3">
 			{#if props.queuedElements.length === 0}
 				<!-- Empty State -->
 				<div class="flex h-full items-center justify-center text-center">
-					<p class="text-sm text-muted-foreground">No elements queued</p>
+					<p class="text-[0.75em] text-muted-foreground">No elements queued</p>
 				</div>
 			{:else if loading}
 				<!-- Loading State -->
@@ -170,7 +170,7 @@
 								<!-- Remove Button -->
 								<button
 									class="absolute right-0.5 top-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground
-									       hover:bg-destructive/90 transition-colors z-20 shadow-sm flex items-center justify-center
+									       hover:bg-destructive/90 transition-colors z-20 __shadow-sm flex items-center justify-center
 									       disabled:pointer-events-none disabled:opacity-50"
 									onclick={(e) => handleRemove(element.id, e)}
 									disabled={props.isProcessing}
@@ -186,7 +186,7 @@
 									</p>
 									<!-- Theme indicator dot - shows frozen theme -->
 									<div 
-										class="w-1 h-1 rounded-full {element.frozenTheme === 'dark' ? 'bg-foreground' : 'bg-foreground/30'}"
+										class="w-1.5 h-1.5 rounded-full {element.frozenTheme === 'dark' ? 'bg-foreground' : 'border border-foreground/30'}"
 										title="{element.frozenTheme} theme (frozen)"
 									></div>
 								</div>
@@ -219,14 +219,13 @@
 
 	:global(.queue-chosen) {
 		transform: scale(1.02);
-		box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+
 		z-index: 1000;
 	}
 
 	:global(.queue-drag) {
 		transform: rotate(2deg) scale(1.05);
 		z-index: 1001;
-		box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
 	}
 
 	:global(.queue-fallback) {
@@ -246,7 +245,7 @@
 	/* Hover effects */
 	.queue-item:not(.opacity-50):hover {
 		cursor: grab;
-		transform: translateY(-1px);
+		transform: translateY(2px);
 	}
 	
 	.queue-item:not(.opacity-50):active {

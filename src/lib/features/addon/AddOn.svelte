@@ -152,11 +152,6 @@
 							onDiscardQueue={handleDiscardQueue}
 							onReorderQueue={handleReorderQueue}
 						/>
-					{:else}
-						<!-- Empty state when not in chain mode - minimal -->
-						<div class="h-full flex items-center justify-center text-muted-foreground/40">
-							<p class="text-xs">Chain mode off</p>
-						</div>
 					{/if}
 				</Resizable.Pane>
 			{/if}
