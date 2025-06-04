@@ -1,4 +1,4 @@
-<!-- src/lib/features/addon/components/StatusManager.svelte -->
+<!-- src/lib/components/ui/StatusManager.svelte -->
 <script lang="ts">
   import { fade, fly } from "svelte/transition";
   import { Loader2, ThumbsUp, AlertCircle, X, ChevronUp, ChevronDown } from "@lucide/svelte";
@@ -172,10 +172,14 @@
       <div class={getStatusStyles()}>
         <div class="h-8 px-3 flex items-center justify-between">
           <div class="flex items-center gap-2 {getIconStyles()}">
-            {@const IconComponent = getStatusIcon()}
             {#if props.status.type === 'processing'}
+              {@const IconComponent = getStatusIcon()}
               <IconComponent class="h-4 w-4 animate-spin" />
-            {:else}
+            {:else if props.status.type === 'success'}
+              {@const IconComponent = getStatusIcon()}
+              <IconComponent class="h-4 w-4" />
+            {:else if props.status.type === 'error'}
+              {@const IconComponent = getStatusIcon()}
               <IconComponent class="h-4 w-4" />
             {/if}
             <span class="text-xs font-medium">{getFormattedMessage()}</span>
