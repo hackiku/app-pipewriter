@@ -262,16 +262,6 @@
 			</Button>
 		</div>
 
-		<!-- Right: Changes Summary -->
-		<!-- <div class="flex-1 text-right">
-      <div class="text-[0.6rem] text-muted-foreground">
-        {changesSummary}
-      </div>
-      {#if scope === 'cell'}
-        <div class="text-[0.55rem] text-muted-foreground/70">
-          to selected cell
-        </div>
-      {/if}
-    </div> -->
+
 	</div>
 </div>

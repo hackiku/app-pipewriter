@@ -1,8 +1,9 @@
 <!-- src/lib/features/addon/features/table/InteractiveTable.svelte -->
 <script lang="ts">
   import { cn } from "$lib/utils";
+  import { Table, Focus } from "@lucide/svelte";
 
-  // Props - now showing actual table features
+  // Props - now showing actual table features + scope toggle
   const props = $props<{
     cellAlignment: 'top' | 'middle' | 'bottom';
     scope: 'cell' | 'table';
@@ -10,15 +11,16 @@
     borderColor: string;
     backgroundColor: string;
     cellPadding: number; // in points
+    onScopeToggle: () => void;
   }>();
 
-  // Get cell content alignment class
+  // Get cell content alignment class - hook to controls
   function getCellAlignClass() {
     switch (props.cellAlignment) {
-      case 'top': return 'items-start';
-      case 'middle': return 'items-center'; 
-      case 'bottom': return 'items-end';
-      default: return 'items-center';
+      case 'top': return 'justify-start items-start';
+      case 'middle': return 'justify-start items-center'; 
+      case 'bottom': return 'justify-start items-end';
+      default: return 'justify-start items-center';
     }
   }
 
@@ -49,11 +51,19 @@
     }
   }
 
-  // Get cell padding in pixels (approximate conversion from points)
+  // Get cell padding in pixels (smaller effect - don't let content disappear)
   function getCellPadding() {
-    // Rough conversion: 1 point ≈ 1.33 pixels
-    const paddingPx = Math.round(props.cellPadding * 1.33);
-    return `${paddingPx}px`;
+    // Smaller conversion: 1 point ≈ 0.8 pixels so 20pt doesn't make content disappear
+    const paddingPx = Math.round(props.cellPadding * 0.8);
+    return `${Math.min(paddingPx, 12)}px`; // Cap at 12px max
+  }
+
+  // Get scope toggle class
+  function getScopeToggleClass() {
+    return cn(
+      'flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs transition-colors hover:bg-accent mt-2',
+      props.scope === 'table' ? 'bg-primary/5 border-primary/30' : 'bg-muted/30'
+    );
   }
 
   // Check if cell should be highlighted (selected cell scope)
@@ -68,7 +78,7 @@
 </script>
 
 <!-- Bigger preview container for better visibility -->
-<div class="bg-neutral-100 dark:bg-neutral-800 rounded-lg p-4 border border-dashed border-neutral-400 dark:border-neutral-500">
+<!-- <div class="bg-neutral-100 dark:bg-neutral-800 rounded-lg p-4 border border-dashed border-neutral-400 dark:border-neutral-500"> -->
   <!-- Table mockup with realistic sizing -->
   <div class="flex justify-center">
     <div 
@@ -106,4 +116,19 @@
     </div>
   </div>
 
-</div>
+		<div class="flex items-center justify-center">
+		<button
+			class={getScopeToggleClass()}
+			onclick={props.onScopeToggle}
+			disabled={props.isProcessing}
+			title={`Currently applying to ${props.scope}. Click to toggle.`}
+		>
+			{#if props.scope === 'table'}
+				<Table class="h-3 w-3" />
+				<span class="font-medium text-primary">Whole Table</span>
+			{:else}
+				<Focus class="h-3 w-3" />
+				<span class="font-medium">Selected Cell</span>
+			{/if}
+		</button>
+	</div>
