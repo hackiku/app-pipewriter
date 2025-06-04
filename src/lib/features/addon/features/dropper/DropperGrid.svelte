@@ -60,7 +60,8 @@
 
         <!-- Elements Grid -->
         <div class="grid grid-cols-{props.gridColumns} gap-2">
-          {#each categoryElements as element (element.id)}
+					<!-- removed styleguide element -->
+					{#each categoryElements.filter(el => el.id !== 'styleguide') as element}
             <ElementCard
               element={element}
               onSelect={() => handleElementSelect(element.id)}

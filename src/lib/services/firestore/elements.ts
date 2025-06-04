@@ -26,7 +26,6 @@ class ElementsService {
 		'cards',
 		'blurbs',
 		'lists',
-		'special'
 	];
 
 	static getInstance(): ElementsService {
