@@ -13,6 +13,12 @@
 	import { getGoogleService } from "$lib/services/google/client";
 	import { signOut } from '$lib/services/auth';
 
+	// Enhanced interface for queue items
+	interface QueueItem {
+		id: string;
+		theme: 'light' | 'dark';
+	}
+
 	// Accept server data as prop - NO CONTEXTS
 	const { data } = $props();
 
@@ -21,16 +27,23 @@
 		throw new Error('AddOn component rendered without proper authentication');
 	}
 	
-	// Component state - simple local state, no reactive stores
+	// Component state - ENHANCED with individual queue themes
 	let zenMode = $state(false);
 	let showInfo = $state(false);
 	let googleService = $state<any>(null);
 	let dropperRef = $state<any>(null);
-	let chainModeState = $state({ 
+	let chainModeState = $state<{ 
+		chainMode: boolean; 
+		queuedElements: string[];
+		queuedItems?: QueueItem[];
+		queueCount: number;
+		theme: string;
+	}>({ 
 		chainMode: false, 
 		queuedElements: [], 
+		queuedItems: [],
 		queueCount: 0,
-		theme: 'light' // Add theme to state tracking
+		theme: 'light'
 	});
 	
 	// Google service initialization
@@ -45,11 +58,10 @@
 		}
 	});
 	
-	// Chain mode tracking - get theme from dropper
+	// Chain mode tracking - ENHANCED to get queue items with themes
 	$effect(() => {
 		if (dropperRef && typeof dropperRef.getChainModeState === 'function') {
 			const state = dropperRef.getChainModeState();
-			// Also get the current theme if available
 			const theme = dropperRef.getTheme ? dropperRef.getTheme() : 'light';
 			chainModeState = { ...state, theme };
 		}
@@ -128,10 +140,11 @@
 			{#if !zenMode}
 				<Resizable.Handle withHandle />
 				<Resizable.Pane defaultSize={35} minSize={20} maxSize={60}>
-					<!-- DropperQueue - Pass correct theme and processing state -->
+					<!-- DropperQueue - ENHANCED with individual themes -->
 					{#if chainModeState.chainMode}
 						<DropperQueue 
 							queuedElements={chainModeState.queuedElements}
+							queuedItems={chainModeState.queuedItems}
 							theme={chainModeState.theme}
 							isProcessing={false}
 							onRemoveFromQueue={handleRemoveFromQueue}

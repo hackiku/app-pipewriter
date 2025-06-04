@@ -1,4 +1,4 @@
-<!-- $lib/iframe/features/colors/ColorTab.svelte -->
+<!-- $lib/features/addon/features/colors/ColorTab.svelte -->
 <script lang="ts">
   import { slide } from "svelte/transition";
   import { Button } from "$lib/components/ui/button";

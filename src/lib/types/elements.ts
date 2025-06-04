@@ -4,6 +4,12 @@
 export type ElementTheme = 'light' | 'dark';
 export type ElementCategory = string;
 
+// NEW: Queue item with individual theme
+export interface QueueItem {
+	id: string;
+	theme: ElementTheme;
+}
+
 // Element structure
 export interface ElementContent {
 	h1?: string;
@@ -47,7 +53,6 @@ export interface ElementDefinition {
 	updatedAt: Date;
 }
 
-
 export interface ElementWithAccess extends ElementDefinition {
 	isLocked: boolean;
 	svgPath: string;
@@ -78,8 +83,6 @@ export interface StatusUpdate {
 	error?: any;
 	elementId?: string;
 }
-
-
 
 // API response interface
 export interface ApiResponse {

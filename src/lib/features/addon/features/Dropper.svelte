@@ -7,6 +7,12 @@
   import StatusSonner from "../components/StatusSonner.svelte";
   import DropperGrid from "./dropper/DropperGrid.svelte";
   import DropperBar from "./dropper/DropperBar.svelte";
+
+  // New interface for queue items with individual themes
+  interface QueueItem {
+    id: string;
+    theme: ElementTheme;
+  }
   
   // Props - server data instead of contexts
   const { 
@@ -23,9 +29,9 @@
   let elementsTheme = $state<ElementTheme>('light');
   let gridColumns = $state(3);
   
-  // Chain mode state
+  // Chain mode state - ENHANCED with individual themes
   let chainMode = $state(false);
-  let queuedElements = $state<string[]>([]);
+  let queuedElements = $state<QueueItem[]>([]);
   
   console.log("Dropper mounted with elements:", Object.keys(elements).length, "categories");
   
@@ -53,7 +59,7 @@
       return;
     }
     
-    // Normal mode - insert directly
+    // Normal mode - insert directly with current theme
     const currentTheme = elementsTheme;
     
     isProcessing = true;
@@ -101,69 +107,71 @@
     }
   }
   
-  // Chain mode functions
+  // Chain mode functions - ENHANCED with individual themes
   function handleChainToggle(elementId: string) {
-    const currentIndex = queuedElements.indexOf(elementId);
+    const currentIndex = queuedElements.findIndex(item => item.id === elementId);
     
     if (currentIndex >= 0) {
-      queuedElements = queuedElements.filter(id => id !== elementId);
+      // Remove from queue
+      queuedElements = queuedElements.filter(item => item.id !== elementId);
     } else {
-      queuedElements = [...queuedElements, elementId];
+      // Add to queue with current theme
+      queuedElements = [...queuedElements, { id: elementId, theme: elementsTheme }];
     }
-    
-    // No status messages - keep chain operations silent
   }
   
   function getChainPosition(elementId: string): number {
-    const index = queuedElements.indexOf(elementId);
+    const index = queuedElements.findIndex(item => item.id === elementId);
     return index >= 0 ? index + 1 : 0;
   }
   
-  // Queue management
+  // Queue management - ENHANCED with individual themes
   function handleAddToQueue(elementId: string) {
-    if (!queuedElements.includes(elementId)) {
-      queuedElements = [...queuedElements, elementId];
-      // No status message - just add silently
+    const exists = queuedElements.some(item => item.id === elementId);
+    if (!exists) {
+      queuedElements = [...queuedElements, { id: elementId, theme: elementsTheme }];
     }
   }
   
   function handleRemoveFromQueue(elementId: string) {
-    queuedElements = queuedElements.filter(id => id !== elementId);
-    // No status message - keep it minimal
+    queuedElements = queuedElements.filter(item => item.id !== elementId);
   }
   
   function handleReorderQueue(newOrder: string[]) {
-    queuedElements = newOrder;
-    // No status message - silent reordering
+    // Reorder while preserving themes
+    const orderedItems = newOrder.map(id => 
+      queuedElements.find(item => item.id === id)
+    ).filter(Boolean) as QueueItem[];
+    queuedElements = orderedItems;
   }
   
   async function handleApplyQueue() {
     if (queuedElements.length === 0) return;
     
-    const currentTheme = elementsTheme;
     isProcessing = true;
     
     setStatusWithTimeout({
       type: "processing",
       message: `Inserting ${queuedElements.length} elements...`,
-      details: `Processing queue in ${currentTheme} theme`
+      details: `Processing queue with individual themes`
     });
 
     try {
       for (let i = 0; i < queuedElements.length; i++) {
-        const elementId = queuedElements[i];
+        const item = queuedElements[i];
         
         setStatusWithTimeout({
           type: "processing",
           message: `Inserting element ${i + 1} of ${queuedElements.length}...`,
-          details: `Inserting ${elementId} (${currentTheme})`,
-          elementId
+          details: `Inserting ${item.id} (${item.theme})`,
+          elementId: item.id
         });
         
-        const response = await insertElement(elementId, currentTheme);
+        // ENHANCED: Use each item's individual theme
+        const response = await insertElement(item.id, item.theme);
         
         if (!response.success) {
-          throw new Error(`Failed to insert ${elementId}: ${response.error}`);
+          throw new Error(`Failed to insert ${item.id}: ${response.error}`);
         }
         
         if (i < queuedElements.length - 1) {
@@ -174,7 +182,7 @@
       setStatusWithTimeout({
         type: "success",
         message: "Queue applied successfully",
-        details: `Successfully inserted ${queuedElements.length} elements`,
+        details: `Successfully inserted ${queuedElements.length} elements with individual themes`,
         executionTime: Date.now()
       });
       
@@ -189,7 +197,6 @@
         error: {
           message: error instanceof Error ? error.message : "Unknown error",
           queue: queuedElements,
-          theme: currentTheme,
           timestamp: new Date().toISOString()
         }
       });
@@ -199,11 +206,8 @@
   }
   
   function handleDiscardQueue() {
-    const count = queuedElements.length;
     queuedElements = [];
-    chainMode = false; // Also exit chain mode
-    
-    // No status message - just silently clear
+    chainMode = false;
   }
   
   function toggleChainMode() {
@@ -212,8 +216,6 @@
     if (!chainMode && queuedElements.length > 0) {
       queuedElements = [];
     }
-    
-    // No status messages - keep it clean
   }
   
   function toggleTheme() {
@@ -224,16 +226,17 @@
     gridColumns = cols;
   }
 
-  // Export for parent component - including theme
+  // Export for parent component - ENHANCED
   export const getChainModeState = () => ({
     chainMode,
-    queuedElements,
+    queuedElements: queuedElements.map(item => item.id), // For backward compatibility
+    queuedItems: queuedElements, // New: full items with themes
     queueCount: queuedElements.length
   });
 
   export const getTheme = () => elementsTheme;
   
-  // Export queue management methods for parent using different names
+  // Export queue management methods - ENHANCED
   export const removeFromQueue = handleRemoveFromQueue;
   export const applyQueue = handleApplyQueue;  
   export const discardQueue = handleDiscardQueue;
@@ -266,7 +269,7 @@
       theme={elementsTheme}
       selectedElements={[]}
       chainMode={chainMode}
-      queuedElements={queuedElements}
+      queuedElements={queuedElements.map(item => item.id)}
       onToggleTheme={toggleTheme}
       onGridChange={updateGridColumns}
       onToggleChainMode={toggleChainMode}
