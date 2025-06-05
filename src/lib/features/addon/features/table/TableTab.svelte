@@ -92,9 +92,9 @@
 		backgroundColor = defaultState.backgroundColor;
 	}
 
-	// FIXED: Main apply function with proper parameter validation
+	// FIXED: Main apply function - ALWAYS allow applying current state
 	async function handleApply() {
-		if (isProcessing || !hasChanges) return;
+		if (isProcessing) return;
 
 		isProcessing = true;
 		props.onProcessingStart?.();
@@ -107,75 +107,66 @@
 			const client = getGoogleService();
 			const operations = [];
 
-			// FIXED: Apply cell content alignment if changed
-			if (cellAlignment !== defaultState.cellAlignment) {
-				console.log('Sending alignment:', { action: 'setCellAlignment', scope, alignment: cellAlignment });
-				const alignmentResponse = await client.sendMessage(
+			// ALWAYS apply current alignment (even if it matches default)
+			console.log('Sending alignment:', { action: 'setCellAlignment', scope, alignment: cellAlignment });
+			const alignmentResponse = await client.sendMessage(
+				'tableOps',
+				{
+					action: 'setCellAlignment',
+					scope: scope,
+					alignment: cellAlignment
+				},
+				props.onStatusUpdate
+			);
+			operations.push({ name: 'alignment', success: alignmentResponse.success });
+
+			// ALWAYS apply current padding
+			const paddingValue = Number(cellPadding);
+			if (!isNaN(paddingValue) && paddingValue >= 0) {
+				console.log('Sending padding:', { action: 'setCellPadding', scope, padding: paddingValue });
+				const paddingResponse = await client.sendMessage(
 					'tableOps',
 					{
-						action: 'setCellAlignment',
+						action: 'setCellPadding',
 						scope: scope,
-						alignment: cellAlignment
+						padding: paddingValue
 					},
 					props.onStatusUpdate
 				);
-				operations.push({ name: 'alignment', success: alignmentResponse.success });
+				operations.push({ name: 'padding', success: paddingResponse.success });
 			}
 
-			// FIXED: Apply cell padding if changed - ONLY IF ACTUALLY DIFFERENT
-			if (cellPadding !== defaultState.cellPadding) {
-				const paddingValue = Number(cellPadding); // Ensure it's a number
-				if (!isNaN(paddingValue) && paddingValue >= 0) { // Only send if valid
-					console.log('Sending padding:', { action: 'setCellPadding', scope, padding: paddingValue });
-					const paddingResponse = await client.sendMessage(
-						'tableOps',
-						{
-							action: 'setCellPadding',
-							scope: scope,
-							padding: paddingValue
-						},
-						props.onStatusUpdate
-					);
-					operations.push({ name: 'padding', success: paddingResponse.success });
-				}
+			// ALWAYS apply current borders
+			const borderWidthValue = Number(borderWidth);
+			if (!isNaN(borderWidthValue) && borderWidthValue >= 0) {
+				const borderColorValue = borderColor || '#000000';
+				console.log('Sending borders:', { action: 'setBorders', scope: 'table', borderWidth: borderWidthValue, borderColor: borderColorValue });
+				const borderResponse = await client.sendMessage(
+					'tableOps',
+					{
+						action: 'setBorders',
+						scope: 'table',
+						borderWidth: borderWidthValue,
+						borderColor: borderColorValue
+					},
+					props.onStatusUpdate
+				);
+				operations.push({ name: 'borders', success: borderResponse.success });
 			}
 
-			// FIXED: Apply borders if changed - ONLY IF ACTUALLY DIFFERENT  
-			if (borderWidth !== defaultState.borderWidth) {
-				const borderWidthValue = Number(borderWidth);
-				if (!isNaN(borderWidthValue) && borderWidthValue >= 0) { // Only send if valid
-					const borderColorValue = borderColor || '#000000';
-					console.log('Sending borders:', { action: 'setBorders', scope: 'table', borderWidth: borderWidthValue, borderColor: borderColorValue });
-					const borderResponse = await client.sendMessage(
-						'tableOps',
-						{
-							action: 'setBorders',
-							scope: 'table', // borders are always table-wide per Google Apps Script
-							borderWidth: borderWidthValue,
-							borderColor: borderColorValue
-						},
-						props.onStatusUpdate
-					);
-					operations.push({ name: 'borders', success: borderResponse.success });
-				}
-			}
-
-			// FIXED: Apply background color if changed - ONLY SEND IF NOT EMPTY
-			if (backgroundColor !== defaultState.backgroundColor) {
-				// Only send background change if there's actually a color (don't send empty string)
-				if (backgroundColor) {
-					console.log('Sending background:', { action: 'setCellBackground', scope, backgroundColor });
-					const backgroundResponse = await client.sendMessage(
-						'tableOps',
-						{
-							action: 'setCellBackground',
-							scope: scope,
-							backgroundColor: backgroundColor
-						},
-						props.onStatusUpdate
-					);
-					operations.push({ name: 'background', success: backgroundResponse.success });
-				}
+			// ALWAYS apply current background (if specified)
+			if (backgroundColor) {
+				console.log('Sending background:', { action: 'setCellBackground', scope, backgroundColor });
+				const backgroundResponse = await client.sendMessage(
+					'tableOps',
+					{
+						action: 'setCellBackground',
+						scope: scope,
+						backgroundColor: backgroundColor
+					},
+					props.onStatusUpdate
+				);
+				operations.push({ name: 'background', success: backgroundResponse.success });
 			}
 
 			// Check if all operations succeeded
@@ -195,8 +186,8 @@
 
 			props.onStatusUpdate?.({
 				type: 'success',
-				message: `Applied ${operations.length} table changes`,
-				details: changesSummary
+				message: `Applied ${operations.length} table settings`,
+				details: `Applied current UI state to table`
 			});
 		} catch (error) {
 			console.error('Apply error:', error);
@@ -303,7 +294,7 @@
 			variant="default"
 			class="flex h-8 items-center gap-1.5 px-3 text-xs"
 			onclick={handleApply}
-			disabled={isProcessing || !hasChanges}
+			disabled={isProcessing}
 		>
 			{#if isProcessing}
 				<Loader2 class="h-3 w-3 animate-spin" />
