@@ -261,7 +261,7 @@
           <Tabs.Content value={category.id} class="h-full">
             {@const { row1, row2 } = getTabColors(category.id)}
             
-            <div class="gap-4 h-full flex flex-col">
+            <div class="gap-2 h-full flex flex-col">
               <!-- Row 1 -->
               <div class="grid grid-cols-5 gap-2">
                 {#each row1 as preset}
@@ -343,15 +343,17 @@
               bind:value={hexInputValue}
               onkeydown={handleHexSubmit}
               onblur={handleHexBlur}
-              autofocus
             />
           {:else}
-            <span 
-              class="hex-input font-mono text-xs tracking-wider uppercase truncate cursor-text"
+            <span
+              role="button"
+							tabindex="0"
+              class="hex-input font-mono text-xs tracking-wider uppercase truncate cursor-text w-full text-left"
               onclick={handleHexEdit}
+              onkeydown={(e) => e.key === 'Enter' && handleHexEdit()}
             >
               {currentColor}
-            </span>
+						</span>
           {/if}
           
           <!-- Copy button -->
