@@ -49,69 +49,65 @@
     }
   }
 
-  // Get cell padding in pixels - ENHANCED to maintain visibility at all levels
+  // Get cell padding - SIMPLE: just real padding, no scaling
   function getCellPadding() {
-    // Better conversion that maintains content visibility
-    const paddingPx = Math.round(props.cellPadding * 0.6);
-    return `${Math.min(paddingPx, 8)}px`; // Cap at 8px for UI
+    return `${props.cellPadding}px`; // Direct padding, no math
   }
 
-  // Check if cell should be highlighted (selected cell scope)
+  // Check if cell should be highlighted (selected cell scope)  
   function isCellHighlighted(cellIndex: number) {
     return props.scope === 'cell' && cellIndex === 0;
   }
 
-  // ENHANCED: Get cell content positioning based on alignment and padding
-  function getContentClass(cellIndex: number) {
-    const baseClasses = "w-6 h-2 bg-neutral-400 dark:bg-neutral-500 rounded transition-all duration-200";
-    
-    // Show alignment effect on all cells or just selected cell
-    const shouldShowAlignment = props.scope === 'table' || (props.scope === 'cell' && cellIndex === 0);
-    
-    if (shouldShowAlignment) {
-      return `${baseClasses} flex-shrink-0`;
+  // Get cell opacity - dim non-selected cells when in cell mode
+  function getCellOpacity(cellIndex: number) {
+    if (props.scope === 'cell' && cellIndex !== 0) {
+      return 'opacity-30';
     }
-    
-    // Default centered positioning for non-affected cells
-    return `${baseClasses} self-center justify-self-start flex-shrink-0`;
+    return 'opacity-100';
   }
 
-  // Fixed 2x2 table for compact view - TALLER cells for better alignment
+  // SIMPLE: Fixed content size, just moves with padding
+  function getContentClass() {
+    return {
+      class: 'w-6 h-2 bg-neutral-400 dark:bg-neutral-500 rounded transition-all duration-200 flex-shrink-0',
+      style: '' // No dynamic sizing
+    };
+  }
+
+  // Fixed 2x2 table for compact view
   const rows = 2;
   const cols = 2;
   const totalCells = rows * cols;
 </script>
 
-<!-- ENHANCED: Taller table to help with alignment -->
-<div class="flex justify-center h-full items-center">
+<!-- Table container - stretches to fill height -->
+<div class="flex justify-center h-full items-stretch">
   <div 
-    class="rounded-sm shadow-sm {getBorderStyle()}"
+    class="flex-1 max-w-32 {getBorderStyle()}"
     style="{getBorderColor()} {props.backgroundColor && props.scope === 'table' ? `background-color: ${props.backgroundColor};` : 'background-color: white;'}"
   >
-    <!-- Dynamic grid with TALLER cells for better alignment -->
-    <div 
-      class="grid"
-      style="grid-template-columns: repeat({cols}, minmax(0, 1fr));"
-    >
+    <!-- Grid with all borders - cells stretch vertically -->
+    <div class="grid grid-cols-2 grid-rows-2 h-full">
       {#each Array(totalCells) as _, index}
-        {@const row = Math.floor(index / cols)}
-        {@const col = index % cols}
+        {@const contentInfo = getContentClass()}
         
         <div 
           class={cn(
-            // ENHANCED: Taller cells (min-h-16) for better visual balance
-            "min-w-16 min-h-16 flex transition-all duration-200 relative",
+            // Remove min-height, let cells stretch to fill
+            "min-w-16 flex transition-all duration-200 relative overflow-hidden",
             props.borderWidth === 0 ? "border-dashed border-neutral-300 dark:border-neutral-600" : "border-solid border-neutral-300 dark:border-neutral-600",
             getCellAlignClass(),
             getBackgroundColor(index),
-            isCellHighlighted(index) && "ring-2 ring-primary/50 ring-inset"
+            getCellOpacity(index)
+            // REMOVED: ring when highlighted - no gray border!
           )}
           style="padding: {getCellPadding()}; border-width: {props.borderWidth === 0 ? '1px' : props.borderWidth + 'px'}; {getBorderColor()} {props.backgroundColor && ((props.scope === 'table') || (props.scope === 'cell' && index === 0)) ? `background-color: ${props.backgroundColor};` : ''}"
         >
-          <!-- ENHANCED: Cell content that moves based on alignment -->
-          <div class={getContentClass(index)}></div>
+          <!-- Simple content that moves with padding -->
+          <div class={contentInfo.class} style={contentInfo.style}></div>
           
-          <!-- Cell selection indicator -->
+          <!-- Just a small indicator, no ring -->
           {#if isCellHighlighted(index)}
             <div class="absolute -top-1 -left-1 w-2 h-2 bg-primary rounded-full"></div>
           {/if}

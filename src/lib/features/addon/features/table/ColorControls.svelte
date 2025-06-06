@@ -1,7 +1,10 @@
 <!-- src/lib/features/addon/features/table/ColorControls.svelte -->
 <script lang="ts">
   import { cn } from "$lib/utils";
-  import { X, ChevronDown, Copy, Check } from "@lucide/svelte";
+  import XIcon from "@lucide/svelte/icons/x";
+  import ChevronDownIcon from "@lucide/svelte/icons/chevron-down";
+  import CopyIcon from "@lucide/svelte/icons/copy";
+  import CheckIcon from "@lucide/svelte/icons/check";
   import { Button } from "$lib/components/ui/button";
   import { fade } from "svelte/transition";
   import ColorPicker from "../colors/ColorPicker.svelte";
@@ -17,14 +20,15 @@
   let showColorPicker = $state(false);
   let copySuccess = $state(false);
 
-  // Quick color presets
+  // Quick color presets - 7 colors + clear button = 8 total
   const colorPresets = [
+    { color: '#ffffff', label: 'White' },
     { color: '#f3f3f3', label: 'Light Gray' },
     { color: '#e0e0e0', label: 'Gray' },
     { color: '#e3f2fd', label: 'Light Blue' },
     { color: '#e8f5e8', label: 'Light Green' },
     { color: '#fff9c4', label: 'Light Yellow' },
-    { color: '#ffffff', label: 'White' }
+    { color: '#333333', label: 'Dark Gray' }
   ];
 
   // Get button class for color swatches
@@ -92,7 +96,7 @@
   }
 </script>
 
-<div class="relative space-y-2">
+<div class="relative">
   <!-- Color Picker Overlay - positioned above entire control -->
   {#if showColorPicker}
     <div
@@ -107,7 +111,7 @@
           class="h-6 w-6"
           onclick={toggleColorPicker}
         >
-          <ChevronDown class="h-3 w-3" />
+          <ChevronDownIcon class="h-3 w-3" />
         </Button>
       </div>
       
@@ -118,88 +122,111 @@
     </div>
   {/if}
 
-  <!-- Row 1: Background label and color picker button -->
-  <div class="flex items-center justify-between">
-    <h3 class="text-[0.6em] font-medium text-muted-foreground whitespace-nowrap">
-      Background
-    </h3>
+  <!-- 2 Column Layout -->
+  <div class="grid grid-cols-2 gap-3 h-full">
     
-    <!-- Color picker button -->
-    <button
-      class="flex items-center rounded-lg overflow-hidden border border-border bg-card text-sm shadow-sm transition-all duration-200 hover:bg-accent disabled:opacity-50 group h-6"
-      onclick={(e) => {
-        // Only open picker if clicking outside copy button
-        if (!e.target.closest('.copy-button')) {
-          toggleColorPicker();
-        }
-      }}
-      disabled={props.isProcessing}
-    >
-      <!-- Color preview -->
-      <div class="h-5 ml-[1px] aspect-square relative">
-        <div
-          class="absolute inset-0.5 border border-black/5 rounded-sm"
-          style="background-color: {getDisplayColor()};"
-        ></div>
+    <!-- LEFT: Background Label + Color Picker -->
+    <div class="flex flex-col justify-between gap-2 h-full">
+      <h3 class="text-[0.6em] font-medium text-muted-foreground whitespace-nowrap">
+        Background color
+      </h3>
+      
+      <!-- Color picker button -->
+      <button
+        class="flex items-center rounded-lg overflow-hidden border border-border bg-card text-sm shadow-sm transition-all duration-200 hover:bg-accent disabled:opacity-50 group h-8"
+        onclick={(e) => {
+          // Only open picker if clicking outside copy button
+          if (!e.target.closest('.copy-button')) {
+            toggleColorPicker();
+          }
+        }}
+        disabled={props.isProcessing}
+      >
+        <!-- Color preview -->
+        <div class="h-6 ml-[1px] aspect-square relative">
+          <div
+            class="absolute inset-0.5 border border-black/5 rounded-sm"
+            style="background-color: {getDisplayColor()};"
+          ></div>
+        </div>
+        
+        <!-- Color value and copy button -->
+        <div class="relative px-2 flex items-center justify-between min-w-0 flex-1">
+          <span class="font-mono text-xs tracking-wider uppercase truncate">
+            {stripAlpha(getDisplayColor())}
+          </span>
+          
+          {#if props.backgroundColor}
+            <!-- Copy button -->
+            <Button
+              variant="ghost"
+              size="icon"
+              class="copy-button h-4 w-4 -mr-1 p-0 hover:bg-background/80 ml-1"
+              onclick={(e) => {
+                e.stopPropagation();
+                copyColorToClipboard();
+              }}
+              title="Copy color code"
+              disabled={props.isProcessing}
+            >
+              {#if copySuccess}
+                <CheckIcon class="h-2 w-2 text-green-500" />
+              {:else}
+                <CopyIcon class="h-2 w-2 text-muted-foreground" />
+              {/if}
+            </Button>
+          {/if}
+        </div>
+      </button>
+    </div>
+
+    <!-- RIGHT: Color Swatches Grid (2 rows x 4 columns) -->
+    <div class="flex flex-col gap-2 h-full justify-between">
+      <!-- Row 1: Clear + 3 colors -->
+      <div class="grid grid-cols-4 gap-1.5">
+        <!-- Clear button first -->
+        <button
+          class={cn(
+            "w-6 h-6 rounded border-2 border-dashed border-border hover:border-red-400 transition-all flex items-center justify-center",
+            !props.backgroundColor && "border-red-400 bg-red-50 dark:bg-red-950/20",
+            props.isProcessing && "opacity-50 cursor-not-allowed"
+          )}
+          onclick={handleClear}
+          disabled={props.isProcessing}
+          title="Clear background"
+        >
+          <XIcon class="w-3 h-3 text-muted-foreground" />
+        </button>
+        
+        <!-- First 3 color swatches -->
+        {#each colorPresets.slice(0, 3) as preset}
+          <button
+            class={getColorClass(preset.color)}
+            style="background-color: {preset.color};"
+            onclick={() => handleColorClick(preset.color)}
+            disabled={props.isProcessing}
+            title={preset.label}
+          >
+            <span class="sr-only">{preset.label}</span>
+          </button>
+        {/each}
       </div>
       
-      <!-- Color value and copy button -->
-      <div class="relative px-2 flex items-center justify-between min-w-0">
-        <span class="font-mono text-xs tracking-wider uppercase truncate">
-          {stripAlpha(getDisplayColor())}
-        </span>
-        
-        {#if props.backgroundColor}
-          <!-- Copy button -->
-          <Button
-            variant="ghost"
-            size="icon"
-            class="copy-button h-4 w-4 -mr-1 p-0 hover:bg-background/80 ml-1"
-            onclick={(e) => {
-              e.stopPropagation();
-              copyColorToClipboard();
-            }}
-            title="Copy color code"
+      <!-- Row 2: Last 4 colors -->
+      <div class="grid grid-cols-4 gap-1.5">
+        {#each colorPresets.slice(3) as preset}
+          <button
+            class={getColorClass(preset.color)}
+            style="background-color: {preset.color};"
+            onclick={() => handleColorClick(preset.color)}
             disabled={props.isProcessing}
+            title={preset.label}
           >
-            {#if copySuccess}
-              <Check class="h-2 w-2 text-green-500" />
-            {:else}
-              <Copy class="h-2 w-2 text-muted-foreground" />
-            {/if}
-          </Button>
-        {/if}
+            <span class="sr-only">{preset.label}</span>
+          </button>
+        {/each}
       </div>
-    </button>
-  </div>
-
-  <!-- Row 2: Clear button first, then color swatches -->
-  <div class="flex items-center gap-1.5">
-    <!-- Clear button first -->
-    <button
-      class={cn(
-        "w-6 h-6 rounded border-2 border-dashed border-border hover:border-red-400 transition-all flex items-center justify-center",
-        !props.backgroundColor && "border-red-400 bg-red-50 dark:bg-red-950/20",
-        props.isProcessing && "opacity-50 cursor-not-allowed"
-      )}
-      onclick={handleClear}
-      disabled={props.isProcessing}
-      title="Clear background"
-    >
-      <X class="w-3 h-3 text-muted-foreground" />
-    </button>
+    </div>
     
-    <!-- Color swatches -->
-    {#each colorPresets as preset}
-      <button
-        class={getColorClass(preset.color)}
-        style="background-color: {preset.color};"
-        onclick={() => handleColorClick(preset.color)}
-        disabled={props.isProcessing}
-        title={preset.label}
-      >
-        <span class="sr-only">{preset.label}</span>
-      </button>
-    {/each}
   </div>
 </div>

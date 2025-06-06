@@ -221,7 +221,7 @@
 </script>
 
 <!-- ENHANCED: Better grid layout with stretched spacing -->
-<div class="space-y-4">
+<div class="space-y-3">
 	<div class="flex h-full w-full flex-col gap-3">
 		<!-- Row 1: Preview + Controls - ENHANCED GRID STRETCHING -->
 		<div class="grid flex-1 grid-cols-2 gap-3" style="min-height: 120px;">
@@ -278,9 +278,12 @@
 		</div>
 	</div>
 
+	<hr/>
 	<!-- Enhanced ColorControls with color picker -->
 	<ColorControls {backgroundColor} {isProcessing} onColorChange={handleColorChange} />
-
+	
+	<hr class="border-border" />
+	
 	<!-- Actions Row with BorderControls combobox -->
 	<div class="flex items-center gap-2">
 		<div class="flex-1">
