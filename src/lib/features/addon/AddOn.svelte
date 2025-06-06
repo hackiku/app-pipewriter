@@ -37,13 +37,13 @@
 		queuedElements: string[];
 		queuedItems?: QueueItem[];
 		queueCount: number;
-		theme: string;
+		theme: string; 
 	}>({ 
 		chainMode: false, 
 		queuedElements: [], 
 		queuedItems: [],
 		queueCount: 0,
-		theme: 'light'
+		theme: 'light'  // This is fine
 	});
 	
 	// Google service initialization
