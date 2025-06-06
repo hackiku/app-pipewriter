@@ -49,18 +49,18 @@
 
 	// Tab definitions with keyboard shortcuts
 	const tabs = {
-		table: {
-			icon: Table,
-			title: "Table Editor",
-			description: "Edit currently selected table",
-			component: TableTab,
-			shortcut: "1"
-		},
 		color: {
 			icon: Palette,
 			title: "Background Color", 
 			description: "Change document background color",
 			component: ColorTab,
+			shortcut: "1"
+		},
+		table: {
+			icon: Table,
+			title: "Table Editor",
+			description: "Edit currently selected table",
+			component: TableTab,
 			shortcut: "2"
 		},
 		ai: {
