@@ -1,7 +1,7 @@
 <!-- Updated src/lib/features/addon/features/text/TextActions.svelte -->
 <script lang="ts">
   import * as Resizable from "$lib/components/ui/resizable";
-  import { RefreshCcw, Heading, Pipette, AlertCircle } from "@lucide/svelte";
+  import { RefreshCcw, Heading, Pipette, AlertCircle, TextCursor, BookOpenCheck, Sun, Moon } from "@lucide/svelte";
   import { Button } from "$lib/components/ui/button";
   import type { ElementTheme } from '$lib/types/elements';
 
@@ -13,9 +13,7 @@
     svgUrl: string;
     onStyleGuideInsert: () => void;
     onExtractStyle: () => void;
-    onApplyStyle: () => void;
-    onUpdateAll: () => void;
-    onResetStyle: () => void;
+    onExtractAllStyles: () => void;
     onToggleTheme: () => void;
   }>();
 
@@ -108,22 +106,23 @@
         </button>
       </div>
       
-      <!-- Controls Row (bottom) -->
-      <div class="flex justify-between items-center h-6 px-1 mt-1">
-        <!-- Theme Toggle Button -->
+      <!-- Theme Toggle (bottom) -->
+      <div class="flex justify-center items-center h-6 mt-1">
         <Button
           variant="ghost"
           size="sm"
-          class="h-5 w-12 text-[0.6rem] opacity-60 hover:opacity-100"
+          class="h-5 px-2 text-[0.6rem] opacity-60 hover:opacity-100 flex items-center gap-1"
           disabled={props.isProcessing}
           onclick={props.onToggleTheme}
           title={`Switch to ${props.theme === 'light' ? 'dark' : 'light'} theme`}
         >
+          {#if props.theme === 'light'}
+            <Sun class="h-2.5 w-2.5" />
+          {:else}
+            <Moon class="h-2.5 w-2.5" />
+          {/if}
           {props.theme}
         </Button>
-        
-        <!-- Empty space for balance -->
-        <div></div>
       </div>
     </div>
   </Resizable.Pane>
@@ -133,55 +132,31 @@
   <!-- Right Pane: Action Buttons -->
   <Resizable.Pane defaultSize={60} minSize={40} maxSize={75}>
     <div bind:this={rightPaneElement} class="h-full flex flex-col gap-2">
-      <!-- Row 1: Get | Apply (same width, both with icons left) -->
-      <div class="flex-1 flex gap-2">
-        <!-- Get Style Button -->
+      <!-- Row 1: Get cursor style -->
+      <div class="flex-1">
         <Button
           variant="outline"
-          class="flex-1 flex items-center justify-center text-xs h-full"
+          class="w-full h-full flex items-center justify-center text-xs"
           disabled={props.isProcessing}
           onclick={props.onExtractStyle}
           title="Extract style from cursor position"
         >
-          <Pipette class="h-3 w-3 mr-1" />
-          <span>{compactMode ? "Get" : "Get Style"}</span>
-        </Button>
-        
-        <!-- Apply Style Button -->
-        <Button
-          variant={props.selectedStyle ? "default" : "outline"}
-          class="flex-1 flex items-center justify-center text-xs h-full"
-          disabled={props.isProcessing || !props.selectedStyle}
-          onclick={props.onApplyStyle}
-          title="Apply style to text at cursor"
-        >
-          <Heading class="h-3 w-3 mr-1" />
-          <span>{compactMode ? "Apply" : "Apply Style"}</span>
+          <TextCursor class="h-3 w-3 mr-2" />
+          <span>Get cursor style</span>
         </Button>
       </div>
       
-      <!-- Row 2: Update All | Reset (icon only) -->
-      <div class="flex-1 flex gap-2">
-        <!-- Update All Button -->
+      <!-- Row 2: Get all styles -->
+      <div class="flex-1">
         <Button
           variant="outline"
-          class="flex-1 flex items-center justify-center text-xs h-full"
+          class="w-full h-full flex items-center justify-center text-xs"
           disabled={props.isProcessing}
-          onclick={props.onUpdateAll}
-          title="Update all matching headings to match cursor style"
+          onclick={props.onExtractAllStyles}
+          title="Extract all styles from document"
         >
-          <span>{compactMode ? "All" : "Update All"}</span>
-        </Button>
-        
-        <!-- Reset Button (icon only) -->
-        <Button
-          variant="outline"
-          class="aspect-square h-full p-0"
-          disabled={props.isProcessing || !props.selectedStyle}
-          onclick={props.onResetStyle}
-          title="Reset style selection"
-        >
-          <RefreshCcw class="h-3 w-3" />
+          <BookOpenCheck class="h-3 w-3 mr-2" />
+          <span>Get all styles</span>
         </Button>
       </div>
     </div>

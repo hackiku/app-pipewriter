@@ -107,78 +107,49 @@
     );
   }
 
-  // Helper to get extracted style attributes for display
-  function getExtractedAttributes(selectedStyle: any) {
-    if (!selectedStyle?.extracted || !selectedStyle?.attributes?.text) {
-      return null;
-    }
+  // Get style attributes for display - simplified
+  function getDisplayAttributes(selectedStyle: any) {
+    if (!selectedStyle) return null;
 
-    const textAttrs = selectedStyle.attributes.text;
     const attributes = [];
 
-    // Add font size if available and different from default
-    if (textAttrs.FONT_SIZE && textAttrs.FONT_SIZE !== null) {
-      attributes.push(`${textAttrs.FONT_SIZE}pt`);
-    }
-
-    // Add font family if available and not default
-    if (textAttrs.FONT_FAMILY && textAttrs.FONT_FAMILY !== null && textAttrs.FONT_FAMILY !== 'Default') {
-      attributes.push(textAttrs.FONT_FAMILY);
-    }
-
-    // Add bold if true
-    if (textAttrs.BOLD === true) {
-      attributes.push('Bold');
-    }
-
-    // Add italic if true  
-    if (textAttrs.ITALIC === true) {
-      attributes.push('Italic');
-    }
-
-    // Add underline if true
-    if (textAttrs.UNDERLINE === true) {
-      attributes.push('Underlined');
-    }
-
-    // Add color if available (but not default black)
-    if (textAttrs.FOREGROUND_COLOR && 
-        textAttrs.FOREGROUND_COLOR !== '#000000' && 
-        textAttrs.FOREGROUND_COLOR !== null &&
-        textAttrs.FOREGROUND_COLOR !== 'Default') {
-      attributes.push(`Color: ${textAttrs.FOREGROUND_COLOR}`);
-    }
-
-    // Add background color if available
-    if (textAttrs.BACKGROUND_COLOR && 
-        textAttrs.BACKGROUND_COLOR !== null &&
-        textAttrs.BACKGROUND_COLOR !== 'Default') {
-      attributes.push(`Highlight: ${textAttrs.BACKGROUND_COLOR}`);
+    if (selectedStyle.extracted && selectedStyle.attributes?.text) {
+      // Extracted style - show what we have
+      const textAttrs = selectedStyle.attributes.text;
+      
+      if (textAttrs.FONT_SIZE) attributes.push(`${textAttrs.FONT_SIZE}pt`);
+      if (textAttrs.FONT_FAMILY) attributes.push(textAttrs.FONT_FAMILY);
+      if (textAttrs.BOLD === true) attributes.push('Bold');
+      if (textAttrs.ITALIC === true) attributes.push('Italic');
+      if (textAttrs.UNDERLINE === true) attributes.push('Underlined');
+      if (textAttrs.FOREGROUND_COLOR && textAttrs.FOREGROUND_COLOR !== '#000000') {
+        attributes.push(`Color: ${textAttrs.FOREGROUND_COLOR}`);
+      }
+      if (textAttrs.BACKGROUND_COLOR) {
+        attributes.push(`Highlight: ${textAttrs.BACKGROUND_COLOR}`);
+      }
+    } else {
+      // Default style - show template info
+      const defaultStyle = textStyles.find(s => s.headingType === selectedStyle.headingType);
+      if (defaultStyle) {
+        attributes.push(`${defaultStyle.fontSize}pt`);
+        attributes.push(defaultStyle.font);
+        if (defaultStyle.weight !== 'Normal') attributes.push(defaultStyle.weight);
+        if (defaultStyle.color !== '#000000') attributes.push(`Color: ${defaultStyle.color}`);
+      }
     }
 
     return attributes.length > 0 ? attributes : null;
   }
 
-  // Get display text for selected style with extracted attributes
-  function getSelectedStyleDisplay() {
-    if (!props.selectedStyle) return null;
-
-    const extractedAttrs = getExtractedAttributes(props.selectedStyle);
-    
-    return {
-      main: props.selectedStyle.label,
-      tag: props.selectedStyle.tag,
-      attributes: extractedAttrs,
-      isExtracted: props.selectedStyle.extracted
-    };
-  }
-
-  // Get display font size for style items
-  function getDisplayFontSize(style: any) {
-    if (props.selectedStyle?.fontSize) {
-      return Math.min(props.selectedStyle.fontSize, 16);
+  // Get color for text display - simplified
+  function getTextColor(selectedStyle: any) {
+    if (selectedStyle?.extracted && selectedStyle.attributes?.text?.FOREGROUND_COLOR) {
+      return selectedStyle.attributes.text.FOREGROUND_COLOR;
     }
-    return Math.min(style.fontSize, 16);
+    
+    const defaultStyle = textStyles.find(s => s.headingType === selectedStyle?.headingType);
+    return defaultStyle?.color || '#000000';
   }
 </script>
 
@@ -196,16 +167,13 @@
             class={getStyleItemClass(style)}
             onclick={() => handleSelect(style)}
           >
-            <div class="flex items-center gap-2">
-              <span class="text-muted-foreground text-xs w-6">{style.tag}</span>
+            <div class="flex items-center gap-2 min-w-0 w-full">
+              <span class="text-muted-foreground text-xs w-6 flex-shrink-0">{style.tag}</span>
               <span 
-                class="text-foreground flex-1"
+                class="text-foreground flex-1 truncate text-left"
                 style="font-size: {Math.min(style.fontSize, 16)}px; color: {style.color}; font-weight: {style.weight === 'Bold' ? 'bold' : style.weight === 'Semibold' ? '600' : 'normal'};"
               >
                 {style.label}
-              </span>
-              <span class="text-muted-foreground text-xs">
-                {style.fontSize}pt
               </span>
             </div>
           </button>
@@ -216,7 +184,7 @@
 
   <!-- Main selector button -->
   <button
-    class="w-full min-h-10 px-3 py-2 flex items-center justify-between rounded-lg
+    class="w-full min-h-12 px-3 py-2 flex items-center justify-between rounded-lg
            border border-input bg-background text-sm shadow-sm 
            transition-all duration-200 hover:bg-accent hover:text-accent-foreground
            disabled:cursor-not-allowed disabled:opacity-50"
@@ -224,31 +192,28 @@
     disabled={props.disabled}
   >
     {#if props.selectedStyle}
-      {@const display = getSelectedStyleDisplay()}
-      {#if display}
-        <div class="flex flex-col items-start gap-0.5 min-w-0 flex-1">
-          <!-- Main label with tag -->
-          <div class="flex items-center gap-2">
-            {#if display.isExtracted}
-              <Pipette class="h-3 w-3 text-primary flex-shrink-0" />
-            {/if}
-            <span class="text-muted-foreground text-xs w-6">{display.tag}</span>
-            <span 
-              class="text-foreground font-medium"
-              style="font-size: {Math.min(props.selectedStyle.fontSize || 14, 16)}px"
-            >
-              {display.main}
-            </span>
-          </div>
-          
-          <!-- Extracted attributes if available -->
-          {#if display.attributes}
-            <div class="text-xs text-muted-foreground truncate w-full">
-              {display.attributes.join(' • ')}
-            </div>
+      <div class="flex flex-col items-start gap-0.5 min-w-0 flex-1">
+        <!-- Main label with tag -->
+        <div class="flex items-center gap-2 min-w-0 w-full">
+          {#if props.selectedStyle.extracted}
+            <Pipette class="h-3 w-3 text-primary flex-shrink-0" />
           {/if}
+          <span class="text-muted-foreground text-xs w-6 flex-shrink-0">{props.selectedStyle.tag}</span>
+          <span 
+            class="text-foreground flex-1 truncate text-left"
+            style="color: {getTextColor(props.selectedStyle)};"
+          >
+            {props.selectedStyle.label}
+          </span>
         </div>
-      {/if}
+        
+        <!-- Style attributes - always show if selected -->
+        {#if getDisplayAttributes(props.selectedStyle)}
+          <div class="text-xs text-muted-foreground truncate w-full pl-6">
+            {getDisplayAttributes(props.selectedStyle).join(' • ')}
+          </div>
+        {/if}
+      </div>
     {:else}
       <span class="text-muted-foreground">Select text style...</span>
     {/if}

@@ -2,8 +2,10 @@
 <script lang="ts">
   import TextDropdown from "./TextDropdown.svelte";
   import TextActions from "./TextActions.svelte";
+  import { Button } from "$lib/components/ui/button";
+  import { RefreshCcw, Heading } from "@lucide/svelte";
   import { insertElement } from "$lib/services/google/docs";
-  import { applyTextStyle, updateAllMatchingHeadings, getStyleInfo } from "$lib/services/google/text";
+  import { applyTextStyle, updateAllMatchingHeadings, getStyleInfo, getAllDocumentStyles } from "$lib/services/google/text";
   import type { ElementTheme } from '$lib/types/elements';
   import type { HeadingType } from '$lib/services/google/text';
   import { onMount, onDestroy } from 'svelte';
@@ -32,6 +34,7 @@
     extracted?: boolean; // Flag to indicate if this was extracted from docs
     attributes?: any; // Store extracted attributes
   } | null>(null);
+  let availableStyles = $state<any[]>([]); // Store all extracted styles
   let elementsTheme = $state<ElementTheme>('light');
   let appTheme = $state<ElementTheme>('light');
   let observer: MutationObserver | null = null;
@@ -134,6 +137,63 @@
         type: 'error',
         message: errorMessage,
         details: 'Make sure your cursor is positioned in text and try again'
+      });
+    } finally {
+      isProcessing = false;
+      props.onProcessingEnd();
+    }
+  }
+
+  // Extract all styles from document
+  async function extractAllStyles() {
+    if (isProcessing) return;
+    
+    isProcessing = true;
+    props.onProcessingStart();
+    
+    props.onStatusUpdate({
+      type: 'processing',
+      message: 'Getting all document styles...'
+    });
+
+    try {
+      const response = await Promise.race([
+        getAllDocumentStyles((statusUpdate) => {
+          props.onStatusUpdate(statusUpdate);
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Style extraction timed out after 15 seconds')), 15000)
+        )
+      ]) as any;
+      
+      if (response.success && response.data) {
+        // Process all styles and update dropdown
+        if (dropdownRef?.createExtractedStyle) {
+          const extractedStyles = response.data.styles?.map((styleData: any) => 
+            dropdownRef.createExtractedStyle(styleData)
+          ) || [];
+          
+          availableStyles = extractedStyles;
+          
+          props.onStatusUpdate({
+            type: 'success',
+            message: `Extracted ${extractedStyles.length} styles from document`,
+            executionTime: response.executionTime
+          });
+        } else {
+          throw new Error("Style mapping functions not available");
+        }
+      } else {
+        throw new Error(response.error || "Failed to extract all styles");
+      }
+    } catch (error) {
+      console.error("Failed to extract all styles:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to extract all styles";
+      
+      props.onStatusUpdate({
+        type: 'error',
+        message: errorMessage,
+        details: 'Make sure the document contains text content and try again'
       });
     } finally {
       isProcessing = false;
@@ -262,6 +322,7 @@
   // Reset style selection
   function resetStyle() {
     selectedStyle = null;
+    availableStyles = [];
     
     props.onStatusUpdate({
       type: 'success',
@@ -301,9 +362,44 @@
     svgUrl={getSvgUrl()}
     onStyleGuideInsert={handleStyleGuideInsert}
     onExtractStyle={extractStyle}
-    onApplyStyle={applyStyle}
-    onUpdateAll={updateAllStyles}
-    onResetStyle={resetStyle}
+    onExtractAllStyles={extractAllStyles}
     onToggleTheme={toggleTheme}
   />
+
+  <!-- Action Buttons Row - Update All | Reset | Apply -->
+  <div class="flex gap-2 w-full">
+    <!-- Update All Button -->
+    <Button
+      variant="outline"
+      class="flex-1 flex items-center justify-center text-xs h-10"
+      disabled={isProcessing}
+      onclick={updateAllStyles}
+      title="Update all matching headings to match cursor style"
+    >
+      <span>Update All</span>
+    </Button>
+    
+    <!-- Reset Button (icon only, square) -->
+    <Button
+      variant="outline"
+      class="aspect-square h-10 p-0 flex items-center justify-center"
+      disabled={isProcessing || !selectedStyle}
+      onclick={resetStyle}
+      title="Reset style selection"
+    >
+      <RefreshCcw class="h-3 w-3" />
+    </Button>
+
+    <!-- Apply Style Button -->
+    <Button
+      variant={selectedStyle ? "default" : "outline"}
+      class="flex-1 flex items-center justify-center text-xs h-10"
+      disabled={isProcessing || !selectedStyle}
+      onclick={applyStyle}
+      title="Apply style to text at cursor"
+    >
+      <Heading class="h-3 w-3 mr-2" />
+      <span>Apply</span>
+    </Button>
+  </div>
 </div>

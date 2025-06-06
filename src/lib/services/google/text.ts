@@ -41,7 +41,6 @@ export async function applyTextStyle(
 
 /**
  * Update all matching headings to match current paragraph style
- * Replicates Google Docs' "Update Heading X to match" functionality
  */
 export async function updateAllMatchingHeadings(
 	onStatus?: StatusCallback
@@ -80,6 +79,28 @@ export async function getStyleInfo(
 		}, onStatus);
 	} catch (error) {
 		console.error('Error in getStyleInfo:', error);
+		throw error;
+	}
+}
+
+/**
+ * Get all styles used in the document (batch operation)
+ */
+export async function getAllDocumentStyles(
+	onStatus?: StatusCallback
+): Promise<ApiResponse> {
+	try {
+		const client = getGoogleService();
+
+		if (!client) {
+			throw new Error('Google Apps Service is not available');
+		}
+
+		return client.sendMessage('textOps', {
+			action: 'getAllStyles'
+		}, onStatus);
+	} catch (error) {
+		console.error('Error in getAllDocumentStyles:', error);
 		throw error;
 	}
 }
