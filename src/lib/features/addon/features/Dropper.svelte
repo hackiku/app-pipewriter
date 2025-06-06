@@ -150,6 +150,10 @@
     
     isProcessing = true;
     
+    // FIXED: Track start time for proper execution time calculation
+    const startTime = Date.now();
+    let totalExecutionTime = 0;
+    
     setStatusWithTimeout({
       type: "processing",
       message: `Inserting ${queuedElements.length} elements...`,
@@ -170,6 +174,11 @@
         // ENHANCED: Use each item's individual theme
         const response = await insertElement(item.id, item.theme);
         
+        // FIXED: Accumulate execution times from each element
+        if (response.executionTime) {
+          totalExecutionTime += response.executionTime;
+        }
+        
         if (!response.success) {
           throw new Error(`Failed to insert ${item.id}: ${response.error}`);
         }
@@ -179,11 +188,14 @@
         }
       }
       
+      // FIXED: Use accumulated execution time, not Date.now()
+      const overallTime = Date.now() - startTime;
+      
       setStatusWithTimeout({
         type: "success",
         message: "Queue applied successfully",
-        details: `Successfully inserted ${queuedElements.length} elements with individual themes`,
-        executionTime: Date.now()
+        details: `Successfully inserted ${queuedElements.length} elements (${totalExecutionTime}ms scripts + ${overallTime - totalExecutionTime}ms overhead)`,
+        executionTime: overallTime
       });
       
       queuedElements = [];

@@ -279,7 +279,7 @@ const elementsData = [
 			cols: 2,
 			rows: 2,
 			supports: { darkMode: true, customText: true },
-			tier: 'pro'
+			tier: 'free'
 		},
 		displayOrder: 22
 	},
