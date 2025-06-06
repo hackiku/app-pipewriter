@@ -108,7 +108,11 @@
 			const operations = [];
 
 			// ALWAYS apply current alignment (even if it matches default)
-			console.log('Sending alignment:', { action: 'setCellAlignment', scope, alignment: cellAlignment });
+			console.log('Sending alignment:', {
+				action: 'setCellAlignment',
+				scope,
+				alignment: cellAlignment
+			});
 			const alignmentResponse = await client.sendMessage(
 				'tableOps',
 				{
@@ -140,7 +144,12 @@
 			const borderWidthValue = Number(borderWidth);
 			if (!isNaN(borderWidthValue) && borderWidthValue >= 0) {
 				const borderColorValue = borderColor || '#000000';
-				console.log('Sending borders:', { action: 'setBorders', scope: 'table', borderWidth: borderWidthValue, borderColor: borderColorValue });
+				console.log('Sending borders:', {
+					action: 'setBorders',
+					scope: 'table',
+					borderWidth: borderWidthValue,
+					borderColor: borderColorValue
+				});
 				const borderResponse = await client.sendMessage(
 					'tableOps',
 					{
@@ -212,73 +221,74 @@
 </script>
 
 <!-- ENHANCED: Better grid layout with stretched spacing -->
-<div class="flex w-full flex-col gap-3 h-full">
-	<!-- Row 1: Preview + Controls - ENHANCED GRID STRETCHING -->
-	<div class="grid grid-cols-2 gap-3 flex-1">
-		<!-- Left: Interactive Table Preview + Scope Toggle -->
-		<div class="flex flex-col gap-2 justify-between">
-			<!-- Table preview - grows to fill space -->
-			<div class="flex-1 flex items-center justify-center">
-				<InteractiveTable
+<div class="space-y-4">
+	<div class="flex h-full w-full flex-col gap-3">
+		<!-- Row 1: Preview + Controls - ENHANCED GRID STRETCHING -->
+		<div class="grid flex-1 grid-cols-2 gap-3">
+			<!-- Left: Interactive Table Preview + Scope Toggle -->
+			<div class="flex flex-col justify-between gap-2">
+				<!-- Table preview - grows to fill space -->
+				<div class="flex flex-1 items-center justify-center">
+					<InteractiveTable
+						{cellAlignment}
+						{scope}
+						{borderWidth}
+						{borderColor}
+						{backgroundColor}
+						{cellPadding}
+					/>
+				</div>
+
+				<!-- MOVED FROM CHILD: Scope Toggle -->
+				<div class="flex items-center justify-center">
+					<button
+						class={getScopeToggleClass()}
+						onclick={handleScopeToggle}
+						disabled={isProcessing}
+						title={`Currently applying to ${scope}. Click to toggle.`}
+					>
+						{#if scope === 'table'}
+							<Table class="h-3 w-3" />
+							<span class="font-medium text-primary">Whole Table</span>
+						{:else}
+							<Focus class="h-3 w-3" />
+							<span class="font-medium">Selected Cell</span>
+						{/if}
+					</button>
+				</div>
+			</div>
+
+			<!-- Right: Alignment + Padding Controls - STRETCHED -->
+			<div class="flex h-full flex-col justify-between gap-2">
+				<AlignmentButtonGrid
 					{cellAlignment}
 					{scope}
-					{borderWidth}
-					{borderColor}
-					{backgroundColor}
-					{cellPadding}
-				/>
-			</div>
-			
-			<!-- MOVED FROM CHILD: Scope Toggle -->
-			<div class="flex items-center justify-center">
-				<button
-					class={getScopeToggleClass()}
-					onclick={handleScopeToggle}
-					disabled={isProcessing}
-					title={`Currently applying to ${scope}. Click to toggle.`}
-				>
-					{#if scope === 'table'}
-						<Table class="h-3 w-3" />
-						<span class="font-medium text-primary">Whole Table</span>
-					{:else}
-						<Focus class="h-3 w-3" />
-						<span class="font-medium">Selected Cell</span>
-					{/if}
-				</button>
-			</div>
-		</div>
-
-		<!-- Right: Alignment + Padding Controls - STRETCHED -->
-		<div class="flex flex-col gap-2 justify-between h-full">
-			<AlignmentButtonGrid
-				{cellAlignment}
-				{scope}
-				{isProcessing}
-				onAlignmentChange={handleAlignmentChange}
-				onScopeToggle={handleScopeToggle}
-			/>
-
-			<hr class="border-border">
-
-			<!-- ENHANCED: PaddingControls fills remaining space -->
-			<div class="flex-1">
-				<PaddingControls 
-					{cellPadding}
 					{isProcessing}
-					onPaddingChange={handlePaddingChange}
+					onAlignmentChange={handleAlignmentChange}
+					onScopeToggle={handleScopeToggle}
 				/>
+
+				<hr class="border-border" />
+
+				<!-- ENHANCED: PaddingControls fills remaining space -->
+				<div class="flex-1">
+					<PaddingControls {cellPadding} {isProcessing} onPaddingChange={handlePaddingChange} />
+				</div>
 			</div>
 		</div>
 	</div>
 
-	<!-- Row 2: Border Controls -->
-	<BorderControls {borderWidth} {borderColor} {isProcessing} onBorderChange={handleBorderChange} />
-
-	<!-- Row 3: Color Controls -->
 	<ColorControls {backgroundColor} {isProcessing} onColorChange={handleColorChange} />
 
-	<!-- Row 4: Action Buttons -->
+	<!-- Actions Buttons -->
 	<div class="flex items-center gap-2">
+		<BorderControls
+			{borderWidth}
+			{borderColor}
+			{isProcessing}
+			onBorderChange={handleBorderChange}
+		/>
+
 		<Button
 			variant="outline"
 			size="icon"
@@ -304,12 +314,5 @@
 				<span>Apply</span>
 			{/if}
 		</Button>
-
-		<!-- Changes summary - as requested, keep commented parts commented -->
-		<!-- {#if changesSummary && !isProcessing}
-			<span class="text-[0.6rem] text-muted-foreground ml-auto text-right leading-tight">
-				{changesSummary}
-			</span>
-		{/if} -->
 	</div>
 </div>

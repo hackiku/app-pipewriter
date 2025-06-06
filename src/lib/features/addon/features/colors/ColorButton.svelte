@@ -17,7 +17,7 @@
       "aspect-square w-full rounded-full transition-all duration-200 relative overflow-hidden",
       "border-2 cursor-pointer",
       props.isSelected 
-        ? "border-primary shadow-lg scale-105 ring-2 ring-primary/20" 
+        ? "border-primary shadow-lg __ring-2 __ring-red-200/60" 
         : "border-gray-300 dark:border-gray-600 hover:border-primary/60 hover:scale-105 hover:shadow-md",
       props.isProcessing && "opacity-50 cursor-not-allowed pointer-events-none"
     );
@@ -47,7 +47,7 @@
   
   <!-- Selection indicator -->
   {#if props.isSelected}
-    <div class="absolute inset-0 bg-black/10 dark:bg-white/10 flex items-center justify-center">
+    <div class="absolute inset-0 __bg-black/10 dark:bg-white/10 flex items-center justify-center">
       <!-- <div class="w-3 h-3 bg-white dark:bg-black rounded-full shadow-sm"></div> -->
     </div>
   {/if}

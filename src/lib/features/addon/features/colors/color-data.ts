@@ -56,63 +56,63 @@ export const colorCategories: ColorCategory[] = [
 		]
 	},
 	{
-		id: 'stone',
-		name: 'Stone',
-		description: 'Warm neutral wireframe backgrounds',
+		id: 'green',
+		name: 'Green',
+		description: 'Modern green-tinted backgrounds',
 		tier: 'pro',
 		colors: [
-			// Row 1 - Light stones
-			{ color: '#FAFAF9', title: 'Stone 50', tier: 'pro' },
-			{ color: '#F5F5F4', title: 'Stone 100', tier: 'pro' },
-			{ color: '#E7E5E4', title: 'Stone 200', tier: 'pro' },
-			{ color: '#D6D3D1', title: 'Stone 300', tier: 'pro' },
-			{ color: '#A8A29E', title: 'Stone 400', tier: 'pro' },
-			// Row 2 - Dark stones
-			{ color: '#78716C', title: 'Stone 500', tier: 'pro' },
-			{ color: '#57534E', title: 'Stone 600', tier: 'pro' },
-			{ color: '#44403C', title: 'Stone 700', tier: 'pro' },
-			{ color: '#292524', title: 'Stone 800', tier: 'pro' },
-			{ color: '#1C1917', title: 'Stone 900', tier: 'pro' },
+			// Row 1 - Light sky tones
+			{ color: '#EEEFE0', title: 'Sky 50', tier: 'pro' },
+			{ color: '#D1D8BE', title: 'Sky 100', tier: 'pro' },
+			{ color: '#A7C1A8', title: 'Sky 200', tier: 'pro' },
+			{ color: '#819A91', title: 'Sky 300', tier: 'pro' },
+			{ color: '#38BDF8', title: 'Sky 400', tier: 'pro' },
+			// Row 2 - Dark sky tones
+			{ color: '#819A91', title: 'Sky 500', tier: 'pro' },
+			{ color: '#0284C7', title: 'Sky 600', tier: 'pro' },
+			{ color: '#0369A1', title: 'Sky 700', tier: 'pro' },
+			{ color: '#075985', title: 'Sky 800', tier: 'pro' },
+			{ color: '#0C4A6E', title: 'Sky 900', tier: 'pro' },
 		]
 	},
 	{
-		id: 'tint',
-		name: 'Tint',
-		description: 'Subtle colored wireframe backgrounds',
+		id: 'violet',
+		name: 'Violet',
+		description: 'Contemporary purple-tinted backgrounds',
 		tier: 'pro',
 		colors: [
-			// Row 1 - Light tints
-			{ color: '#FEF3C7', title: 'Amber 100', tier: 'pro' },
-			{ color: '#DBEAFE', title: 'Blue 100', tier: 'pro' },
-			{ color: '#D1FAE5', title: 'Green 100', tier: 'pro' },
-			{ color: '#FCE7F3', title: 'Pink 100', tier: 'pro' },
-			{ color: '#EDE9FE', title: 'Purple 100', tier: 'pro' },
-			// Row 2 - Medium tints
-			{ color: '#FDE68A', title: 'Amber 200', tier: 'pro' },
-			{ color: '#BFDBFE', title: 'Blue 200', tier: 'pro' },
-			{ color: '#A7F3D0', title: 'Green 200', tier: 'pro' },
-			{ color: '#F9A8D4', title: 'Pink 200', tier: 'pro' },
-			{ color: '#DDD6FE', title: 'Purple 200', tier: 'pro' },
+			// Row 1 - Light violet tones
+			{ color: '#FAF5FF', title: 'Violet 50', tier: 'pro' },
+			{ color: '#F3E8FF', title: 'Violet 100', tier: 'pro' },
+			{ color: '#E9D5FF', title: 'Violet 200', tier: 'pro' },
+			{ color: '#D8B4FE', title: 'Violet 300', tier: 'pro' },
+			{ color: '#C084FC', title: 'Violet 400', tier: 'pro' },
+			// Row 2 - Dark violet tones
+			{ color: '#A855F7', title: 'Violet 500', tier: 'pro' },
+			{ color: '#9333EA', title: 'Violet 600', tier: 'pro' },
+			{ color: '#7C3AED', title: 'Violet 700', tier: 'pro' },
+			{ color: '#6D28D9', title: 'Violet 800', tier: 'pro' },
+			{ color: '#581C87', title: 'Violet 900', tier: 'pro' },
 		]
 	},
 	{
-		id: 'accent',
-		name: 'Accent',
-		description: 'Stronger colored wireframe backgrounds',
+		id: 'emerald',
+		name: 'Emerald',
+		description: 'Fresh green-tinted backgrounds',
 		tier: 'pro',
 		colors: [
-			// Row 1 - Medium accents
-			{ color: '#FCD34D', title: 'Amber 300', tier: 'pro' },
-			{ color: '#93C5FD', title: 'Blue 300', tier: 'pro' },
-			{ color: '#6EE7B7', title: 'Green 300', tier: 'pro' },
-			{ color: '#F472B6', title: 'Pink 300', tier: 'pro' },
-			{ color: '#C4B5FD', title: 'Purple 300', tier: 'pro' },
-			// Row 2 - Strong accents
-			{ color: '#F59E0B', title: 'Amber 500', tier: 'pro' },
-			{ color: '#3B82F6', title: 'Blue 500', tier: 'pro' },
-			{ color: '#10B981', title: 'Green 500', tier: 'pro' },
-			{ color: '#EC4899', title: 'Pink 500', tier: 'pro' },
-			{ color: '#8B5CF6', title: 'Purple 500', tier: 'pro' },
+			// Row 1 - Light emerald tones
+			{ color: '#ECFDF5', title: 'Emerald 50', tier: 'pro' },
+			{ color: '#D1FAE5', title: 'Emerald 100', tier: 'pro' },
+			{ color: '#A7F3D0', title: 'Emerald 200', tier: 'pro' },
+			{ color: '#6EE7B7', title: 'Emerald 300', tier: 'pro' },
+			{ color: '#34D399', title: 'Emerald 400', tier: 'pro' },
+			// Row 2 - Dark emerald tones
+			{ color: '#10B981', title: 'Emerald 500', tier: 'pro' },
+			{ color: '#059669', title: 'Emerald 600', tier: 'pro' },
+			{ color: '#047857', title: 'Emerald 700', tier: 'pro' },
+			{ color: '#065F46', title: 'Emerald 800', tier: 'pro' },
+			{ color: '#064E3B', title: 'Emerald 900', tier: 'pro' },
 		]
 	}
 ];

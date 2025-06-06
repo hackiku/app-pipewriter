@@ -1,6 +1,6 @@
 <!-- src/lib/features/addon/features/colors/ColorTab.svelte -->
 <script lang="ts">
-  import { slide } from "svelte/transition";
+  import { fade } from "svelte/transition";
   import { Button } from "$lib/components/ui/button";
   import { Check, Loader2, Copy, ChevronDown, Crown } from "@lucide/svelte";
   import * as Tabs from "$lib/components/ui/tabs/index.js";
@@ -214,7 +214,7 @@
   {#if showColorPicker}
     <div
       class="absolute bottom-12 left-0 right-0 z-20 bg-card border border-border rounded-xl shadow-lg p-4"
-      transition:slide={{ duration: 200, axis: "y" }}
+      transition:fade={{ duration: 150 }}
     >
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-sm font-medium">Custom Color</h3>
@@ -239,20 +239,22 @@
   <div class="flex flex-col h-full space-y-4">
     <!-- Scrollable Tabs -->
     <Tabs.Root value={activeTab} onValueChange={(value) => activeTab = value || colorCategories[0]?.id || "base"}>
-      <div class="relative">
-        <Tabs.List class="flex w-full gap-1 bg-muted/50 p-1 rounded-lg overflow-x-auto scrollbar-none justify-start">
-          {#each colorCategories as category}
-            <Tabs.Trigger 
-              value={category.id}
-              class="flex items-center gap-2 whitespace-nowrap px-3 py-1.5 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm flex-shrink-0"
-            >
-              <span>{category.name}</span>
-              {#if hasPro(category)}
-                <Crown class="h-3 w-3 text-amber-500" />
-              {/if}
-            </Tabs.Trigger>
-          {/each}
-        </Tabs.List>
+      <div class="relative hide-scrollbar-container">
+        <div class="hide-scrollbar-content">
+          <Tabs.List class="flex min-w-[400px] gap-1 bg-secondary-foreground/5 p-1 rounded-lg justify-start">
+            {#each colorCategories as category}
+              <Tabs.Trigger 
+                value={category.id}
+                class="flex items-center gap-2 whitespace-nowrap px-3 py-1.5 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm flex-shrink-0"
+              >
+                <span>{category.name}</span>
+                {#if hasPro(category)}
+                  <Crown class="h-3 w-3 text-amber-500" />
+                {/if}
+              </Tabs.Trigger>
+            {/each}
+          </Tabs.List>
+        </div>
       </div>
 
       <!-- Tab Content: Color Swatches in 2 Rows -->
@@ -313,6 +315,7 @@
       </div>
     </Tabs.Root>
 
+
     <!-- Bottom Controls: Hex Button + Apply -->
     <div class="flex gap-2 mt-auto h-9">
       <!-- Hex Color Button with Integrated Copy -->
@@ -328,10 +331,13 @@
       >
         <!-- Color preview -->
         <div 
-          class="h-9 aspect-square border-r border-border relative"
-          style="background-color: {currentColor};"
+          class="h-8 ml-[1px] aspect-square relative "
+          
         >
-          <div class="absolute inset-0.5 border border-black/5 rounded-sm"></div>
+          <div
+						class="absolute inset-0.5 border border-black/5 rounded-md"
+						style="background-color: {currentColor};"
+					></div>
         </div>
         
         <!-- Color value and copy button -->
@@ -343,24 +349,25 @@
               bind:value={hexInputValue}
               onkeydown={handleHexSubmit}
               onblur={handleHexBlur}
+              autofocus
             />
           {:else}
             <span
               role="button"
-							tabindex="0"
+              tabindex="0"
               class="hex-input font-mono text-xs tracking-wider uppercase truncate cursor-text w-full text-left"
               onclick={handleHexEdit}
               onkeydown={(e) => e.key === 'Enter' && handleHexEdit()}
             >
               {currentColor}
-						</span>
+            </span>
           {/if}
           
           <!-- Copy button -->
           <Button
             variant="ghost"
             size="icon"
-            class="copy-button h-6 w-6 ml-2 hover:bg-background/80"
+            class="copy-button h-6 w-6 -mr-2 p-1 hover:bg-background/80"
             onclick={(e) => {
               e.stopPropagation();
               copyColorToClipboard();
@@ -369,9 +376,9 @@
             disabled={isProcessing}
           >
             {#if copySuccess}
-              <Check class="h-3 w-3 text-green-500" />
+              <Check class="h-2 w-2 text-green-500" />
             {:else}
-              <Copy class="h-3 w-3 text-muted-foreground" />
+              <Copy class="h-2 w-2 text-muted-foreground" />
             {/if}
           </Button>
         </div>
@@ -387,22 +394,27 @@
         {#if isProcessing}
           <Loader2 class="h-4 w-4 animate-spin" />
         {:else}
-          <Check class="h-3 w-3 mr-1" />
-          Set
+          <Check class="h-3 w-3 -mr-1" />
+          Apply
         {/if}
       </Button>
     </div>
   </div>
 </div>
 
+
 <style>
-  /* Hide scrollbar for tabs */
-  .scrollbar-none {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  /* Bulletproof horizontal scrollbar hiding - container technique */
+  .hide-scrollbar-container {
+    overflow: hidden;
+    position: relative;
   }
   
-  .scrollbar-none::-webkit-scrollbar {
-    display: none;
+  .hide-scrollbar-content {
+    overflow-x: auto;
+    overflow-y: hidden;
+    /* Push scrollbar below visible area */
+    padding-bottom: 20px;
+    margin-bottom: -20px;
   }
 </style>

@@ -306,13 +306,13 @@
 			<Button
 				variant="ghost"
 				size="sm"
-				class="rounded-lg border border-foreground/60 flex items-center gap-1.5 px-2 py-1 opacity-40 hover:opacity-100 hover:bg-transparent h-7"
+				class="mt-1 rounded-lg border border-foreground/60 flex items-center gap-1.5 px-2 py-1 opacity-40 hover:opacity-100 hover:bg-transparent h-7"
 				onclick={() => (activeTab = null)}
 				disabled={isProcessing}
 				title="Close tab (Esc)"
 			>
 				<span class="text-[0.65em] font-mono">ESC</span>
-				<X class="w-3.5 h-3.5" />
+				<X class="w-3 h-3" />
 			</Button>
 		{/if}
 	</div>
