@@ -35,6 +35,9 @@
   let elementsTheme = $state<ElementTheme>('light');
   let appTheme = $state<ElementTheme>('light');
   let observer: MutationObserver | null = null;
+  
+  // Get reference to dropdown functions
+  let dropdownRef = $state<any>(null);
 
   // Setup mutation observer to detect app theme changes (same as ElementCard)
   onMount(() => {
@@ -92,96 +95,50 @@
     
     props.onStatusUpdate({
       type: 'processing',
-      message: 'Extracting style from cursor position...'
+      message: 'Getting style info...'
     });
 
     try {
-      const response = await getStyleInfo((statusUpdate) => {
-        props.onStatusUpdate(statusUpdate);
-      });
+      // Use a shorter timeout and better error handling
+      const response = await Promise.race([
+        getStyleInfo((statusUpdate) => {
+          props.onStatusUpdate(statusUpdate);
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Style extraction timed out after 10 seconds')), 10000)
+        )
+      ]) as any;
       
       if (response.success && response.data) {
-        // Map the response to our selectedStyle format
-        const { textAttributes, paragraphAttributes } = response.data;
-        
-        // Determine heading type (this comes from the Apps Script response)
-        const headingType = determineHeadingType(response.data.heading);
-        
-        // Create extracted style object
-        const extractedStyle = {
-          headingType: headingType,
-          tag: getTagForHeading(headingType),
-          label: getLabelForHeading(headingType),
-          fontSize: textAttributes?.FONT_SIZE || undefined,
-          extracted: true,
-          attributes: {
-            text: textAttributes,
-            paragraph: paragraphAttributes
-          }
-        };
-        
-        selectedStyle = extractedStyle;
-        
-        props.onStatusUpdate({
-          type: 'success',
-          message: `Extracted ${extractedStyle.label} style`,
-          executionTime: response.executionTime
-        });
+        // Use dropdown's createExtractedStyle function
+        if (dropdownRef?.createExtractedStyle) {
+          const extractedStyle = dropdownRef.createExtractedStyle(response.data);
+          selectedStyle = extractedStyle;
+          
+          props.onStatusUpdate({
+            type: 'success',
+            message: `Extracted ${extractedStyle.label} style`,
+            executionTime: response.executionTime
+          });
+        } else {
+          throw new Error("Style mapping functions not available");
+        }
       } else {
         throw new Error(response.error || "Failed to extract style");
       }
     } catch (error) {
       console.error("Failed to extract style:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to extract style";
+      
       props.onStatusUpdate({
         type: 'error',
-        message: error instanceof Error ? error.message : "Failed to extract style"
+        message: errorMessage,
+        details: 'Make sure your cursor is positioned in text and try again'
       });
     } finally {
       isProcessing = false;
       props.onProcessingEnd();
     }
-  }
-
-  // Helper functions to map Google Docs headings to our format
-  function determineHeadingType(docHeading: any): HeadingType {
-    // Map from DocumentApp.ParagraphHeading values to our HeadingType
-    const headingMap: Record<string, HeadingType> = {
-      'NORMAL': 'NORMAL',
-      'HEADING1': 'HEADING1', 
-      'HEADING2': 'HEADING2',
-      'HEADING3': 'HEADING3',
-      'HEADING4': 'HEADING4',
-      'HEADING5': 'HEADING5',
-      'HEADING6': 'HEADING6'
-    };
-    
-    return headingMap[docHeading] || 'NORMAL';
-  }
-
-  function getTagForHeading(headingType: HeadingType): string {
-    const tagMap: Record<HeadingType, string> = {
-      'NORMAL': 'p',
-      'HEADING1': 'h1',
-      'HEADING2': 'h2', 
-      'HEADING3': 'h3',
-      'HEADING4': 'h4',
-      'HEADING5': 'h5',
-      'HEADING6': 'h6'
-    };
-    return tagMap[headingType];
-  }
-
-  function getLabelForHeading(headingType: HeadingType): string {
-    const labelMap: Record<HeadingType, string> = {
-      'NORMAL': 'Normal text',
-      'HEADING1': 'Heading 1',
-      'HEADING2': 'Heading 2',
-      'HEADING3': 'Heading 3', 
-      'HEADING4': 'Heading 4',
-      'HEADING5': 'Heading 5',
-      'HEADING6': 'Heading 6'
-    };
-    return labelMap[headingType];
   }
 
   // Handle styleguide insertion with smart SVG contrast logic
@@ -330,6 +287,7 @@
 <div class="flex flex-col items-stretch w-full gap-2">
   <!-- Style Selector Dropdown -->
   <TextDropdown
+    bind:this={dropdownRef}
     selectedStyle={selectedStyle}
     disabled={isProcessing}
     onSelect={selectStyle}

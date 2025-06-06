@@ -3,6 +3,7 @@
   import { slide } from "svelte/transition";
   import { ChevronUp, Pipette } from "@lucide/svelte";
   import { cn } from "$lib/utils";
+  import type { HeadingType } from '$lib/services/google/text';
 
   // Props with SvelteKit 5 syntax
   const props = $props<{
@@ -14,16 +15,76 @@
   // Local state
   let showOptions = $state(false);
   
-  // Default text styles that are always available
+  // Text styles matching your style guide exactly
   const textStyles = [
-    { headingType: 'NORMAL', tag: 'p', label: 'Normal text', fontSize: 11 },
-    { headingType: 'HEADING1', tag: 'h1', label: 'Heading 1', fontSize: 24 },
-    { headingType: 'HEADING2', tag: 'h2', label: 'Heading 2', fontSize: 20 },
-    { headingType: 'HEADING3', tag: 'h3', label: 'Heading 3', fontSize: 16 },
-    { headingType: 'HEADING4', tag: 'h4', label: 'Heading 4', fontSize: 14 },
-    { headingType: 'HEADING5', tag: 'h5', label: 'Heading 5', fontSize: 12 },
-    { headingType: 'HEADING6', tag: 'h6', label: 'Heading 6', fontSize: 11 }
+    { headingType: 'NORMAL', tag: 'p', label: 'Normal', fontSize: 11, font: 'DM Sans', weight: 'Normal', color: '#000000' },
+    { headingType: 'HEADING1', tag: 'h1', label: 'Heading 1', fontSize: 32, font: 'Inter Tight', weight: 'Semibold', color: '#000000' },
+    { headingType: 'HEADING2', tag: 'h2', label: 'Heading 2', fontSize: 22, font: 'Inter Tight', weight: 'Semibold', color: '#000000' },
+    { headingType: 'HEADING3', tag: 'h3', label: 'Heading 3', fontSize: 16, font: 'Inter Tight', weight: 'Bold', color: '#000000' },
+    { headingType: 'HEADING4', tag: 'h4', label: 'Heading 4', fontSize: 14, font: 'Inter Tight', weight: 'Bold', color: '#000000' },
+    { headingType: 'HEADING5', tag: 'h5', label: 'Heading 5', fontSize: 11, font: 'Inter Tight', weight: 'Semibold', color: '#b7b7b7' },
+    { headingType: 'HEADING6', tag: 'h6', label: 'Heading 6', fontSize: 13, font: 'Inter Tight', weight: 'Semibold', color: '#666666' }
   ];
+
+  // Style mapping functions (moved from parent)
+  export function determineHeadingType(docHeading: any): HeadingType {
+    // Handle both string names and actual DocumentApp enum values
+    if (typeof docHeading === 'string') {
+      const headingMap: Record<string, HeadingType> = {
+        'NORMAL': 'NORMAL',
+        'HEADING1': 'HEADING1', 
+        'HEADING2': 'HEADING2',
+        'HEADING3': 'HEADING3',
+        'HEADING4': 'HEADING4',
+        'HEADING5': 'HEADING5',
+        'HEADING6': 'HEADING6'
+      };
+      return headingMap[docHeading] || 'NORMAL';
+    }
+    
+    // If it's an enum value, convert to string first
+    const headingStr = docHeading?.toString?.() || 'NORMAL';
+    return determineHeadingType(headingStr);
+  }
+
+  export function getTagForHeading(headingType: HeadingType): string {
+    const tagMap: Record<HeadingType, string> = {
+      'NORMAL': 'p',
+      'HEADING1': 'h1',
+      'HEADING2': 'h2', 
+      'HEADING3': 'h3',
+      'HEADING4': 'h4',
+      'HEADING5': 'h5',
+      'HEADING6': 'h6'
+    };
+    return tagMap[headingType];
+  }
+
+  export function getLabelForHeading(headingType: HeadingType): string {
+    const style = textStyles.find(s => s.headingType === headingType);
+    return style?.label || 'Unknown';
+  }
+
+  // Create extracted style from Google Docs response
+  export function createExtractedStyle(responseData: any) {
+    const { textAttributes, paragraphAttributes, heading } = responseData;
+    
+    // Determine heading type from response
+    const headingType = determineHeadingType(heading);
+    
+    // Create extracted style object
+    return {
+      headingType: headingType,
+      tag: getTagForHeading(headingType),
+      label: getLabelForHeading(headingType),
+      fontSize: textAttributes?.FONT_SIZE || textStyles.find(s => s.headingType === headingType)?.fontSize,
+      extracted: true,
+      attributes: {
+        text: textAttributes || {},
+        paragraph: paragraphAttributes || {}
+      }
+    };
+  }
 
   // Toggle options visibility
   function toggleOptions() {
@@ -55,33 +116,43 @@
     const textAttrs = selectedStyle.attributes.text;
     const attributes = [];
 
-    // Add font size if available
-    if (textAttrs.FONT_SIZE) {
+    // Add font size if available and different from default
+    if (textAttrs.FONT_SIZE && textAttrs.FONT_SIZE !== null) {
       attributes.push(`${textAttrs.FONT_SIZE}pt`);
     }
 
+    // Add font family if available and not default
+    if (textAttrs.FONT_FAMILY && textAttrs.FONT_FAMILY !== null && textAttrs.FONT_FAMILY !== 'Default') {
+      attributes.push(textAttrs.FONT_FAMILY);
+    }
+
     // Add bold if true
-    if (textAttrs.BOLD) {
+    if (textAttrs.BOLD === true) {
       attributes.push('Bold');
     }
 
-    // Add italic if true
-    if (textAttrs.ITALIC) {
+    // Add italic if true  
+    if (textAttrs.ITALIC === true) {
       attributes.push('Italic');
     }
 
     // Add underline if true
-    if (textAttrs.UNDERLINE) {
+    if (textAttrs.UNDERLINE === true) {
       attributes.push('Underlined');
     }
 
     // Add color if available (but not default black)
-    if (textAttrs.FOREGROUND_COLOR && textAttrs.FOREGROUND_COLOR !== '#000000') {
+    if (textAttrs.FOREGROUND_COLOR && 
+        textAttrs.FOREGROUND_COLOR !== '#000000' && 
+        textAttrs.FOREGROUND_COLOR !== null &&
+        textAttrs.FOREGROUND_COLOR !== 'Default') {
       attributes.push(`Color: ${textAttrs.FOREGROUND_COLOR}`);
     }
 
     // Add background color if available
-    if (textAttrs.BACKGROUND_COLOR) {
+    if (textAttrs.BACKGROUND_COLOR && 
+        textAttrs.BACKGROUND_COLOR !== null &&
+        textAttrs.BACKGROUND_COLOR !== 'Default') {
       attributes.push(`Highlight: ${textAttrs.BACKGROUND_COLOR}`);
     }
 
@@ -101,6 +172,14 @@
       isExtracted: props.selectedStyle.extracted
     };
   }
+
+  // Get display font size for style items
+  function getDisplayFontSize(style: any) {
+    if (props.selectedStyle?.fontSize) {
+      return Math.min(props.selectedStyle.fontSize, 16);
+    }
+    return Math.min(style.fontSize, 16);
+  }
 </script>
 
 <div class="flex flex-col">
@@ -118,12 +197,15 @@
             onclick={() => handleSelect(style)}
           >
             <div class="flex items-center gap-2">
-              <span class="text-muted-foreground text-xs">{style.tag}</span>
+              <span class="text-muted-foreground text-xs w-6">{style.tag}</span>
               <span 
-                class="text-foreground"
-                style={style.fontSize ? `font-size: ${style.fontSize}px` : ''}
+                class="text-foreground flex-1"
+                style="font-size: {Math.min(style.fontSize, 16)}px; color: {style.color}; font-weight: {style.weight === 'Bold' ? 'bold' : style.weight === 'Semibold' ? '600' : 'normal'};"
               >
                 {style.label}
+              </span>
+              <span class="text-muted-foreground text-xs">
+                {style.fontSize}pt
               </span>
             </div>
           </button>
@@ -150,10 +232,10 @@
             {#if display.isExtracted}
               <Pipette class="h-3 w-3 text-primary flex-shrink-0" />
             {/if}
-            <span class="text-muted-foreground text-xs">{display.tag}</span>
+            <span class="text-muted-foreground text-xs w-6">{display.tag}</span>
             <span 
               class="text-foreground font-medium"
-              style={props.selectedStyle.fontSize ? `font-size: ${Math.min(props.selectedStyle.fontSize, 16)}px` : ''}
+              style="font-size: {Math.min(props.selectedStyle.fontSize || 14, 16)}px"
             >
               {display.main}
             </span>

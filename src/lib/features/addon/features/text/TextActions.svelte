@@ -138,13 +138,13 @@
         <!-- Get Style Button -->
         <Button
           variant="outline"
-          class="flex-1 flex items-center justify-center text-[0.7em] h-full"
+          class="flex-1 flex items-center justify-center text-xs h-full"
           disabled={props.isProcessing}
           onclick={props.onExtractStyle}
           title="Extract style from cursor position"
         >
-          <Pipette class="h-3 w-3 -ml-2" />
-          <span>{compactMode ? "Get" : "Get"}</span>
+          <Pipette class="h-3 w-3 mr-1" />
+          <span>{compactMode ? "Get" : "Get Style"}</span>
         </Button>
         
         <!-- Apply Style Button -->
@@ -155,8 +155,8 @@
           onclick={props.onApplyStyle}
           title="Apply style to text at cursor"
         >
-          <Heading class="h-3 w-3 -ml-2" />
-          <span>{compactMode ? "Apply" : "Apply"}</span>
+          <Heading class="h-3 w-3 mr-1" />
+          <span>{compactMode ? "Apply" : "Apply Style"}</span>
         </Button>
       </div>
       
