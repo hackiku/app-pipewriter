@@ -2,7 +2,7 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
   import * as Select from "$lib/components/ui/select";
-  import { Moon, Sun } from "lucide-svelte";
+  import { Moon, Sun } from "@lucide/svelte";
   import ElementCard from "../dropper/ElementCard.svelte";
   import { elementManager } from '$lib/data/addon/utils';
   import type { ElementTheme } from '$lib/types/elements';

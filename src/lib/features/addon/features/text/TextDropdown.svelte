@@ -1,7 +1,7 @@
 <!-- Updated src/lib/features/addon/features/text/TextDropdown.svelte -->
 <script lang="ts">
   import { slide } from "svelte/transition";
-  import { ChevronUp } from "@lucide/svelte";
+  import { ChevronUp, Pipette } from "@lucide/svelte";
   import { cn } from "$lib/utils";
 
   // Props with SvelteKit 5 syntax
@@ -45,6 +45,62 @@
       "hover:bg-accent hover:text-accent-foreground"
     );
   }
+
+  // Helper to get extracted style attributes for display
+  function getExtractedAttributes(selectedStyle: any) {
+    if (!selectedStyle?.extracted || !selectedStyle?.attributes?.text) {
+      return null;
+    }
+
+    const textAttrs = selectedStyle.attributes.text;
+    const attributes = [];
+
+    // Add font size if available
+    if (textAttrs.FONT_SIZE) {
+      attributes.push(`${textAttrs.FONT_SIZE}pt`);
+    }
+
+    // Add bold if true
+    if (textAttrs.BOLD) {
+      attributes.push('Bold');
+    }
+
+    // Add italic if true
+    if (textAttrs.ITALIC) {
+      attributes.push('Italic');
+    }
+
+    // Add underline if true
+    if (textAttrs.UNDERLINE) {
+      attributes.push('Underlined');
+    }
+
+    // Add color if available (but not default black)
+    if (textAttrs.FOREGROUND_COLOR && textAttrs.FOREGROUND_COLOR !== '#000000') {
+      attributes.push(`Color: ${textAttrs.FOREGROUND_COLOR}`);
+    }
+
+    // Add background color if available
+    if (textAttrs.BACKGROUND_COLOR) {
+      attributes.push(`Highlight: ${textAttrs.BACKGROUND_COLOR}`);
+    }
+
+    return attributes.length > 0 ? attributes : null;
+  }
+
+  // Get display text for selected style with extracted attributes
+  function getSelectedStyleDisplay() {
+    if (!props.selectedStyle) return null;
+
+    const extractedAttrs = getExtractedAttributes(props.selectedStyle);
+    
+    return {
+      main: props.selectedStyle.label,
+      tag: props.selectedStyle.tag,
+      attributes: extractedAttrs,
+      isExtracted: props.selectedStyle.extracted
+    };
+  }
 </script>
 
 <div class="flex flex-col">
@@ -78,7 +134,7 @@
 
   <!-- Main selector button -->
   <button
-    class="w-full h-10 px-3 flex items-center justify-between rounded-lg
+    class="w-full min-h-10 px-3 py-2 flex items-center justify-between rounded-lg
            border border-input bg-background text-sm shadow-sm 
            transition-all duration-200 hover:bg-accent hover:text-accent-foreground
            disabled:cursor-not-allowed disabled:opacity-50"
@@ -86,21 +142,38 @@
     disabled={props.disabled}
   >
     {#if props.selectedStyle}
-      <div class="flex items-center gap-2">
-        <span class="text-muted-foreground">{props.selectedStyle.tag}</span>
-        <span 
-          class="text-foreground"
-          style={props.selectedStyle.fontSize ? `font-size: ${props.selectedStyle.fontSize}px` : ''}
-        >
-          {props.selectedStyle.label}
-        </span>
-      </div>
+      {@const display = getSelectedStyleDisplay()}
+      {#if display}
+        <div class="flex flex-col items-start gap-0.5 min-w-0 flex-1">
+          <!-- Main label with tag -->
+          <div class="flex items-center gap-2">
+            {#if display.isExtracted}
+              <Pipette class="h-3 w-3 text-primary flex-shrink-0" />
+            {/if}
+            <span class="text-muted-foreground text-xs">{display.tag}</span>
+            <span 
+              class="text-foreground font-medium"
+              style={props.selectedStyle.fontSize ? `font-size: ${Math.min(props.selectedStyle.fontSize, 16)}px` : ''}
+            >
+              {display.main}
+            </span>
+          </div>
+          
+          <!-- Extracted attributes if available -->
+          {#if display.attributes}
+            <div class="text-xs text-muted-foreground truncate w-full">
+              {display.attributes.join(' • ')}
+            </div>
+          {/if}
+        </div>
+      {/if}
     {:else}
       <span class="text-muted-foreground">Select text style...</span>
     {/if}
+    
     <ChevronUp
       class={cn(
-        "h-4 w-4 transition-transform duration-200 text-muted-foreground",
+        "h-4 w-4 transition-transform duration-200 text-muted-foreground flex-shrink-0 ml-2",
         !showOptions && "rotate-180"
       )}
     />

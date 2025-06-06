@@ -1,10 +1,10 @@
 <!-- $lib/iframe/features/text/TextButtons.svelte -->
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
-  import { Pipette, RefreshCw, Moon, Sun, Heading } from "lucide-svelte";
+  import { Pipette, RefreshCw, Moon, Sun, Heading } from "@lucide/svelte";
   import ElementCard from "../dropper/ElementCard.svelte";
   import { elementManager } from '$lib/data/addon/utils';
-  import type { ElementTheme } from '$lib/data/addon/types';
+  import type { ElementTheme } from '$lib/types/elements';
 
   // Props
   const props = $props<{

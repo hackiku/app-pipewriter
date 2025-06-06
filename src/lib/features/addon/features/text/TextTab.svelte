@@ -3,7 +3,9 @@
   import TextDropdown from "./TextDropdown.svelte";
   import TextActions from "./TextActions.svelte";
   import { insertElement } from "$lib/services/google/docs";
+  import { applyTextStyle, updateAllMatchingHeadings, getStyleInfo } from "$lib/services/google/text";
   import type { ElementTheme } from '$lib/types/elements';
+  import type { HeadingType } from '$lib/services/google/text';
   import { onMount, onDestroy } from 'svelte';
   
   // Props using SvelteKit 5 syntax
@@ -23,10 +25,12 @@
   // State
   let isProcessing = $state(false);
   let selectedStyle = $state<{
-    headingType: string;
+    headingType: HeadingType;
     tag: string;
     label: string;
     fontSize?: number;
+    extracted?: boolean; // Flag to indicate if this was extracted from docs
+    attributes?: any; // Store extracted attributes
   } | null>(null);
   let elementsTheme = $state<ElementTheme>('light');
   let appTheme = $state<ElementTheme>('light');
@@ -75,8 +79,109 @@
   }
 
   // Handle style selection
-  function selectStyle(style) {
+  function selectStyle(style: any) {
     selectedStyle = style;
+  }
+
+  // Extract style from current cursor position in Google Docs
+  async function extractStyle() {
+    if (isProcessing) return;
+    
+    isProcessing = true;
+    props.onProcessingStart();
+    
+    props.onStatusUpdate({
+      type: 'processing',
+      message: 'Extracting style from cursor position...'
+    });
+
+    try {
+      const response = await getStyleInfo((statusUpdate) => {
+        props.onStatusUpdate(statusUpdate);
+      });
+      
+      if (response.success && response.data) {
+        // Map the response to our selectedStyle format
+        const { textAttributes, paragraphAttributes } = response.data;
+        
+        // Determine heading type (this comes from the Apps Script response)
+        const headingType = determineHeadingType(response.data.heading);
+        
+        // Create extracted style object
+        const extractedStyle = {
+          headingType: headingType,
+          tag: getTagForHeading(headingType),
+          label: getLabelForHeading(headingType),
+          fontSize: textAttributes?.FONT_SIZE || undefined,
+          extracted: true,
+          attributes: {
+            text: textAttributes,
+            paragraph: paragraphAttributes
+          }
+        };
+        
+        selectedStyle = extractedStyle;
+        
+        props.onStatusUpdate({
+          type: 'success',
+          message: `Extracted ${extractedStyle.label} style`,
+          executionTime: response.executionTime
+        });
+      } else {
+        throw new Error(response.error || "Failed to extract style");
+      }
+    } catch (error) {
+      console.error("Failed to extract style:", error);
+      props.onStatusUpdate({
+        type: 'error',
+        message: error instanceof Error ? error.message : "Failed to extract style"
+      });
+    } finally {
+      isProcessing = false;
+      props.onProcessingEnd();
+    }
+  }
+
+  // Helper functions to map Google Docs headings to our format
+  function determineHeadingType(docHeading: any): HeadingType {
+    // Map from DocumentApp.ParagraphHeading values to our HeadingType
+    const headingMap: Record<string, HeadingType> = {
+      'NORMAL': 'NORMAL',
+      'HEADING1': 'HEADING1', 
+      'HEADING2': 'HEADING2',
+      'HEADING3': 'HEADING3',
+      'HEADING4': 'HEADING4',
+      'HEADING5': 'HEADING5',
+      'HEADING6': 'HEADING6'
+    };
+    
+    return headingMap[docHeading] || 'NORMAL';
+  }
+
+  function getTagForHeading(headingType: HeadingType): string {
+    const tagMap: Record<HeadingType, string> = {
+      'NORMAL': 'p',
+      'HEADING1': 'h1',
+      'HEADING2': 'h2', 
+      'HEADING3': 'h3',
+      'HEADING4': 'h4',
+      'HEADING5': 'h5',
+      'HEADING6': 'h6'
+    };
+    return tagMap[headingType];
+  }
+
+  function getLabelForHeading(headingType: HeadingType): string {
+    const labelMap: Record<HeadingType, string> = {
+      'NORMAL': 'Normal text',
+      'HEADING1': 'Heading 1',
+      'HEADING2': 'Heading 2',
+      'HEADING3': 'Heading 3', 
+      'HEADING4': 'Heading 4',
+      'HEADING5': 'Heading 5',
+      'HEADING6': 'Heading 6'
+    };
+    return labelMap[headingType];
   }
 
   // Handle styleguide insertion with smart SVG contrast logic
@@ -134,14 +239,19 @@
     });
 
     try {
-      // TODO: Connect to actual Google Docs API
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      props.onStatusUpdate({
-        type: 'success',
-        message: `${selectedStyle.label} style applied`,
-        executionTime: 300
+      const response = await applyTextStyle(selectedStyle.headingType, (statusUpdate) => {
+        props.onStatusUpdate(statusUpdate);
       });
+      
+      if (response.success) {
+        props.onStatusUpdate({
+          type: 'success',
+          message: `${selectedStyle.label} style applied`,
+          executionTime: response.executionTime
+        });
+      } else {
+        throw new Error(response.error || "Failed to apply style");
+      }
     } catch (error) {
       console.error("Failed to apply style:", error);
       props.onStatusUpdate({
@@ -156,25 +266,30 @@
 
   // Apply style to all matching text in document
   async function updateAllStyles() {
-    if (!selectedStyle || isProcessing) return;
+    if (isProcessing) return;
     
     isProcessing = true;
     props.onProcessingStart();
     
     props.onStatusUpdate({
       type: 'processing',
-      message: `Updating all ${selectedStyle.label} styles...`
+      message: 'Updating all matching styles...'
     });
 
     try {
-      // TODO: Connect to actual Google Docs API for "update all"
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      props.onStatusUpdate({
-        type: 'success',
-        message: `All ${selectedStyle.label} styles updated`,
-        executionTime: 500
+      const response = await updateAllMatchingHeadings((statusUpdate) => {
+        props.onStatusUpdate(statusUpdate);
       });
+      
+      if (response.success) {
+        props.onStatusUpdate({
+          type: 'success',
+          message: response.data?.message || 'All matching styles updated',
+          executionTime: response.executionTime
+        });
+      } else {
+        throw new Error(response.error || "Failed to update all styles");
+      }
     } catch (error) {
       console.error("Failed to update all styles:", error);
       props.onStatusUpdate({
@@ -220,13 +335,14 @@
     onSelect={selectStyle}
   />
 
-  <!-- Actions - Updated to remove Get button and add Update All -->
+  <!-- Actions - Updated with Get button and proper layout -->
   <TextActions
     isProcessing={isProcessing}
     selectedStyle={selectedStyle}
     theme={elementsTheme}
     svgUrl={getSvgUrl()}
     onStyleGuideInsert={handleStyleGuideInsert}
+    onExtractStyle={extractStyle}
     onApplyStyle={applyStyle}
     onUpdateAll={updateAllStyles}
     onResetStyle={resetStyle}

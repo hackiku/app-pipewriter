@@ -1,9 +1,8 @@
 <!-- Updated src/lib/features/addon/features/text/TextActions.svelte -->
 <script lang="ts">
   import * as Resizable from "$lib/components/ui/resizable";
+  import { RefreshCcw, Heading, Pipette, AlertCircle } from "@lucide/svelte";
   import { Button } from "$lib/components/ui/button";
-  import { Heading, RefreshCw, AlertCircle } from "lucide-svelte";
-  import * as Select from "$lib/components/ui/select";
   import type { ElementTheme } from '$lib/types/elements';
 
   // Props
@@ -13,6 +12,7 @@
     theme: ElementTheme;
     svgUrl: string;
     onStyleGuideInsert: () => void;
+    onExtractStyle: () => void;
     onApplyStyle: () => void;
     onUpdateAll: () => void;
     onResetStyle: () => void;
@@ -24,7 +24,6 @@
   let rightPaneElement = $state<HTMLDivElement | null>(null);
   let compactMode = $derived(rightPaneWidth < 120);
   let imageError = $state(false);
-  let styleMode = $state("local");
 
   // Resize observer to detect width changes
   $effect(() => {
@@ -42,11 +41,6 @@
       resizeObserver.disconnect();
     };
   });
-
-  // Handle style mode change  
-  function handleStyleModeChange(value) {
-    styleMode = value;
-  }
 
   // Handle image loading errors
   function handleImageError() {
@@ -128,23 +122,8 @@
           {props.theme}
         </Button>
         
-        <!-- Style Mode Select -->
-        <div class="w-14">
-          <Select.Root 
-            type="single" 
-            value={styleMode}
-            onValueChange={handleStyleModeChange} 
-            disabled={props.isProcessing}
-          >
-            <Select.Trigger class="h-5 text-[0.6em] bg-transparent border-0 p-0 w-full px-1 justify-end">
-              {styleMode === "local" ? "local" : "base"}
-            </Select.Trigger>
-            <Select.Content>
-              <Select.Item value="local" class="text-xs">Local</Select.Item>
-              <Select.Item value="original" class="text-xs">Base</Select.Item>
-            </Select.Content>
-          </Select.Root>
-        </div>
+        <!-- Empty space for balance -->
+        <div></div>
       </div>
     </div>
   </Resizable.Pane>
@@ -154,34 +133,47 @@
   <!-- Right Pane: Action Buttons -->
   <Resizable.Pane defaultSize={60} minSize={40} maxSize={75}>
     <div bind:this={rightPaneElement} class="h-full flex flex-col gap-2">
-      <!-- Row 1: Apply Style (Primary) -->
-      <div class="flex-1">
+      <!-- Row 1: Get | Apply (same width, both with icons left) -->
+      <div class="flex-1 flex gap-2">
+        <!-- Get Style Button -->
+        <Button
+          variant="outline"
+          class="flex-1 flex items-center justify-center text-[0.7em] h-full"
+          disabled={props.isProcessing}
+          onclick={props.onExtractStyle}
+          title="Extract style from cursor position"
+        >
+          <Pipette class="h-3 w-3 -ml-2" />
+          <span>{compactMode ? "Get" : "Get"}</span>
+        </Button>
+        
+        <!-- Apply Style Button -->
         <Button
           variant={props.selectedStyle ? "default" : "outline"}
-          class="w-full h-full flex items-center justify-center text-xs"
+          class="flex-1 flex items-center justify-center text-xs h-full"
           disabled={props.isProcessing || !props.selectedStyle}
           onclick={props.onApplyStyle}
           title="Apply style to text at cursor"
         >
-          <Heading class="h-3 w-3 mr-1" />
-          <span>{compactMode ? "Apply" : "Apply Style"}</span>
+          <Heading class="h-3 w-3 -ml-2" />
+          <span>{compactMode ? "Apply" : "Apply"}</span>
         </Button>
       </div>
       
-      <!-- Row 2: Update All + Reset -->
+      <!-- Row 2: Update All | Reset (icon only) -->
       <div class="flex-1 flex gap-2">
-        <!-- Update All Button (Secondary) -->
+        <!-- Update All Button -->
         <Button
           variant="outline"
           class="flex-1 flex items-center justify-center text-xs h-full"
-          disabled={props.isProcessing || !props.selectedStyle}
+          disabled={props.isProcessing}
           onclick={props.onUpdateAll}
-          title="Apply style to all matching text in document"
+          title="Update all matching headings to match cursor style"
         >
           <span>{compactMode ? "All" : "Update All"}</span>
         </Button>
         
-        <!-- Reset Button -->
+        <!-- Reset Button (icon only) -->
         <Button
           variant="outline"
           class="aspect-square h-full p-0"
@@ -189,7 +181,7 @@
           onclick={props.onResetStyle}
           title="Reset style selection"
         >
-          <RefreshCw class="h-3 w-3" />
+          <RefreshCcw class="h-3 w-3" />
         </Button>
       </div>
     </div>

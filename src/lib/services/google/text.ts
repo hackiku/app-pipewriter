@@ -1,21 +1,25 @@
 // src/lib/services/google/text.ts
-// Import this file in src/lib/services/google/index.ts
 import { getGoogleService } from './client';
 import type { StatusCallback } from './client';
-import type { ApiResponse } from '$lib/data/addon/types';
+import type { ApiResponse } from '$lib/types/elements';
 
 /**
- * Apply a text style to the selected text
+ * Available heading types for text styling
+ */
+export type HeadingType =
+	| 'NORMAL'
+	| 'HEADING1'
+	| 'HEADING2'
+	| 'HEADING3'
+	| 'HEADING4'
+	| 'HEADING5'
+	| 'HEADING6';
+
+/**
+ * Apply text style to current paragraph
  */
 export async function applyTextStyle(
-	style: {
-		headingType: string;
-		fontSize?: number;
-		fontFamily?: string;
-		isBold?: boolean;
-		isItalic?: boolean;
-		color?: string;
-	},
+	headingType: HeadingType,
 	onStatus?: StatusCallback
 ): Promise<ApiResponse> {
 	try {
@@ -25,7 +29,10 @@ export async function applyTextStyle(
 			throw new Error('Google Apps Service is not available');
 		}
 
-		return client.sendMessage('formatSelectedText', { format: style }, onStatus);
+		return client.sendMessage('textOps', {
+			action: 'applyStyle',
+			headingType
+		}, onStatus);
 	} catch (error) {
 		console.error('Error in applyTextStyle:', error);
 		throw error;
@@ -33,9 +40,10 @@ export async function applyTextStyle(
 }
 
 /**
- * Get the current format of the selected text
+ * Update all matching headings to match current paragraph style
+ * Replicates Google Docs' "Update Heading X to match" functionality
  */
-export async function getSelectedTextFormat(
+export async function updateAllMatchingHeadings(
 	onStatus?: StatusCallback
 ): Promise<ApiResponse> {
 	try {
@@ -45,20 +53,19 @@ export async function getSelectedTextFormat(
 			throw new Error('Google Apps Service is not available');
 		}
 
-		return client.sendMessage('getSelectedFormat', {}, onStatus);
+		return client.sendMessage('textOps', {
+			action: 'updateAllMatching'
+		}, onStatus);
 	} catch (error) {
-		console.error('Error in getSelectedTextFormat:', error);
+		console.error('Error in updateAllMatchingHeadings:', error);
 		throw error;
 	}
 }
 
 /**
- * Count words in the document or selection
+ * Get current paragraph style information (for debugging/development)
  */
-export async function countWords(
-	options: {
-		selection?: boolean;
-	} = {},
+export async function getStyleInfo(
 	onStatus?: StatusCallback
 ): Promise<ApiResponse> {
 	try {
@@ -68,11 +75,35 @@ export async function countWords(
 			throw new Error('Google Apps Service is not available');
 		}
 
-		return client.sendMessage('countWords', {
-			selection: options.selection || false
+		return client.sendMessage('textOps', {
+			action: 'getStyleInfo'
 		}, onStatus);
 	} catch (error) {
-		console.error('Error in countWords:', error);
+		console.error('Error in getStyleInfo:', error);
 		throw error;
 	}
 }
+
+/**
+ * Convenience functions for specific heading types
+ */
+export const applyNormalText = (onStatus?: StatusCallback) =>
+	applyTextStyle('NORMAL', onStatus);
+
+export const applyHeading1 = (onStatus?: StatusCallback) =>
+	applyTextStyle('HEADING1', onStatus);
+
+export const applyHeading2 = (onStatus?: StatusCallback) =>
+	applyTextStyle('HEADING2', onStatus);
+
+export const applyHeading3 = (onStatus?: StatusCallback) =>
+	applyTextStyle('HEADING3', onStatus);
+
+export const applyHeading4 = (onStatus?: StatusCallback) =>
+	applyTextStyle('HEADING4', onStatus);
+
+export const applyHeading5 = (onStatus?: StatusCallback) =>
+	applyTextStyle('HEADING5', onStatus);
+
+export const applyHeading6 = (onStatus?: StatusCallback) =>
+	applyTextStyle('HEADING6', onStatus);
