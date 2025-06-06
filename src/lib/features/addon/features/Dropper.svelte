@@ -4,7 +4,7 @@
   import type { ElementTheme, StatusUpdate } from '$lib/types/elements';
   import { insertElement } from "$lib/services/google/docs";
   
-  import StatusSonner from "../components/StatusSonner.svelte";
+  import CompactStatus from "../components/CompactStatus.svelte";
   import DropperGrid from "./dropper/DropperGrid.svelte";
   import DropperBar from "./dropper/DropperBar.svelte";
 
@@ -278,8 +278,8 @@
     />
   </div>
   
-  <!-- Status Sonner - Fixed positioned, will appear in bottom-right -->
-  <StatusSonner {status} onStatusClose={handleStatusClose} />
+  <!-- UPDATED: Use CompactStatus instead of StatusSonner -->
+  <CompactStatus status={status} onStatusClose={handleStatusClose} />
 </div>
 
 <style>
