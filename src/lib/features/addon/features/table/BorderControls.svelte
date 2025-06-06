@@ -1,6 +1,13 @@
 <!-- src/lib/features/addon/features/table/BorderControls.svelte -->
 <script lang="ts">
   import { cn } from "$lib/utils";
+  import { tick } from "svelte";
+  import { Check, ChevronsUpDown } from "@lucide/svelte";
+	// import CheckIcon from "@lucide/svelte/icons/check";
+  // import ChevronsUpDownIcon from "@lucide/svelte/icons/chevrons-up-down";
+  import * as Command from "$lib/components/ui/command/index.js";
+  import * as Popover from "$lib/components/ui/popover/index.js";
+  import { Button } from "$lib/components/ui/button/index.js";
 
   // Props
   const props = $props<{
@@ -10,54 +17,86 @@
     onBorderChange: (width: number, color?: string) => void;
   }>();
 
-  // Border presets
-  const borderPresets = [
-    { width: 0, label: "None" },
-    { width: 1, label: "1pt" },
-    { width: 2, label: "2pt" },
-    { width: 3, label: "3pt" }
+  // Border options
+  const borderOptions = [
+    { value: 0, label: "No Border" },
+    { value: 1, label: "Border 1pt" },
+    { value: 2, label: "Border 2pt" },
+    { value: 3, label: "Border 3pt" },
+    { value: 4, label: "Border 4pt" },
+    { value: 5, label: "Border 5pt" },
+    { value: 6, label: "Border 6pt" }
   ];
 
-  // Get button class for border presets
-  function getBorderClass(width: number) {
-    const isSelected = props.borderWidth === width;
-    return cn(
-      "px-3 py-1.5 text-xs border rounded-md transition-colors",
-      isSelected 
-        ? "bg-primary/10 border-primary text-primary" 
-        : "border-border hover:bg-accent",
-      props.isProcessing && "opacity-50 cursor-not-allowed"
-    );
+  // Combobox state
+  let open = $state(false);
+  let triggerRef = $state<HTMLButtonElement | null>(null);
+
+  // Get selected option
+  const selectedOption = $derived(
+    borderOptions.find((option) => option.value === props.borderWidth) || borderOptions[0]
+  );
+
+  // Close and refocus
+  function closeAndFocusTrigger() {
+    open = false;
+    tick().then(() => {
+      triggerRef?.focus();
+    });
   }
 
-  // Handle preset click
-  function handlePresetClick(width: number) {
-    if (!props.isProcessing) {
-      props.onBorderChange(width, props.borderColor);
-    }
+  // Handle selection
+  function handleSelect(width: number) {
+    props.onBorderChange(width, props.borderColor);
+    closeAndFocusTrigger();
   }
 </script>
 
 <!-- Full width row layout -->
-<div class="flex items-center gap-3">
-  <!-- Left: Label -->
-  <div class="flex items-center gap-2 min-w-0 flex-shrink">
-    <h3 class="text-[0.6em] font-medium text-muted-foreground whitespace-nowrap">
-      Border
-    </h3>
-  </div>
+<!-- <div class="flex items-center gap-3"> -->
 
-  <!-- Right: Border Presets -->
-  <div class="flex gap-1 flex-1">
-    {#each borderPresets as preset}
-      <button
-        class={getBorderClass(preset.width)}
-        onclick={() => handlePresetClick(preset.width)}
-        disabled={props.isProcessing}
-        title={`Set border to ${preset.label}`}
-      >
-        {preset.label}
-      </button>
-    {/each}
+
+  <!-- Right: Combobox -->
+  <div class="flex-1">
+    <Popover.Root bind:open>
+      <Popover.Trigger bind:ref={triggerRef}>
+        {#snippet child({ props: triggerProps })}
+          <Button
+            variant="outline"
+            class="w-full justify-between h-8 text-xs"
+            {...triggerProps}
+            role="combobox"
+            aria-expanded={open}
+            disabled={props.isProcessing}
+          >
+            {selectedOption.label}
+            <ChevronsUpDown class="h-3 w-3 opacity-50" />
+          </Button>
+        {/snippet}
+      </Popover.Trigger>
+      <Popover.Content class="w-[var(--radix-popover-trigger-width)] p-0">
+        <Command.Root>
+          <Command.List>
+            <Command.Empty>No border option found.</Command.Empty>
+            <Command.Group>
+              {#each borderOptions as option}
+                <Command.Item
+                  value={option.value.toString()}
+                  onSelect={() => handleSelect(option.value)}
+                >
+                  <Check
+                    class={cn(
+                      "mr-2 h-3 w-3",
+                      props.borderWidth !== option.value && "text-transparent"
+                    )}
+                  />
+                  {option.label}
+                </Command.Item>
+              {/each}
+            </Command.Group>
+          </Command.List>
+        </Command.Root>
+      </Popover.Content>
+    </Popover.Root>
   </div>
-</div>
+<!-- </div> -->

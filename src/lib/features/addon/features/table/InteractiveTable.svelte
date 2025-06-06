@@ -76,19 +76,19 @@
     return `${baseClasses} self-center justify-self-start flex-shrink-0`;
   }
 
-  // Fixed 2x2 table for compact view - SHORTER cells for better fit
+  // Fixed 2x2 table for compact view - TALLER cells for better alignment
   const rows = 2;
   const cols = 2;
   const totalCells = rows * cols;
 </script>
 
-<!-- FIXED: Shorter cells for better layout balance -->
-<div class="flex justify-center">
+<!-- ENHANCED: Taller table to help with alignment -->
+<div class="flex justify-center h-full items-center">
   <div 
     class="rounded-sm shadow-sm {getBorderStyle()}"
     style="{getBorderColor()} {props.backgroundColor && props.scope === 'table' ? `background-color: ${props.backgroundColor};` : 'background-color: white;'}"
   >
-    <!-- Dynamic grid with SHORTER cells for layout balance -->
+    <!-- Dynamic grid with TALLER cells for better alignment -->
     <div 
       class="grid"
       style="grid-template-columns: repeat({cols}, minmax(0, 1fr));"
@@ -99,8 +99,8 @@
         
         <div 
           class={cn(
-            // FIXED: Shorter cells (min-h-12) and NO DOUBLE BORDERS
-            "min-w-14 min-h-12 flex transition-all duration-200 relative",
+            // ENHANCED: Taller cells (min-h-16) for better visual balance
+            "min-w-16 min-h-16 flex transition-all duration-200 relative",
             props.borderWidth === 0 ? "border-dashed border-neutral-300 dark:border-neutral-600" : "border-solid border-neutral-300 dark:border-neutral-600",
             getCellAlignClass(),
             getBackgroundColor(index),

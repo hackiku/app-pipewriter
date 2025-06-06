@@ -224,11 +224,11 @@
 <div class="space-y-4">
 	<div class="flex h-full w-full flex-col gap-3">
 		<!-- Row 1: Preview + Controls - ENHANCED GRID STRETCHING -->
-		<div class="grid flex-1 grid-cols-2 gap-3">
+		<div class="grid flex-1 grid-cols-2 gap-3" style="min-height: 120px;">
 			<!-- Left: Interactive Table Preview + Scope Toggle -->
-			<div class="flex flex-col justify-between gap-2">
-				<!-- Table preview - grows to fill space -->
-				<div class="flex flex-1 items-center justify-center">
+			<div class="flex flex-col justify-between gap-2 h-full">
+				<!-- Table preview - ENHANCED: grows to fill more space -->
+				<div class="flex flex-1 items-center justify-center" style="min-height: 80px;">
 					<InteractiveTable
 						{cellAlignment}
 						{scope}
@@ -239,7 +239,7 @@
 					/>
 				</div>
 
-				<!-- MOVED FROM CHILD: Scope Toggle -->
+				<!-- MOVED FROM CHILD: Scope Toggle - positioned at bottom -->
 				<div class="flex items-center justify-center">
 					<button
 						class={getScopeToggleClass()}
@@ -258,7 +258,7 @@
 				</div>
 			</div>
 
-			<!-- Right: Alignment + Padding Controls - STRETCHED -->
+			<!-- Right: Alignment + Padding Controls - STRETCHED to align with left -->
 			<div class="flex h-full flex-col justify-between gap-2">
 				<AlignmentButtonGrid
 					{cellAlignment}
@@ -270,24 +270,27 @@
 
 				<hr class="border-border" />
 
-				<!-- ENHANCED: PaddingControls fills remaining space -->
-				<div class="flex-1">
+				<!-- ENHANCED: PaddingControls fills remaining space and aligns with scope toggle -->
+				<div class="flex-1 flex flex-col justify-end">
 					<PaddingControls {cellPadding} {isProcessing} onPaddingChange={handlePaddingChange} />
 				</div>
 			</div>
 		</div>
 	</div>
 
+	<!-- Enhanced ColorControls with color picker -->
 	<ColorControls {backgroundColor} {isProcessing} onColorChange={handleColorChange} />
 
-	<!-- Actions Buttons -->
+	<!-- Actions Row with BorderControls combobox -->
 	<div class="flex items-center gap-2">
-		<BorderControls
-			{borderWidth}
-			{borderColor}
-			{isProcessing}
-			onBorderChange={handleBorderChange}
-		/>
+		<div class="flex-1">
+			<BorderControls
+				{borderWidth}
+				{borderColor}
+				{isProcessing}
+				onBorderChange={handleBorderChange}
+			/>
+		</div>
 
 		<Button
 			variant="outline"
