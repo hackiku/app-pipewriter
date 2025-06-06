@@ -115,7 +115,11 @@
 							onclick={props.onToggleTheme}
 						>
 							<div class="mx-auto flex items-center justify-center">
-								<svelte:component this={currentTheme.icon} class="h-4 w-4 text-muted-foreground hover:text-foreground" />
+								{#if props.theme === 'light'}
+									<Sun class="h-4 w-4 text-muted-foreground hover:text-foreground" />
+								{:else}
+									<Moon class="h-4 w-4 text-muted-foreground hover:text-foreground" />
+								{/if}
 							</div>
 							<span class="sr-only">Switch to {nextTheme.label} theme</span>
 						</Tooltip.Trigger>
@@ -125,7 +129,7 @@
 					</Tooltip.Root>
 
 					<!-- FIXED: Grid Size Button with Icons -->
-					<Tooltip.Root>
+					<!-- <Tooltip.Root>
 						<Tooltip.Trigger
 							class="h-8 w-8 rounded-full border-2 border-border bg-background/90 backdrop-blur-sm
 							transition-all duration-150 hover:border-primary/60 hover:bg-accent hover:text-foreground hover:shadow-sm active:scale-95"
@@ -137,7 +141,7 @@
 						<Tooltip.Content>
 							<p>Switch to {nextGridSize.label}</p>
 						</Tooltip.Content>
-					</Tooltip.Root>
+					</Tooltip.Root> -->
 				</div>
 
 				<!-- Chain Mode Actions -->
@@ -163,7 +167,7 @@
 						<!-- Drop Button with text -->
 						<Tooltip.Root>
 							<Tooltip.Trigger
-								class="h-7 px-3 rounded-lg border-2 border-primary bg-primary/10 backdrop-blur-sm
+								class="h-7 px-3 rounded-full border-2 border-primary bg-primary/10 backdrop-blur-sm
 								   text-primary transition-all duration-150 hover:border-primary hover:bg-primary/20
 								   hover:shadow-sm active:scale-95 disabled:cursor-not-allowed disabled:opacity-50
 								   flex items-center gap-1 text-xs font-medium"
@@ -174,7 +178,7 @@
 								<span>Drop</span>
 							</Tooltip.Trigger>
 							<Tooltip.Content>
-								<p class="text-[0.75em]">Drop {props.queuedElements?.length || 0} elements</p>
+								<p>Drop {props.queuedElements?.length || 0} elements</p>
 							</Tooltip.Content>
 						</Tooltip.Root>
 					</div>

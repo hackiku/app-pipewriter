@@ -39,7 +39,7 @@
   }
 </script>
 
-<div class="space-y-2 px-2 pb-10">
+<div class="space-y-2 px-2 pb-6">
   {#if Object.keys(props.elements).length === 0}
     <div class="p-4 text-center">
       <p class="text-neutral-500 dark:text-neutral-400 text-sm">

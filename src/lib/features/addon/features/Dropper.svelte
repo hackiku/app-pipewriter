@@ -7,6 +7,7 @@
   import CompactStatus from "../components/CompactStatus.svelte";
   import DropperGrid from "./dropper/DropperGrid.svelte";
   import DropperBar from "./dropper/DropperBar.svelte";
+  import DocsLinks from "./dropper/DocsLinks.svelte";
 
   // New interface for queue items with individual themes
   interface QueueItem {
@@ -257,7 +258,7 @@
 
 <div class="relative h-full z-0 bg-neutral-100/50 dark:bg-neutral-800/50">
   <!-- Main Container -->
-  <div class="h-full pb-8 pt-2 overflow-y-auto scrollbar-none">
+  <div class="h-full __pb-8 pt-2 overflow-y-auto scrollbar-none">
     <DropperGrid 
       isProcessing={isProcessing}
       context={context}
@@ -271,6 +272,17 @@
       getChainPosition={getChainPosition}
       onElementSelect={handleElementSelect}
       onChainToggle={handleChainToggle}
+    />
+    
+    <!-- Spacer and Divider -->
+    <div class="py-4 px-2">
+      <hr class="border-border/30" />
+    </div>
+
+    <!-- Template Documents Section -->
+    <DocsLinks 
+      userTier={userTier}
+      showInfo={showInfo}
     />
   </div>
 
