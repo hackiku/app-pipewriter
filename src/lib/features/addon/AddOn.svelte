@@ -8,7 +8,8 @@
 	import Dropper from "./features/Dropper.svelte";
 	import DropperQueue from "./features/dropper/DropperQueue.svelte";
 	import Tabs from "./features/Tabs.svelte";
-	import TrialBanner from "$lib/components/pricing/TrialBanner.svelte";
+	
+	// import TrialBanner from "$lib/components/pricing/TrialBanner.svelte";
 	
 	import { getGoogleService } from "$lib/services/google/client";
 	import { signOut } from '$lib/services/auth';

@@ -270,6 +270,7 @@
       selectedElements={[]}
       chainMode={chainMode}
       queuedElements={queuedElements.map(item => item.id)}
+      gridColumns={gridColumns}
       onToggleTheme={toggleTheme}
       onGridChange={updateGridColumns}
       onToggleChainMode={toggleChainMode}
