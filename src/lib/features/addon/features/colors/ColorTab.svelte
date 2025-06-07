@@ -390,7 +390,7 @@
 
       <!-- Hex Color Button with Integrated Copy -->
       <button
-        class="flex flex-1 items-center rounded-lg overflow-hidden border border-input bg-card text-sm shadow-sm transition-all duration-200 hover:bg-accent disabled:opacity-50 group
+        class="flex flex-1 items-center h-8 rounded-lg overflow-hidden border border-input bg-card text-sm shadow-sm transition-all duration-200 hover:bg-accent disabled:opacity-50 group
                {shouldShowUpgradeBar() ? 'pointer-events-none opacity-40' : ''}"
         onclick={(e) => {
           if (shouldShowUpgradeBar()) return;
@@ -402,7 +402,7 @@
         disabled={isProcessing || shouldShowUpgradeBar()}
       >
         <!-- Color preview -->
-        <div class="h-8 ml-[1px] aspect-square relative">
+        <div class="h-7 ml-[1px] aspect-square relative">
           <div
             class="absolute inset-0.5 border border-black/5 rounded-md"
             style="background-color: {currentColor};"
@@ -462,7 +462,7 @@
       <!-- Apply button -->
       <Button 
         variant="default" 
-        class="px-3 h-9 text-xs {shouldShowUpgradeBar() ? 'pointer-events-none opacity-40' : ''}"
+        class="px-3 h-8 text-xs {shouldShowUpgradeBar() ? 'pointer-events-none opacity-40' : ''}"
         disabled={isProcessing || shouldShowUpgradeBar()}
         onclick={handleSubmit}
       >

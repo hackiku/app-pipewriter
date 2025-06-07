@@ -3,7 +3,7 @@
   import TextDropdown from "./TextDropdown.svelte";
   import TextActions from "./TextActions.svelte";
   import { Button } from "$lib/components/ui/button";
-  import { RefreshCcw, Heading } from "@lucide/svelte";
+  import { RefreshCcw, Heading, Save } from "@lucide/svelte";
   import { insertElement } from "$lib/services/google/docs";
   import { applyTextStyle, updateAllMatchingHeadings, getStyleInfo } from "$lib/services/google/text";
   import type { ElementTheme } from '$lib/types/elements';
@@ -308,11 +308,24 @@
   />
 
   <!-- Action Buttons Row - Reset | Apply (aligned right) -->
+	<!-- TODO: full width button bar, keep h-9 in wrapper-->
   <div class="flex justify-end gap-2 w-full">
-    <!-- Reset Button (icon only, square) -->
+    
+		<!-- Reset Button (icon only, square) -->
     <Button
       variant="outline"
-      class="aspect-square h-10 p-0 flex items-center justify-center"
+      class="aspect-square h-8 p-0 flex items-center justify-center"
+      disabled={isProcessing || !selectedStyle}
+      onclick={resetStyle}
+      title="Reset style selection"
+    >
+      <Save class="h-3 w-3" />
+			<span>Save</span>
+
+    </Button>
+    <Button
+      variant="outline"
+      class="aspect-square p-0 h-8 flex items-center justify-center"
       disabled={isProcessing || !selectedStyle}
       onclick={resetStyle}
       title="Reset style selection"
@@ -323,7 +336,7 @@
     <!-- Apply Style Button -->
     <Button
       variant={selectedStyle ? "default" : "outline"}
-      class="flex items-center justify-center text-xs h-10 px-4"
+      class="flex h-8 items-center justify-center text-xs px-4"
       disabled={isProcessing || !selectedStyle}
       onclick={applyStyle}
       title="Apply style to text at cursor"

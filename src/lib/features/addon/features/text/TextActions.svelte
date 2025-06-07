@@ -1,7 +1,7 @@
 <!-- Updated src/lib/features/addon/features/text/TextActions.svelte -->
 <script lang="ts">
   import * as Resizable from "$lib/components/ui/resizable";
-  import { RefreshCcw, Heading, Pipette, AlertCircle, TextCursor, Sun, Moon } from "@lucide/svelte";
+  import { RefreshCcw, Heading, Pipette, AlertCircle, TextCursor, BookOpenCheck, Sun, Moon } from "@lucide/svelte";
   import { Button } from "$lib/components/ui/button";
   import type { ElementTheme } from '$lib/types/elements';
 
@@ -131,32 +131,54 @@
   
   <!-- Right Pane: Action Buttons -->
   <Resizable.Pane defaultSize={60} minSize={40} maxSize={75}>
-    <div bind:this={rightPaneElement} class="h-full flex flex-col gap-2">
+    <div bind:this={rightPaneElement} class="h-full flex flex-col gap-1">
       <!-- Row 1: Get cursor style -->
-      <div class="flex-1">
+      <span class="text-[0.65em] text-muted-foreground -mb-10.5">Get style from</span>
+			<div class="flex gap-1 w-full">
         <Button
           variant="outline"
-          class="w-full h-full flex items-center justify-center text-xs"
+          class="h-7 flex items-center justify-center text-[0.7em]"
           disabled={props.isProcessing}
           onclick={props.onExtractStyle}
           title="Extract style from cursor position"
         >
           <TextCursor class="h-3 w-3 mr-2" />
-          <span>Get cursor style</span>
+          <span>Cursor</span>
+        </Button>
+        <Button
+          variant="outline"
+          class="h-7 flex items-center justify-center text-xs"
+          disabled={props.isProcessing}
+          onclick={props.onExtractStyle}
+          title="Extract style from cursor position"
+        >
+          <BookOpenCheck class="h-3 w-3 mr-2" />
+          <span>All</span>
         </Button>
       </div>
       
       <!-- Row 2: Update all styles -->
-      <div class="flex-1">
+      <div class="flex-1 gap-1 w-full">
+				<span class="text-[0.65em] text-muted-foreground -mb-0.5">Update styles</span>
         <Button
           variant="outline"
-          class="w-full h-full flex items-center justify-center text-xs"
+          class="h-7 flex items-center justify-center text-xs"
           disabled={props.isProcessing}
           onclick={props.onUpdateAllStyles}
           title="Update all matching headings to match cursor style"
         >
           <Heading class="h-3 w-3 mr-2" />
-          <span>Update all</span>
+          <span>All</span>
+        </Button>
+        <Button
+          variant="outline"
+          class="h-7 flex items-center justify-center text-xs"
+          disabled={props.isProcessing}
+          onclick={props.onUpdateAllStyles}
+          title="Update all matching headings to match cursor style"
+        >
+          <Heading class="h-3 w-3 mr-2" />
+          <span>All</span>
         </Button>
       </div>
     </div>

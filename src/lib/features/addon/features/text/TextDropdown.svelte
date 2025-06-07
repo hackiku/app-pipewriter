@@ -120,7 +120,7 @@
       // Extracted style from Google Docs - use real formatting
       const textAttrs = style.attributes.text;
       
-      if (textAttrs.FONT_SIZE) fontSize = Math.min(textAttrs.FONT_SIZE, 24); // Increased cap to 24px for better visibility
+      if (textAttrs.FONT_SIZE) fontSize = Math.min(textAttrs.FONT_SIZE, 30); // Increased cap to 24px for better visibility
       if (textAttrs.FONT_FAMILY) fontFamily = textAttrs.FONT_FAMILY;
       if (textAttrs.BOLD === true) fontWeight = 'bold';
       if (textAttrs.ITALIC === true) fontStyle = 'italic';
@@ -234,7 +234,7 @@
            border border-input bg-background text-sm shadow-sm 
            transition-all duration-200 hover:bg-accent hover:text-accent-foreground
            disabled:cursor-not-allowed disabled:opacity-50
-           {props.selectedStyle ? 'min-h-12' : 'h-10'}"
+           {props.selectedStyle ? 'min-h-10' : 'h-9'}"
     onclick={toggleOptions}
     disabled={props.disabled}
   >
