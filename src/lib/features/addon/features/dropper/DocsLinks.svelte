@@ -12,8 +12,8 @@
   // Template documents - URLs embedded here
   const templateDocs = [
     {
-      id: 'free-template',
-      title: 'Free',
+      id: 'starter-template',
+      title: 'Starter',
       description: 'Basic wireframe template',
       url: 'https://docs.google.com/document/d/1VsjRgy_dAccHhRF2iG_jEknv8bQn6t47wX3GD-_uoaQ',
       tier: 'free',

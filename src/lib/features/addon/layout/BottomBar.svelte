@@ -8,6 +8,7 @@
   import UpgradeDrawer from '$lib/components/pricing/UpgradeDrawer.svelte';
   import { docLinks, DRIVE_FOLDER_URL } from '$lib/data/addon/templateDocs';
   
+
   // Props instead of context - same functionality
   const props = $props<{
     onToggleAboutModal: () => void;

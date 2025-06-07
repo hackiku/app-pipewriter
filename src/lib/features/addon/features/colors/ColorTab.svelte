@@ -2,26 +2,40 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
   import { Button } from "$lib/components/ui/button";
-  import { Check, Loader2, Copy, ChevronDown, Crown } from "@lucide/svelte";
+  import { Check, Loader2, Copy, ChevronDown, Crown, Lock } from "@lucide/svelte";
   import * as Tabs from "$lib/components/ui/tabs/index.js";
   import ColorPicker from "./ColorPicker.svelte";
   import ColorButton from "./ColorButton.svelte";
   import { changeBackground, getCurrentColor } from "$lib/services/google/colors";
   import { colorCategories, type ColorScheme } from './color-data';
   
-  // Props using SvelteKit 5 syntax
+  import UpgradeDrawer from '$lib/components/pricing/UpgradeDrawer.svelte';
+
+
+
+  // Props using SvelteKit 5 syntax - UPDATED with features and onStatusUpdate
   const props = $props<{
     context: any;
-    onStatusUpdate: (status: {
-      type: 'processing' | 'success' | 'error';
-      message: string;
-      details?: string;
-      executionTime?: number;
-      error?: any;
-    }) => void;
+    features: any;
+		onStatusUpdate?: (status: {
+			type: 'processing' | 'success' | 'error';
+			message: string;
+			details?: string;
+			executionTime?: number;
+			error?: any;
+		}) => void;
     onProcessingStart: () => void;
     onProcessingEnd: () => void;
   }>();
+  
+  // User tier access control
+  const userTier = props.features?.tier || 'free';
+  
+  function canUseColor(colorTier: string): boolean {
+    if (userTier === 'pro') return true;
+    if (userTier === 'trial') return colorTier !== 'pro';
+    return colorTier === 'free';
+  }
   
   // State
   let currentColor = $state("#FFFFFF");
@@ -31,6 +45,8 @@
   let copySuccess = $state(false);
   let isEditingHex = $state(false);
   let hexInputValue = $state("#FFFFFF");
+
+  let showUpgradeDrawer = $state(false);
 
   // Initialize by getting the current color
   $effect(() => {
@@ -44,11 +60,6 @@
     hexInputValue = currentColor;
   });
 
-  // Status management
-  function updateStatus(newStatus: typeof props.onStatusUpdate extends (arg: infer T) => any ? T : never) {
-    props.onStatusUpdate?.(newStatus);
-  }
-
   async function loadCurrentColor() {
     if (isProcessing) return;
     
@@ -57,7 +68,7 @@
     
     try {
       const response = await getCurrentColor((statusUpdate) => {
-        updateStatus(statusUpdate);
+        props.onStatusUpdate(statusUpdate);
       });
       
       if (response.success && response.data?.color) {
@@ -85,7 +96,7 @@
 
     isProcessing = true;
     props.onProcessingStart();
-    updateStatus({
+    props.onStatusUpdate({
       type: 'processing',
       message: 'Applying color...',
       details: `Changing background to ${color}`
@@ -95,12 +106,12 @@
       const cleanColor = stripAlpha(color);
       
       const response = await changeBackground(cleanColor, (statusUpdate) => {
-        updateStatus(statusUpdate);
+        props.onStatusUpdate(statusUpdate);
       });
 
       if (response.success) {
         currentColor = cleanColor;
-        updateStatus({
+        props.onStatusUpdate({
           type: 'success',
           message: 'Color applied',
           executionTime: response.executionTime
@@ -110,7 +121,7 @@
       }
     } catch (error) {
       console.error("Failed to change background:", error);
-      updateStatus({
+      props.onStatusUpdate({
         type: 'error',
         message: error instanceof Error ? error.message : "Failed to change color",
         error
@@ -131,8 +142,21 @@
     handleColorChange(currentColor);
   }
   
-  // Changed: swatches only update picker, don't apply
+  function handleUpgradeDrawerChange(open: boolean) {
+    showUpgradeDrawer = open;
+  }
+
+
+  // UPDATED: Handle preset color clicks with access control
   function handlePresetColorClick(preset: ColorScheme) {
+    if (!canUseColor(preset.tier)) {
+      props.onStatusUpdate({
+        type: 'error',
+        message: 'Upgrade required',
+        details: `${preset.title} requires ${preset.tier === 'pro' ? 'Pro' : 'Trial'} plan`
+      });
+      return;
+    }
     handleColorUpdate(preset.color);
   }
 
@@ -179,7 +203,7 @@
         copySuccess = false;
       }, 1500);
       
-      updateStatus({
+      props.onStatusUpdate({
         type: 'success',
         message: 'Color copied to clipboard',
         details: `Copied ${currentColor}`
@@ -189,7 +213,7 @@
     }
   }
 
-  // Get colors for active tab, split into 2 rows (no reverse - light/dark already organized)
+  // Get colors for active tab, split into 2 rows
   function getTabColors(tabId: string) {
     const category = colorCategories.find(cat => cat.id === tabId);
     if (!category) return { row1: [], row2: [] };
@@ -207,11 +231,23 @@
   function hasPro(category: typeof colorCategories[0]): boolean {
     return category.tier === 'pro' || category.colors.some(color => color.tier === 'pro');
   }
+
+  // Check if current active tab is pro and user can't access it
+  function shouldShowUpgradeBar(): boolean {
+    const activeCategory = colorCategories.find(cat => cat.id === activeTab);
+    return activeCategory?.tier === 'pro' && !canUseColor('pro');
+  }
+  
+  // Check if user should be able to interact with colors in current tab
+  function canInteractWithCurrentTab(): boolean {
+    const activeCategory = colorCategories.find(cat => cat.id === activeTab);
+    return !activeCategory || canUseColor(activeCategory.tier);
+  }
 </script>
 
 <div class="relative flex flex-col h-full">
   <!-- Color Picker Overlay - positioned above bottom controls -->
-  {#if showColorPicker}
+  {#if showColorPicker && !shouldShowUpgradeBar()}
     <div
       class="absolute bottom-12 left-0 right-0 z-20 bg-card border border-border rounded-xl shadow-lg p-4"
       transition:fade={{ duration: 150 }}
@@ -241,11 +277,11 @@
     <Tabs.Root value={activeTab} onValueChange={(value) => activeTab = value || colorCategories[0]?.id || "base"}>
       <div class="relative hide-scrollbar-container">
         <div class="hide-scrollbar-content">
-          <Tabs.List class="flex min-w-[400px] gap-1 bg-secondary-foreground/5 p-1 rounded-lg justify-start">
+          <Tabs.List class="flex w-[32em] gap-1 bg-secondary-foreground/5 p-1 rounded-lg justify-start">
             {#each colorCategories as category}
               <Tabs.Trigger 
                 value={category.id}
-                class="flex items-center gap-2 whitespace-nowrap px-3 py-1.5 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm flex-shrink-0"
+                class="flex items-center gap-2 whitespace-nowrap px-3 py-1.5 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm flex-1"
               >
                 <span>{category.name}</span>
                 {#if hasPro(category)}
@@ -270,14 +306,19 @@
                   <div class="relative p-0.5">
                     <ColorButton
                       color={preset.color}
-                      title={preset.title}
+                      title={canUseColor(preset.tier) ? preset.title : `${preset.title} (${preset.tier === 'pro' ? 'Pro' : 'Trial'} required)`}
                       isSelected={currentColor === preset.color}
-                      isProcessing={isProcessing}
+                      isProcessing={isProcessing || !canUseColor(preset.tier)}
                       onClick={() => handlePresetColorClick(preset)}
                     />
                     
-                    <!-- Pro badge for premium colors -->
-                    {#if preset.tier === 'pro'}
+                    <!-- Lock overlay for inaccessible colors -->
+                    {#if !canUseColor(preset.tier)}
+                      <div class="absolute inset-0 __bg-background/60 __backdrop-blur-[1px] rounded-full flex items-center justify-center pointer-events-none">
+                        <Lock class="h-3 w-3 mb-1 text-muted-foreground" />
+                      </div>
+                    {:else if preset.tier === 'pro'}
+                      <!-- Pro badge for accessible premium colors -->
                       <div class="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center">
                         <div class="w-1.5 h-1.5 bg-white rounded-full"></div>
                       </div>
@@ -293,14 +334,19 @@
                     <div class="relative p-0.5">
                       <ColorButton
                         color={preset.color}
-                        title={preset.title}
+                        title={canUseColor(preset.tier) ? preset.title : `${preset.title} (${preset.tier === 'pro' ? 'Pro' : 'Trial'} required)`}
                         isSelected={currentColor === preset.color}
-                        isProcessing={isProcessing}
+                        isProcessing={isProcessing || !canUseColor(preset.tier)}
                         onClick={() => handlePresetColorClick(preset)}
                       />
                       
-                      <!-- Pro badge for premium colors -->
-                      {#if preset.tier === 'pro'}
+                      <!-- Lock overlay for inaccessible colors -->
+                      {#if !canUseColor(preset.tier)}
+                        <div class="absolute inset-0 __bg-background/60 __backdrop-blur-[1px] rounded-full flex items-center justify-center pointer-events-none">
+                          <Lock class="h-3 w-3 mb-1 text-muted-foreground" />
+                        </div>
+                      {:else if preset.tier === 'pro'}
+                        <!-- Pro badge for accessible premium colors -->
                         <div class="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center">
                           <div class="w-1.5 h-1.5 bg-white rounded-full"></div>
                         </div>
@@ -315,35 +361,62 @@
       </div>
     </Tabs.Root>
 
-
     <!-- Bottom Controls: Hex Button + Apply -->
-    <div class="flex gap-2 mt-auto h-9">
+    <div class="flex gap-2 mt-auto h-9 relative">
+      <!-- Upgrade Bar Overlay -->
+      {#if shouldShowUpgradeBar()}
+        <div class="absolute inset-0 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/50 dark:to-orange-950/50 
+                    border border-amber-200 dark:border-amber-800 rounded-md backdrop-blur-sm z-10
+                    flex items-center justify-between px-3"
+             transition:fade={{ duration: 200 }}>
+          <div class="flex items-center gap-2">
+            <Crown class="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <span class="text-xs font-medium text-amber-800 dark:text-amber-200">
+              Upgrade to Pro for premium colors
+            </span>
+          </div>
+          <Button
+            variant="default"
+            size="sm"
+            class="h-6 px-3 text-xs bg-amber-600 hover:bg-amber-700 text-white"
+						onclick={() => {
+							showUpgradeDrawer = true;
+						}}
+          >
+            Upgrade
+          </Button>
+        </div>
+      {/if}
+
       <!-- Hex Color Button with Integrated Copy -->
       <button
-        class="flex flex-1 items-center rounded-lg overflow-hidden border border-input bg-card text-sm shadow-sm transition-all duration-200 hover:bg-accent disabled:opacity-50 group"
+        class="flex flex-1 items-center rounded-lg overflow-hidden border border-input bg-card text-sm shadow-sm transition-all duration-200 hover:bg-accent disabled:opacity-50 group
+               {shouldShowUpgradeBar() ? 'pointer-events-none opacity-40' : ''}"
         onclick={(e) => {
+          if (shouldShowUpgradeBar()) return;
           // Only open picker if clicking outside hex text and copy button
           if (!e.target.closest('.hex-input') && !e.target.closest('.copy-button')) {
             toggleColorPicker();
           }
         }}
-        disabled={isProcessing}
+        disabled={isProcessing || shouldShowUpgradeBar()}
       >
         <!-- Color preview -->
-        <div 
-          class="h-8 ml-[1px] aspect-square relative "
-          
-        >
+        <div class="h-8 ml-[1px] aspect-square relative">
           <div
-						class="absolute inset-0.5 border border-black/5 rounded-md"
-						style="background-color: {currentColor};"
-					></div>
+            class="absolute inset-0.5 border border-black/5 rounded-md"
+            style="background-color: {currentColor};"
+          ></div>
         </div>
         
         <!-- Color value and copy button -->
         <div class="relative flex-1 px-3 flex items-center justify-between min-w-0">
-          <!-- Editable hex input -->
-          {#if isEditingHex}
+          <!-- Show placeholder text when upgrade bar is active -->
+          {#if shouldShowUpgradeBar()}
+            <span class="font-mono text-xs tracking-wider uppercase text-muted-foreground">
+              #PRO
+            </span>
+          {:else if isEditingHex}
             <input
               class="hex-input font-mono text-xs tracking-wider uppercase bg-transparent border-none outline-none flex-1"
               bind:value={hexInputValue}
@@ -364,31 +437,33 @@
           {/if}
           
           <!-- Copy button -->
-          <Button
-            variant="ghost"
-            size="icon"
-            class="copy-button h-6 w-6 -mr-2 p-1 hover:bg-background/80"
-            onclick={(e) => {
-              e.stopPropagation();
-              copyColorToClipboard();
-            }}
-            title="Copy color code"
-            disabled={isProcessing}
-          >
-            {#if copySuccess}
-              <Check class="h-2 w-2 text-green-500" />
-            {:else}
-              <Copy class="h-2 w-2 text-muted-foreground" />
-            {/if}
-          </Button>
+          {#if !shouldShowUpgradeBar()}
+            <Button
+              variant="ghost"
+              size="icon"
+              class="copy-button h-6 w-6 -mr-2 p-1 hover:bg-background/80"
+              onclick={(e) => {
+                e.stopPropagation();
+                copyColorToClipboard();
+              }}
+              title="Copy color code"
+              disabled={isProcessing}
+            >
+              {#if copySuccess}
+                <Check class="h-2 w-2 text-green-500" />
+              {:else}
+                <Copy class="h-2 w-2 text-muted-foreground" />
+              {/if}
+            </Button>
+          {/if}
         </div>
       </button>
 
       <!-- Apply button -->
       <Button 
         variant="default" 
-        class="px-3 h-9 text-xs"
-        disabled={isProcessing}
+        class="px-3 h-9 text-xs {shouldShowUpgradeBar() ? 'pointer-events-none opacity-40' : ''}"
+        disabled={isProcessing || shouldShowUpgradeBar()}
         onclick={handleSubmit}
       >
         {#if isProcessing}
@@ -400,8 +475,10 @@
       </Button>
     </div>
   </div>
-</div>
 
+	<UpgradeDrawer isOpen={showUpgradeDrawer} onOpenChange={handleUpgradeDrawerChange} />
+
+</div>
 
 <style>
   /* Bulletproof horizontal scrollbar hiding - container technique */

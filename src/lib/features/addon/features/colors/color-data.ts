@@ -56,63 +56,83 @@ export const colorCategories: ColorCategory[] = [
 		]
 	},
 	{
-		id: 'green',
-		name: 'Green',
-		description: 'Modern green-tinted backgrounds',
+		id: 'saas',
+		name: 'SaaS',
+		description: 'Subtle blue-tinted professional backgrounds',
 		tier: 'pro',
 		colors: [
-			// Row 1 - Light sky tones
-			{ color: '#EEEFE0', title: 'Sky 50', tier: 'pro' },
-			{ color: '#D1D8BE', title: 'Sky 100', tier: 'pro' },
-			{ color: '#A7C1A8', title: 'Sky 200', tier: 'pro' },
-			{ color: '#819A91', title: 'Sky 300', tier: 'pro' },
-			{ color: '#38BDF8', title: 'Sky 400', tier: 'pro' },
-			// Row 2 - Dark sky tones
-			{ color: '#819A91', title: 'Sky 500', tier: 'pro' },
-			{ color: '#0284C7', title: 'Sky 600', tier: 'pro' },
-			{ color: '#0369A1', title: 'Sky 700', tier: 'pro' },
-			{ color: '#075985', title: 'Sky 800', tier: 'pro' },
-			{ color: '#0C4A6E', title: 'Sky 900', tier: 'pro' },
+			// Row 1 - Light blue tints (readable with black text)
+			{ color: '#F0F9FF', title: 'Cloud 50', tier: 'pro' },
+			{ color: '#E0F2FE', title: 'Cloud 100', tier: 'pro' },
+			{ color: '#BAE6FD', title: 'Cloud 200', tier: 'pro' },
+			{ color: '#93C5FD', title: 'Cloud 300', tier: 'pro' },
+			{ color: '#DBEAFE', title: 'Cloud 150', tier: 'pro' },
+			// Row 2 - Dark blue backgrounds
+			{ color: '#1E3A8A', title: 'Cloud 800', tier: 'pro' },
+			{ color: '#1E40AF', title: 'Cloud 750', tier: 'pro' },
+			{ color: '#312E81', title: 'Cloud 850', tier: 'pro' },
+			{ color: '#1E1B4B', title: 'Cloud 900', tier: 'pro' },
+			{ color: '#0F172A', title: 'Cloud 950', tier: 'pro' },
 		]
 	},
 	{
-		id: 'violet',
-		name: 'Violet',
-		description: 'Contemporary purple-tinted backgrounds',
+		id: 'neon',
+		name: 'Neon',
+		description: 'Bright cyber-inspired backgrounds',
 		tier: 'pro',
 		colors: [
-			// Row 1 - Light violet tones
-			{ color: '#FAF5FF', title: 'Violet 50', tier: 'pro' },
-			{ color: '#F3E8FF', title: 'Violet 100', tier: 'pro' },
-			{ color: '#E9D5FF', title: 'Violet 200', tier: 'pro' },
-			{ color: '#D8B4FE', title: 'Violet 300', tier: 'pro' },
-			{ color: '#C084FC', title: 'Violet 400', tier: 'pro' },
-			// Row 2 - Dark violet tones
-			{ color: '#A855F7', title: 'Violet 500', tier: 'pro' },
-			{ color: '#9333EA', title: 'Violet 600', tier: 'pro' },
-			{ color: '#7C3AED', title: 'Violet 700', tier: 'pro' },
-			{ color: '#6D28D9', title: 'Violet 800', tier: 'pro' },
-			{ color: '#581C87', title: 'Violet 900', tier: 'pro' },
+			// Row 1 - Light neon tints
+			{ color: '#F0FDF4', title: 'Cyber 50', tier: 'pro' },
+			{ color: '#ECFCCB', title: 'Cyber 100', tier: 'pro' },
+			{ color: '#FEF3C7', title: 'Cyber 150', tier: 'pro' },
+			{ color: '#FECACA', title: 'Cyber 175', tier: 'pro' },
+			{ color: '#E0E7FF', title: 'Cyber 125', tier: 'pro' },
+			// Row 2 - Dark neon backgrounds
+			{ color: '#166534', title: 'Cyber 800', tier: 'pro' },
+			{ color: '#92400E', title: 'Cyber 850', tier: 'pro' },
+			{ color: '#991B1B', title: 'Cyber 875', tier: 'pro' },
+			{ color: '#3730A3', title: 'Cyber 825', tier: 'pro' },
+			{ color: '#14532D', title: 'Cyber 900', tier: 'pro' },
 		]
 	},
 	{
-		id: 'emerald',
-		name: 'Emerald',
-		description: 'Fresh green-tinted backgrounds',
+		id: 'brutal',
+		name: 'Neobrutalist',
+		description: 'High contrast statement backgrounds',
 		tier: 'pro',
 		colors: [
-			// Row 1 - Light emerald tones
-			{ color: '#ECFDF5', title: 'Emerald 50', tier: 'pro' },
-			{ color: '#D1FAE5', title: 'Emerald 100', tier: 'pro' },
-			{ color: '#A7F3D0', title: 'Emerald 200', tier: 'pro' },
-			{ color: '#6EE7B7', title: 'Emerald 300', tier: 'pro' },
-			{ color: '#34D399', title: 'Emerald 400', tier: 'pro' },
-			// Row 2 - Dark emerald tones
-			{ color: '#10B981', title: 'Emerald 500', tier: 'pro' },
-			{ color: '#059669', title: 'Emerald 600', tier: 'pro' },
-			{ color: '#047857', title: 'Emerald 700', tier: 'pro' },
-			{ color: '#065F46', title: 'Emerald 800', tier: 'pro' },
-			{ color: '#064E3B', title: 'Emerald 900', tier: 'pro' },
+			// Row 1 - Light high contrast
+			{ color: '#FFFBEB', title: 'Bold 50', tier: 'pro' },
+			{ color: '#FEF3C7', title: 'Bold 100', tier: 'pro' },
+			{ color: '#FDE68A', title: 'Bold 200', tier: 'pro' },
+			{ color: '#FECACA', title: 'Bold 150', tier: 'pro' },
+			{ color: '#FCE7F3', title: 'Bold 175', tier: 'pro' },
+			// Row 2 - Dark high contrast
+			{ color: '#92400E', title: 'Bold 800', tier: 'pro' },
+			{ color: '#991B1B', title: 'Bold 850', tier: 'pro' },
+			{ color: '#86198F', title: 'Bold 875', tier: 'pro' },
+			{ color: '#7C2D12', title: 'Bold 825', tier: 'pro' },
+			{ color: '#450A0A', title: 'Bold 950', tier: 'pro' },
+		]
+	},
+	{
+		id: 'minimal',
+		name: 'Minimal',
+		description: 'Extended grayscale range for precise control',
+		tier: 'pro',
+		colors: [
+			// Row 1 - Extended light range
+			{ color: '#FDFDFD', title: 'Pure 25', tier: 'pro' },
+			{ color: '#F9FAFB', title: 'Pure 50', tier: 'pro' },
+			{ color: '#F3F4F6', title: 'Pure 100', tier: 'pro' },
+			{ color: '#E5E7EB', title: 'Pure 200', tier: 'pro' },
+			{ color: '#D1D5DB', title: 'Pure 300', tier: 'pro' },
+			// Row 2 - Extended dark range
+			{ color: '#6B7280', title: 'Pure 500', tier: 'pro' },
+			{ color: '#374151', title: 'Pure 700', tier: 'pro' },
+			{ color: '#1F2937', title: 'Pure 800', tier: 'pro' },
+			{ color: '#111827', title: 'Pure 900', tier: 'pro' },
+			{ color: '#030712', title: 'Pure 950', tier: 'pro' },
 		]
 	}
 ];
