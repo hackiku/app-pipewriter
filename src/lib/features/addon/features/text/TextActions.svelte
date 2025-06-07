@@ -1,7 +1,7 @@
 <!-- Updated src/lib/features/addon/features/text/TextActions.svelte -->
 <script lang="ts">
   import * as Resizable from "$lib/components/ui/resizable";
-  import { RefreshCcw, Heading, Pipette, AlertCircle, TextCursor, BookOpenCheck, Sun, Moon } from "@lucide/svelte";
+  import { RefreshCcw, Heading, Pipette, AlertCircle, TextCursor, Sun, Moon } from "@lucide/svelte";
   import { Button } from "$lib/components/ui/button";
   import type { ElementTheme } from '$lib/types/elements';
 
@@ -13,7 +13,7 @@
     svgUrl: string;
     onStyleGuideInsert: () => void;
     onExtractStyle: () => void;
-    onExtractAllStyles: () => void;
+    onUpdateAllStyles: () => void;
     onToggleTheme: () => void;
   }>();
 
@@ -146,17 +146,17 @@
         </Button>
       </div>
       
-      <!-- Row 2: Get all styles -->
+      <!-- Row 2: Update all styles -->
       <div class="flex-1">
         <Button
           variant="outline"
           class="w-full h-full flex items-center justify-center text-xs"
           disabled={props.isProcessing}
-          onclick={props.onExtractAllStyles}
-          title="Extract all styles from document"
+          onclick={props.onUpdateAllStyles}
+          title="Update all matching headings to match cursor style"
         >
-          <BookOpenCheck class="h-3 w-3 mr-2" />
-          <span>Get all styles</span>
+          <Heading class="h-3 w-3 mr-2" />
+          <span>Update all</span>
         </Button>
       </div>
     </div>

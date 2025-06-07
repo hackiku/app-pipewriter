@@ -5,7 +5,7 @@
   import { Button } from "$lib/components/ui/button";
   import { RefreshCcw, Heading } from "@lucide/svelte";
   import { insertElement } from "$lib/services/google/docs";
-  import { applyTextStyle, updateAllMatchingHeadings, getStyleInfo, getAllDocumentStyles } from "$lib/services/google/text";
+  import { applyTextStyle, updateAllMatchingHeadings, getStyleInfo } from "$lib/services/google/text";
   import type { ElementTheme } from '$lib/types/elements';
   import type { HeadingType } from '$lib/services/google/text';
   import { onMount, onDestroy } from 'svelte';
@@ -34,7 +34,6 @@
     extracted?: boolean; // Flag to indicate if this was extracted from docs
     attributes?: any; // Store extracted attributes
   } | null>(null);
-  let availableStyles = $state<any[]>([]); // Store all extracted styles
   let elementsTheme = $state<ElementTheme>('light');
   let appTheme = $state<ElementTheme>('light');
   let observer: MutationObserver | null = null;
@@ -144,8 +143,8 @@
     }
   }
 
-  // Extract all styles from document
-  async function extractAllStyles() {
+  // Update all matching styles in document
+  async function updateAllStyles() {
     if (isProcessing) return;
     
     isProcessing = true;
@@ -153,47 +152,28 @@
     
     props.onStatusUpdate({
       type: 'processing',
-      message: 'Getting all document styles...'
+      message: 'Updating all matching styles...'
     });
 
     try {
-      const response = await Promise.race([
-        getAllDocumentStyles((statusUpdate) => {
-          props.onStatusUpdate(statusUpdate);
-        }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Style extraction timed out after 15 seconds')), 15000)
-        )
-      ]) as any;
+      const response = await updateAllMatchingHeadings((statusUpdate) => {
+        props.onStatusUpdate(statusUpdate);
+      });
       
-      if (response.success && response.data) {
-        // Process all styles and update dropdown
-        if (dropdownRef?.createExtractedStyle) {
-          const extractedStyles = response.data.styles?.map((styleData: any) => 
-            dropdownRef.createExtractedStyle(styleData)
-          ) || [];
-          
-          availableStyles = extractedStyles;
-          
-          props.onStatusUpdate({
-            type: 'success',
-            message: `Extracted ${extractedStyles.length} styles from document`,
-            executionTime: response.executionTime
-          });
-        } else {
-          throw new Error("Style mapping functions not available");
-        }
+      if (response.success) {
+        props.onStatusUpdate({
+          type: 'success',
+          message: response.data?.message || 'All matching styles updated',
+          executionTime: response.executionTime
+        });
       } else {
-        throw new Error(response.error || "Failed to extract all styles");
+        throw new Error(response.error || "Failed to update all styles");
       }
     } catch (error) {
-      console.error("Failed to extract all styles:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to extract all styles";
-      
+      console.error("Failed to update all styles:", error);
       props.onStatusUpdate({
         type: 'error',
-        message: errorMessage,
-        details: 'Make sure the document contains text content and try again'
+        message: error instanceof Error ? error.message : "Failed to update all styles"
       });
     } finally {
       isProcessing = false;
@@ -281,48 +261,9 @@
     }
   }
 
-  // Apply style to all matching text in document
-  async function updateAllStyles() {
-    if (isProcessing) return;
-    
-    isProcessing = true;
-    props.onProcessingStart();
-    
-    props.onStatusUpdate({
-      type: 'processing',
-      message: 'Updating all matching styles...'
-    });
-
-    try {
-      const response = await updateAllMatchingHeadings((statusUpdate) => {
-        props.onStatusUpdate(statusUpdate);
-      });
-      
-      if (response.success) {
-        props.onStatusUpdate({
-          type: 'success',
-          message: response.data?.message || 'All matching styles updated',
-          executionTime: response.executionTime
-        });
-      } else {
-        throw new Error(response.error || "Failed to update all styles");
-      }
-    } catch (error) {
-      console.error("Failed to update all styles:", error);
-      props.onStatusUpdate({
-        type: 'error',
-        message: error instanceof Error ? error.message : "Failed to update all styles"
-      });
-    } finally {
-      isProcessing = false;
-      props.onProcessingEnd();
-    }
-  }
-
   // Reset style selection
   function resetStyle() {
     selectedStyle = null;
-    availableStyles = [];
     
     props.onStatusUpdate({
       type: 'success',
@@ -354,7 +295,7 @@
     onSelect={selectStyle}
   />
 
-  <!-- Actions - Updated with Get button and proper layout -->
+  <!-- Actions - Updated with Update All button instead of Get All Styles -->
   <TextActions
     isProcessing={isProcessing}
     selectedStyle={selectedStyle}
@@ -362,23 +303,12 @@
     svgUrl={getSvgUrl()}
     onStyleGuideInsert={handleStyleGuideInsert}
     onExtractStyle={extractStyle}
-    onExtractAllStyles={extractAllStyles}
+    onUpdateAllStyles={updateAllStyles}
     onToggleTheme={toggleTheme}
   />
 
-  <!-- Action Buttons Row - Update All | Reset | Apply -->
-  <div class="flex gap-2 w-full">
-    <!-- Update All Button -->
-    <Button
-      variant="outline"
-      class="flex-1 flex items-center justify-center text-xs h-10"
-      disabled={isProcessing}
-      onclick={updateAllStyles}
-      title="Update all matching headings to match cursor style"
-    >
-      <span>Update All</span>
-    </Button>
-    
+  <!-- Action Buttons Row - Reset | Apply (aligned right) -->
+  <div class="flex justify-end gap-2 w-full">
     <!-- Reset Button (icon only, square) -->
     <Button
       variant="outline"
@@ -393,7 +323,7 @@
     <!-- Apply Style Button -->
     <Button
       variant={selectedStyle ? "default" : "outline"}
-      class="flex-1 flex items-center justify-center text-xs h-10"
+      class="flex items-center justify-center text-xs h-10 px-4"
       disabled={isProcessing || !selectedStyle}
       onclick={applyStyle}
       title="Apply style to text at cursor"

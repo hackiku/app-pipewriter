@@ -19,7 +19,7 @@
   const textStyles = [
     { headingType: 'NORMAL', tag: 'p', label: 'Normal', fontSize: 11, font: 'DM Sans', weight: 'Normal', color: '#000000' },
     { headingType: 'HEADING1', tag: 'h1', label: 'Heading 1', fontSize: 32, font: 'Inter Tight', weight: 'Semibold', color: '#000000' },
-    { headingType: 'HEADING2', tag: 'h2', label: 'Heading 2', fontSize: 22, font: 'Inter Tight', weight: 'Semibold', color: '#000000' },
+    { headingType: 'HEADING2', tag: 'h2', label: 'Heading 2', fontSize: 20, font: 'Inter Tight', weight: 'Semibold', color: '#000000' },
     { headingType: 'HEADING3', tag: 'h3', label: 'Heading 3', fontSize: 16, font: 'Inter Tight', weight: 'Bold', color: '#000000' },
     { headingType: 'HEADING4', tag: 'h4', label: 'Heading 4', fontSize: 14, font: 'Inter Tight', weight: 'Bold', color: '#000000' },
     { headingType: 'HEADING5', tag: 'h5', label: 'Heading 5', fontSize: 11, font: 'Inter Tight', weight: 'Semibold', color: '#b7b7b7' },
@@ -101,10 +101,51 @@
   
   function getStyleItemClass(style: any) {
     return cn(
-      "flex items-center justify-between px-2 py-1.5 rounded-sm transition-colors",
+      "flex items-center justify-between px-2 py-2 rounded-sm transition-colors min-h-0",
       props.selectedStyle?.headingType === style.headingType && "bg-accent text-accent-foreground",
       "hover:bg-accent hover:text-accent-foreground"
     );
+  }
+
+  // Get comprehensive style for text display (enhanced for real formatting)
+  function getTextStyle(style: any) {
+    let fontSize = 14; // Default fallback
+    let fontWeight = 'normal';
+    let color = '#000000';
+    let fontStyle = 'normal';
+    let textDecoration = 'none';
+    let fontFamily = 'inherit';
+
+    if (style.extracted && style.attributes?.text) {
+      // Extracted style from Google Docs - use real formatting
+      const textAttrs = style.attributes.text;
+      
+      if (textAttrs.FONT_SIZE) fontSize = Math.min(textAttrs.FONT_SIZE, 24); // Increased cap to 24px for better visibility
+      if (textAttrs.FONT_FAMILY) fontFamily = textAttrs.FONT_FAMILY;
+      if (textAttrs.BOLD === true) fontWeight = 'bold';
+      if (textAttrs.ITALIC === true) fontStyle = 'italic';
+      if (textAttrs.UNDERLINE === true) textDecoration = 'underline';
+      if (textAttrs.FOREGROUND_COLOR) color = textAttrs.FOREGROUND_COLOR;
+    } else {
+      // Default style - use template info with better scaling
+      const defaultStyle = textStyles.find(s => s.headingType === style.headingType);
+      if (defaultStyle) {
+        // Scale font sizes better for visibility while keeping proportions
+        fontSize = Math.min(Math.max(defaultStyle.fontSize * 1.2, 12), 24);
+        color = defaultStyle.color;
+        fontWeight = defaultStyle.weight === 'Bold' ? 'bold' : 
+                    defaultStyle.weight === 'Semibold' ? '600' : 'normal';
+      }
+    }
+
+    return {
+      fontSize: `${fontSize}px`,
+      fontWeight,
+      color,
+      fontStyle,
+      textDecoration,
+      fontFamily
+    };
   }
 
   // Get style attributes for display - simplified
@@ -163,15 +204,20 @@
     >
       <div class="flex flex-col gap-0.5">
         {#each textStyles as style}
+          {@const textStyle = getTextStyle(style)}
           <button
             class={getStyleItemClass(style)}
             onclick={() => handleSelect(style)}
           >
-            <div class="flex items-center gap-2 min-w-0 w-full">
-              <span class="text-muted-foreground text-xs w-6 flex-shrink-0">{style.tag}</span>
+            <div class="flex items-center gap-2 min-w-0 w-full py-1">
               <span 
-                class="text-foreground flex-1 truncate text-left"
-                style="font-size: {Math.min(style.fontSize, 16)}px; color: {style.color}; font-weight: {style.weight === 'Bold' ? 'bold' : style.weight === 'Semibold' ? '600' : 'normal'};"
+                class="text-foreground flex-1 truncate text-left leading-tight"
+                style="font-size: {textStyle.fontSize}; 
+                       font-weight: {textStyle.fontWeight}; 
+                       color: {textStyle.color}; 
+                       font-style: {textStyle.fontStyle};
+                       text-decoration: {textStyle.textDecoration};
+                       font-family: {textStyle.fontFamily};"
               >
                 {style.label}
               </span>
@@ -184,24 +230,30 @@
 
   <!-- Main selector button -->
   <button
-    class="w-full min-h-12 px-3 py-2 flex items-center justify-between rounded-lg
+    class="w-full px-3 py-2 flex items-center justify-between rounded-lg
            border border-input bg-background text-sm shadow-sm 
            transition-all duration-200 hover:bg-accent hover:text-accent-foreground
-           disabled:cursor-not-allowed disabled:opacity-50"
+           disabled:cursor-not-allowed disabled:opacity-50
+           {props.selectedStyle ? 'min-h-12' : 'h-10'}"
     onclick={toggleOptions}
     disabled={props.disabled}
   >
     {#if props.selectedStyle}
+      {@const selectedTextStyle = getTextStyle(props.selectedStyle)}
       <div class="flex flex-col items-start gap-0.5 min-w-0 flex-1">
-        <!-- Main label with tag -->
-        <div class="flex items-center gap-2 min-w-0 w-full">
+        <!-- Main label with enhanced styling -->
+        <div class="flex items-center gap-2 min-w-0 w-full py-1">
           {#if props.selectedStyle.extracted}
             <Pipette class="h-3 w-3 text-primary flex-shrink-0" />
           {/if}
-          <span class="text-muted-foreground text-xs w-6 flex-shrink-0">{props.selectedStyle.tag}</span>
           <span 
-            class="text-foreground flex-1 truncate text-left"
-            style="color: {getTextColor(props.selectedStyle)};"
+            class="text-foreground flex-1 truncate text-left leading-tight"
+            style="font-size: {selectedTextStyle.fontSize}; 
+                   font-weight: {selectedTextStyle.fontWeight}; 
+                   color: {selectedTextStyle.color}; 
+                   font-style: {selectedTextStyle.fontStyle};
+                   text-decoration: {selectedTextStyle.textDecoration};
+                   font-family: {selectedTextStyle.fontFamily};"
           >
             {props.selectedStyle.label}
           </span>
@@ -209,7 +261,7 @@
         
         <!-- Style attributes - always show if selected -->
         {#if getDisplayAttributes(props.selectedStyle)}
-          <div class="text-xs text-muted-foreground truncate w-full pl-6">
+          <div class="text-xs text-muted-foreground truncate w-full">
             {getDisplayAttributes(props.selectedStyle).join(' • ')}
           </div>
         {/if}
