@@ -3,9 +3,9 @@
   import TextDropdown from "./TextDropdown.svelte";
   import TextActions from "./TextActions.svelte";
   import { Button } from "$lib/components/ui/button";
-  import { RefreshCcw, Heading, Save } from "@lucide/svelte";
+  import { RefreshCcw, Heading } from "@lucide/svelte";
   import { insertElement } from "$lib/services/google/docs";
-  import { applyTextStyle, updateAllMatchingHeadings, getStyleInfo, getAllDocumentStyles } from "$lib/services/google/text";
+  import { applyTextStyle, updateAllMatchingHeadings, getStyleInfo } from "$lib/services/google/text";
   import type { ElementTheme } from '$lib/types/elements';
   import type { HeadingType } from '$lib/services/google/text';
   import { onMount, onDestroy } from 'svelte';
@@ -31,10 +31,9 @@
     tag: string;
     label: string;
     fontSize?: number;
-    extracted?: boolean; // Flag to indicate if this was extracted from docs
-    attributes?: any; // Store extracted attributes
+    extracted?: boolean;
+    attributes?: any;
   } | null>(null);
-  let savedStyles = $state<any[]>([]); // Reactive state for saved styles
   let elementsTheme = $state<ElementTheme>('light');
   let appTheme = $state<ElementTheme>('light');
   let observer: MutationObserver | null = null;
@@ -42,12 +41,10 @@
   // Get reference to dropdown functions
   let dropdownRef = $state<any>(null);
 
-  // Setup mutation observer to detect app theme changes (same as ElementCard)
+  // Setup mutation observer to detect app theme changes
   onMount(() => {
-    // Initial dark mode check
     appTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 
-    // Watch for dark mode changes
     observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         if (mutation.attributeName === 'class') {
@@ -74,7 +71,7 @@
     }
   });
 
-  // Toggle theme function - creates contrast with app theme
+  // Toggle theme function
   function toggleTheme() {
     elementsTheme = elementsTheme === 'light' ? 'dark' : 'light';
     
@@ -102,7 +99,6 @@
     });
 
     try {
-      // Use a shorter timeout and better error handling
       const response = await Promise.race([
         getStyleInfo((statusUpdate) => {
           props.onStatusUpdate(statusUpdate);
@@ -113,7 +109,6 @@
       ]) as any;
       
       if (response.success && response.data) {
-        // Use dropdown's createExtractedStyle function
         if (dropdownRef?.createExtractedStyle) {
           const extractedStyle = dropdownRef.createExtractedStyle(response.data);
           selectedStyle = extractedStyle;
@@ -137,63 +132,6 @@
         type: 'error',
         message: errorMessage,
         details: 'Make sure your cursor is positioned in text and try again'
-      });
-    } finally {
-      isProcessing = false;
-      props.onProcessingEnd();
-    }
-  }
-
-  // Extract all styles from document (placeholder for future implementation)
-  async function extractAllStyles() {
-    if (isProcessing) return;
-    
-    isProcessing = true;
-    props.onProcessingStart();
-    
-    props.onStatusUpdate({
-      type: 'processing',
-      message: 'Getting all document styles...'
-    });
-
-    try {
-      const response = await Promise.race([
-        getAllDocumentStyles((statusUpdate) => {
-          props.onStatusUpdate(statusUpdate);
-        }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Style extraction timed out after 15 seconds')), 15000)
-        )
-      ]) as any;
-      
-      if (response.success && response.data) {
-        // Process all styles and update saved styles
-        if (dropdownRef?.createExtractedStyle) {
-          const extractedStyles = response.data.styles?.map((styleData: any) => 
-            dropdownRef.createExtractedStyle(styleData)
-          ) || [];
-          
-          savedStyles = extractedStyles;
-          
-          props.onStatusUpdate({
-            type: 'success',
-            message: `Extracted ${extractedStyles.length} styles from document`,
-            executionTime: response.executionTime
-          });
-        } else {
-          throw new Error("Style mapping functions not available");
-        }
-      } else {
-        throw new Error(response.error || "Failed to extract all styles");
-      }
-    } catch (error) {
-      console.error("Failed to extract all styles:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to extract all styles";
-      
-      props.onStatusUpdate({
-        type: 'error',
-        message: errorMessage,
-        details: 'Make sure the document contains text content and try again'
       });
     } finally {
       isProcessing = false;
@@ -239,7 +177,7 @@
     }
   }
 
-  // Handle styleguide insertion with smart SVG contrast logic
+  // Handle styleguide insertion
   async function handleStyleGuideInsert() {
     if (isProcessing) return;
     
@@ -281,7 +219,7 @@
     }
   }
 
-  // Apply style to current selection (where cursor is)
+  // Apply style to current selection
   async function applyStyle() {
     if (!selectedStyle || isProcessing) return;
     
@@ -319,30 +257,6 @@
     }
   }
 
-  // Save current style to reactive state
-  function saveStyle() {
-    if (!selectedStyle) return;
-    
-    // Add to saved styles if not already present
-    const existingIndex = savedStyles.findIndex(style => 
-      style.headingType === selectedStyle.headingType && 
-      style.extracted === selectedStyle.extracted
-    );
-    
-    if (existingIndex >= 0) {
-      // Update existing style
-      savedStyles[existingIndex] = { ...selectedStyle };
-    } else {
-      // Add new style
-      savedStyles = [...savedStyles, { ...selectedStyle }];
-    }
-    
-    props.onStatusUpdate({
-      type: 'success',
-      message: `${selectedStyle.label} style saved`
-    });
-  }
-
   // Reset style selection
   function resetStyle() {
     selectedStyle = null;
@@ -353,12 +267,9 @@
     });
   }
 
-  // Get SVG URL with contrast logic (same as ElementCard)
+  // Get SVG URL with contrast logic
   function getSvgUrl(): string {
     const baseId = 'styleguide';
-    
-    // CONTRAST LOGIC: If elementsTheme !== appTheme → use dark SVG
-    // This makes the styleguide element contrast with the app background
     const shouldUseDarkVariant = elementsTheme !== appTheme;
     
     if (shouldUseDarkVariant) {
@@ -377,7 +288,7 @@
     onSelect={selectStyle}
   />
 
-  <!-- Actions - Updated with all functions -->
+  <!-- Actions - Simplified -->
   <TextActions
     isProcessing={isProcessing}
     selectedStyle={selectedStyle}
@@ -385,24 +296,14 @@
     svgUrl={getSvgUrl()}
     onStyleGuideInsert={handleStyleGuideInsert}
     onExtractStyle={extractStyle}
-    onExtractAllStyles={extractAllStyles}
     onUpdateAllStyles={updateAllStyles}
     onToggleTheme={toggleTheme}
   />
 
-  <!-- Action Buttons Row - Full Width -->
+  <!-- Action Buttons Row - Apply and Reset only -->
   <div class="flex gap-2 w-full">
-    <!-- Save Button -->
-    <Button
-      variant="outline"
-      class="flex-1 h-8 flex items-center justify-center text-xs"
-      disabled={isProcessing || !selectedStyle}
-      onclick={saveStyle}
-      title="Save current style to collection"
-    >
-      <Save class="h-3 w-3 mr-2" />
-      <span>Save</span>
-    </Button>
+    <!-- Spacer -->
+    <div class="flex-1"></div>
 
     <!-- Reset Button -->
     <Button
@@ -418,7 +319,7 @@
     <!-- Apply Style Button -->
     <Button
       variant={selectedStyle ? "default" : "outline"}
-      class="flex-1 h-8 flex items-center justify-center text-xs"
+      class="h-8 flex items-center justify-center text-xs px-3"
       disabled={isProcessing || !selectedStyle}
       onclick={applyStyle}
       title="Apply style to text at cursor"

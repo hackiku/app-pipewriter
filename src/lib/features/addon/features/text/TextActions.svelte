@@ -1,32 +1,7 @@
-<!-- <div class="flex items-center gap-2 text-[0.9em] ml-1">
-          <TextCursor class="h-4 w-4" />
-          <span>Get Styles</span>
-
-  let buttonClass = $derived(cn(
-    "h-10 text-xs aspect-square",
-    "relative",
-    "flex items-center justify-between px-1.5",
-    "w-full rounded-lg",
-    "border border-input bg-background",
-    "hover:bg-accent hover:text-accent-foreground",
-    props.isProcessing && "opacity-50 cursor-not-allowed"
-  ));
-
-  let miniButtonClass = $derived(cn(
-    "h-7 w-7",
-    "flex items-center justify-center",
-    "rounded-md",
-    "border border-input bg-background",
-    "hover:bg-accent hover:text-accent-foreground",
-    props.isProcessing && "opacity-50 cursor-not-allowed"
-  )); -->
-
-
 <!-- Updated src/lib/features/addon/features/text/TextActions.svelte -->
-
 <script lang="ts">
   import * as Resizable from "$lib/components/ui/resizable";
-  import { AlertCircle, TextCursor, BookOpenCheck, Heading, Sun, Moon } from "@lucide/svelte";
+  import { AlertCircle, Sun, Moon, TextCursor } from "@lucide/svelte";
   import { Button } from "$lib/components/ui/button";
   import { cn } from "$lib/utils";
   import type { ElementTheme } from '$lib/types/elements';
@@ -39,9 +14,7 @@
     svgUrl: string;
     onStyleGuideInsert: () => void;
     onExtractStyle: () => void;
-    onExtractSelectedHeadingStyle: () => void;
     onUpdateAllStyles: () => void;
-    onCopySelectedStyleToCursor: () => void;
     onToggleTheme: () => void;
   }>();
 
@@ -79,58 +52,15 @@
     dark: 'bg-neutral-950 dark:bg-white hover:bg-neutral-900/80 dark:hover:bg-neutral-400/30 border border-neutral-300'
   };
 
-  // Button classes matching DropCode/StripCode pattern
-  let buttonClass = $derived(cn(
-    "h-10 text-xs aspect-square",
-    "relative",
-    "flex items-center justify-between px-1.5",
-    "w-full rounded-lg",
-    "border border-input bg-background",
-    "hover:bg-accent hover:text-accent-foreground",
-    props.isProcessing && "opacity-50 cursor-not-allowed"
-  ));
-
-
+  // Button classes
   let miniButtonClass = $derived(cn(
     "h-7 w-7",
     "flex items-center justify-center",
     "rounded-md",
     "border border-input bg-background",
-    "hover:bg-accent hover:text-accent-foreground",
+    "hover:bg-accent hover:text-accent-foreground text-xs font-medium",
     props.isProcessing && "opacity-50 cursor-not-allowed"
   ));
-
-  // Get heading display for selected style
-  function getHeadingDisplay() {
-    if (!props.selectedStyle) return "H1";
-    
-    const headingMap = {
-      'NORMAL': 'p',
-      'HEADING1': 'H1',
-      'HEADING2': 'H2',
-      'HEADING3': 'H3',
-      'HEADING4': 'H4',
-      'HEADING5': 'H5',
-      'HEADING6': 'H6'
-    };
-    
-    return headingMap[props.selectedStyle.headingType] || 'H1';
-  }
-
-  // Get label for heading type (for tooltips)
-  function getLabelForHeading(headingType: string) {
-    const labelMap = {
-      'NORMAL': 'Normal text',
-      'HEADING1': 'Heading 1',
-      'HEADING2': 'Heading 2',
-      'HEADING3': 'Heading 3',
-      'HEADING4': 'Heading 4',
-      'HEADING5': 'Heading 5',
-      'HEADING6': 'Heading 6'
-    };
-    
-    return labelMap[headingType] || 'Unknown';
-  }
 </script>
 
 <Resizable.PaneGroup direction="horizontal" class="h-36 gap-2">
@@ -213,66 +143,29 @@
   <Resizable.Pane defaultSize={60} minSize={40} maxSize={75}>
     <div bind:this={rightPaneElement} class="h-full flex flex-col gap-2">
       
-      <!-- Get Style Actions -->
-      <div class={buttonClass}>
-        <!-- Left side with label and icon -->
-				<div class="flex items-center text-[0.9em] ml-1">
-          <span>Get Styles</span>
-        </div>
-        
-        <!-- Right side with action buttons -->
-        <div class="flex items-center gap-1">
-          <button 
-            class={miniButtonClass}
-            onclick={props.onExtractStyle}
-            disabled={props.isProcessing}
-            title="Get style from cursor position"
-          >
-            <TextCursor class="h-3 w-3" />
-          </button>
-          
-          <button 
-            class={miniButtonClass}
-            onclick={props.onExtractSelectedHeadingStyle}
-            disabled={props.isProcessing || !props.selectedStyle}
-            title="Get document style for {props.selectedStyle ? getLabelForHeading(props.selectedStyle.headingType) : 'selected heading'}"
-          >
-            {getHeadingDisplay()}
-          </button>
-        </div>
-      </div>
+      <!-- Get Style Button -->
+      <Button
+        variant="outline"
+        class="flex-1 h-full flex items-center justify-center gap-2 text-sm"
+        onclick={props.onExtractStyle}
+        disabled={props.isProcessing}
+        title="Get style from cursor position"
+      >
+        <TextCursor class="h-4 w-4" />
+        <span>Get text style</span>
+      </Button>
       
-      <!-- Update Style Actions -->
-      <div class={buttonClass}>
-        <!-- Left side with label and icon -->
-				<div class="flex items-center gap-1 text-[0.9em] ml-1">
-          <span>Update</span>
-        </div>
-        
-        <!-- Right side with action buttons -->
-        <div class="flex items-center gap-1">
-          <button 
-            class="{miniButtonClass}
-                   {props.isProcessing && 'opacity-50 cursor-not-allowed'}"
-            onclick={props.onUpdateAllStyles}
-            disabled={props.isProcessing}
-            title="Update all matching headings at cursor position"
-          >
-						<TextCursor class="h-3 w-3" />
-          </button>
-          
-          <button 
-            class="{miniButtonClass}
-                   {props.isProcessing && 'opacity-50 cursor-not-allowed'}
-                   {!props.selectedStyle && 'opacity-30 cursor-not-allowed'}"
-            onclick={props.onUpdateAllStyles}
-            disabled={props.isProcessing || !props.selectedStyle}
-            title="Update all {getHeadingDisplay()} headings to match selected style"
-          >
-            {getHeadingDisplay()}
-          </button>
-        </div>
-      </div>
+      <!-- Update Style Button -->
+      <Button
+        variant="outline"
+        class="flex-1 h-full flex items-center justify-center gap-2 text-sm"
+        onclick={props.onUpdateAllStyles}
+        disabled={props.isProcessing}
+        title="Update all matching headings at cursor position"
+      >
+        <TextCursor class="h-4 w-4" />
+        <span>Update style</span>
+      </Button>
       
     </div>
   </Resizable.Pane>

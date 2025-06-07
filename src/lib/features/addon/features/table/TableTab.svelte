@@ -236,7 +236,6 @@
 					onScopeToggle={handleScopeToggle}
 				/>
 
-				<hr class="border-border" />
 
 				<!-- ENHANCED: PaddingControls fills remaining space and aligns perfectly with scope toggle -->
 				<div class="flex-1 flex flex-col justify-end">

@@ -26,7 +26,7 @@
     { headingType: 'HEADING6', tag: 'h6', label: 'Heading 6', fontSize: 13, font: 'Inter Tight', weight: 'Semibold', color: '#666666' }
   ];
 
-  // Style mapping functions (moved from parent)
+  // Style mapping functions 
   export function determineHeadingType(docHeading: any): HeadingType {
     // Handle both string names and actual DocumentApp enum values
     if (typeof docHeading === 'string') {
@@ -125,7 +125,7 @@
       // Extracted style from Google Docs - use real formatting
       const textAttrs = style.attributes.text;
       
-      if (textAttrs.FONT_SIZE) fontSize = Math.min(textAttrs.FONT_SIZE, 24); // Increased cap to 24px for better visibility
+      if (textAttrs.FONT_SIZE) fontSize = Math.min(textAttrs.FONT_SIZE, 24); // Cap to 24px for better visibility
       if (textAttrs.FONT_FAMILY) fontFamily = textAttrs.FONT_FAMILY;
       if (textAttrs.BOLD === true) fontWeight = 'bold';
       if (textAttrs.ITALIC === true) fontStyle = 'italic';
@@ -153,7 +153,7 @@
     };
   }
 
-  // Get style attributes for display - with debugging
+  // Get style attributes for display
   function getDisplayAttributes(selectedStyle: any) {
     if (!selectedStyle) return null;
 
@@ -162,10 +162,6 @@
     if (selectedStyle.extracted && selectedStyle.attributes?.text) {
       // Extracted style - show what we have
       const textAttrs = selectedStyle.attributes.text;
-      
-      // Debug logging
-      console.log('TextDropdown - textAttrs:', textAttrs);
-      console.log('TextDropdown - textAttrs keys:', Object.keys(textAttrs));
       
       if (textAttrs.FONT_SIZE) attributes.push(`${textAttrs.FONT_SIZE}pt`);
       if (textAttrs.FONT_FAMILY) attributes.push(textAttrs.FONT_FAMILY);
@@ -190,16 +186,6 @@
     }
 
     return attributes.length > 0 ? attributes : null;
-  }
-
-  // Get color for text display - simplified
-  function getTextColor(selectedStyle: any) {
-    if (selectedStyle?.extracted && selectedStyle.attributes?.text?.FOREGROUND_COLOR) {
-      return selectedStyle.attributes.text.FOREGROUND_COLOR;
-    }
-    
-    const defaultStyle = textStyles.find(s => s.headingType === selectedStyle?.headingType);
-    return defaultStyle?.color || '#000000';
   }
 </script>
 
@@ -268,9 +254,9 @@
           </span>
         </div>
         
-        <!-- Style attributes - always show if selected -->
+        <!-- Style attributes - always show if selected, LEFT ALIGNED -->
         {#if getDisplayAttributes(props.selectedStyle)}
-          <div class="text-xs text-muted-foreground truncate w-full">
+          <div class="text-xs text-muted-foreground truncate w-full text-left">
             {getDisplayAttributes(props.selectedStyle).join(' • ')}
           </div>
         {/if}

@@ -9,19 +9,17 @@
     onPaddingChange: (points: number) => void;
   }>();
 
-  // Quick preset buttons (in points)
-  const presets = [
-    { label: "0", points: 0 },
-    { label: "5", points: 5 },
-    { label: "10", points: 10 },
-    { label: "20", points: 20 }
+  // 8 padding values in 2 rows of 4
+  const paddingValues = [
+    [0, 4, 8, 12],    // Row 1
+    [16, 20, 24, 30]  // Row 2
   ];
 
-  // Get button class for presets
-  function getPresetClass(points: number) {
+  // Get button class for padding values
+  function getPaddingClass(points: number) {
     const isSelected = props.cellPadding === points;
     return cn(
-      "px-2 py-1 text-[0.5em] border rounded-md transition-colors flex-1",
+      "px-1.5 py-1 text-[0.5em] border rounded-md transition-colors flex-1 font-medium",
       isSelected 
         ? "bg-primary/10 border-primary text-primary" 
         : "border-border hover:bg-accent",
@@ -29,55 +27,35 @@
     );
   }
 
-  // Handle preset click
-  function handlePresetClick(points: number) {
+  // Handle padding click
+  function handlePaddingClick(points: number) {
     if (!props.isProcessing) {
       props.onPaddingChange(points);
     }
   }
-
-  // Handle input change
-  function handleInputChange(event: Event) {
-    if (props.isProcessing) return;
-    
-    const target = event.target as HTMLInputElement;
-    const points = parseInt(target.value) || 0;
-    props.onPaddingChange(Math.max(0, Math.min(50, points))); // Clamp between 0-50pt
-  }
 </script>
 
-<!-- FIXED: Full width layout with proper spacing -->
-<div class="flex flex-col gap-1 h-full">
-  <!-- Top row: Label and Input with FULL SPACE between them -->
-  <div class="flex items-center justify-between w-full">
-    <h3 class="text-[0.6em] font-medium text-muted-foreground whitespace-nowrap">
-      Padding
-    </h3>
-    <div class="flex items-center gap-1">
-      <input 
-        type="number" 
-        min="0" 
-        max="50"
-        value={props.cellPadding}
-        onchange={handleInputChange}
-        class="w-12 h-8 px-1 text-center text-xs border border-input rounded-lg bg-background"
-        disabled={props.isProcessing}
-      />
-      <span class="text-xs text-muted-foreground">pt</span>
-    </div>
-  </div>
+<div class="flex flex-col gap-2 h-full">
+  <!-- Header -->
+  <h3 class="text-[0.6em] font-medium text-muted-foreground">
+    Padding
+  </h3>
 
-  <!-- Bottom row: Preset Buttons that FILL THE SPACE -->
-  <div class="flex gap-0.5 w-full">
-    {#each presets as preset}
-      <button
-        class={getPresetClass(preset.points)}
-        onclick={() => handlePresetClick(preset.points)}
-        disabled={props.isProcessing}
-        title={`Set padding to ${preset.points} points`}
-      >
-        {preset.label}
-      </button>
+  <!-- 2 Rows of 4 Padding Values -->
+  <div class="flex flex-col gap-1 flex-1">
+    {#each paddingValues as row}
+      <div class="flex gap-1 w-full">
+        {#each row as paddingValue}
+          <button
+            class={getPaddingClass(paddingValue)}
+            onclick={() => handlePaddingClick(paddingValue)}
+            disabled={props.isProcessing}
+            title={`Set padding to ${paddingValue} points`}
+          >
+            {paddingValue}
+          </button>
+        {/each}
+      </div>
     {/each}
   </div>
 </div>

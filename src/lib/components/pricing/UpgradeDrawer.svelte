@@ -92,7 +92,7 @@
 </script>
 
 <Drawer.Root open={isOpen} onOpenChange={handleOpenChange}>
-  <Drawer.Content class="max-h-[85vh] mx-3">
+  <Drawer.Content class="max-h-[90vh] mx-3 pb-16">
     <div class="mx-auto w-full max-w-md">
       
       <Drawer.Header class="text-center pb-4">
@@ -161,7 +161,7 @@
 
             <!-- Features List -->
             <div class="space-y-3">
-              <p class="font-medium text-sm">What you get:</p>
+              <!-- <p class="font-medium text-sm">What you get:</p> -->
               <ul class="space-y-2">
                 {#each proFeatures as feature}
                   <li class="flex items-start gap-3 text-sm">
