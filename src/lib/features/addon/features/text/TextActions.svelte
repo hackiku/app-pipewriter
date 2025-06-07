@@ -1,4 +1,29 @@
+<!-- <div class="flex items-center gap-2 text-[0.9em] ml-1">
+          <TextCursor class="h-4 w-4" />
+          <span>Get Styles</span>
+
+  let buttonClass = $derived(cn(
+    "h-10 text-xs aspect-square",
+    "relative",
+    "flex items-center justify-between px-1.5",
+    "w-full rounded-lg",
+    "border border-input bg-background",
+    "hover:bg-accent hover:text-accent-foreground",
+    props.isProcessing && "opacity-50 cursor-not-allowed"
+  ));
+
+  let miniButtonClass = $derived(cn(
+    "h-7 w-7",
+    "flex items-center justify-center",
+    "rounded-md",
+    "border border-input bg-background",
+    "hover:bg-accent hover:text-accent-foreground",
+    props.isProcessing && "opacity-50 cursor-not-allowed"
+  )); -->
+
+
 <!-- Updated src/lib/features/addon/features/text/TextActions.svelte -->
+
 <script lang="ts">
   import * as Resizable from "$lib/components/ui/resizable";
   import { AlertCircle, TextCursor, BookOpenCheck, Heading, Sun, Moon } from "@lucide/svelte";
@@ -14,8 +39,9 @@
     svgUrl: string;
     onStyleGuideInsert: () => void;
     onExtractStyle: () => void;
-    onExtractAllStyles: () => void;
+    onExtractSelectedHeadingStyle: () => void;
     onUpdateAllStyles: () => void;
+    onCopySelectedStyleToCursor: () => void;
     onToggleTheme: () => void;
   }>();
 
@@ -64,6 +90,7 @@
     props.isProcessing && "opacity-50 cursor-not-allowed"
   ));
 
+
   let miniButtonClass = $derived(cn(
     "h-7 w-7",
     "flex items-center justify-center",
@@ -88,6 +115,21 @@
     };
     
     return headingMap[props.selectedStyle.headingType] || 'H1';
+  }
+
+  // Get label for heading type (for tooltips)
+  function getLabelForHeading(headingType: string) {
+    const labelMap = {
+      'NORMAL': 'Normal text',
+      'HEADING1': 'Heading 1',
+      'HEADING2': 'Heading 2',
+      'HEADING3': 'Heading 3',
+      'HEADING4': 'Heading 4',
+      'HEADING5': 'Heading 5',
+      'HEADING6': 'Heading 6'
+    };
+    
+    return labelMap[headingType] || 'Unknown';
   }
 </script>
 
@@ -168,14 +210,13 @@
   <Resizable.Handle />
   
   <!-- Right Pane: Action Buttons -->
-  <Resizable.Pane defaultSize={70} minSize={40} maxSize={90}>
+  <Resizable.Pane defaultSize={60} minSize={40} maxSize={75}>
     <div bind:this={rightPaneElement} class="h-full flex flex-col gap-2">
       
       <!-- Get Style Actions -->
       <div class={buttonClass}>
         <!-- Left side with label and icon -->
-        <div class="flex items-center gap-2 text-[0.9em] ml-1">
-          <!-- <TextCursor class="h-4 w-4" /> -->
+				<div class="flex items-center text-[0.9em] ml-1">
           <span>Get Styles</span>
         </div>
         
@@ -192,11 +233,11 @@
           
           <button 
             class={miniButtonClass}
-            onclick={props.onExtractAllStyles}
-            disabled={props.isProcessing}
-            title="Get all document styles"
+            onclick={props.onExtractSelectedHeadingStyle}
+            disabled={props.isProcessing || !props.selectedStyle}
+            title="Get document style for {props.selectedStyle ? getLabelForHeading(props.selectedStyle.headingType) : 'selected heading'}"
           >
-            <BookOpenCheck class="h-3 w-3" />
+            {getHeadingDisplay()}
           </button>
         </div>
       </div>
@@ -204,15 +245,15 @@
       <!-- Update Style Actions -->
       <div class={buttonClass}>
         <!-- Left side with label and icon -->
-					<div class="flex items-center gap-2 text-[0.9em] ml-1">
-          <!-- <Heading class="h-4 w-4" /> -->
+				<div class="flex items-center gap-1 text-[0.9em] ml-1">
           <span>Update</span>
         </div>
         
         <!-- Right side with action buttons -->
         <div class="flex items-center gap-1">
           <button 
-            class="{miniButtonClass} {props.isProcessing && 'opacity-50 cursor-not-allowed'}"
+            class="{miniButtonClass}
+                   {props.isProcessing && 'opacity-50 cursor-not-allowed'}"
             onclick={props.onUpdateAllStyles}
             disabled={props.isProcessing}
             title="Update all matching headings at cursor position"

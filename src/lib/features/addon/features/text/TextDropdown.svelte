@@ -19,7 +19,7 @@
   const textStyles = [
     { headingType: 'NORMAL', tag: 'p', label: 'Normal', fontSize: 11, font: 'DM Sans', weight: 'Normal', color: '#000000' },
     { headingType: 'HEADING1', tag: 'h1', label: 'Heading 1', fontSize: 32, font: 'Inter Tight', weight: 'Semibold', color: '#000000' },
-    { headingType: 'HEADING2', tag: 'h2', label: 'Heading 2', fontSize: 20, font: 'Inter Tight', weight: 'Semibold', color: '#000000' },
+    { headingType: 'HEADING2', tag: 'h2', label: 'Heading 2', fontSize: 22, font: 'Inter Tight', weight: 'Semibold', color: '#000000' },
     { headingType: 'HEADING3', tag: 'h3', label: 'Heading 3', fontSize: 16, font: 'Inter Tight', weight: 'Bold', color: '#000000' },
     { headingType: 'HEADING4', tag: 'h4', label: 'Heading 4', fontSize: 14, font: 'Inter Tight', weight: 'Bold', color: '#000000' },
     { headingType: 'HEADING5', tag: 'h5', label: 'Heading 5', fontSize: 11, font: 'Inter Tight', weight: 'Semibold', color: '#b7b7b7' },
@@ -68,6 +68,11 @@
   // Create extracted style from Google Docs response
   export function createExtractedStyle(responseData: any) {
     const { textAttributes, paragraphAttributes, heading } = responseData;
+    
+    // Debug logging
+    console.log('createExtractedStyle - responseData:', responseData);
+    console.log('createExtractedStyle - textAttributes:', textAttributes);
+    console.log('createExtractedStyle - heading:', heading);
     
     // Determine heading type from response
     const headingType = determineHeadingType(heading);
@@ -120,7 +125,7 @@
       // Extracted style from Google Docs - use real formatting
       const textAttrs = style.attributes.text;
       
-      if (textAttrs.FONT_SIZE) fontSize = Math.min(textAttrs.FONT_SIZE, 30); // Increased cap to 24px for better visibility
+      if (textAttrs.FONT_SIZE) fontSize = Math.min(textAttrs.FONT_SIZE, 24); // Increased cap to 24px for better visibility
       if (textAttrs.FONT_FAMILY) fontFamily = textAttrs.FONT_FAMILY;
       if (textAttrs.BOLD === true) fontWeight = 'bold';
       if (textAttrs.ITALIC === true) fontStyle = 'italic';
@@ -148,7 +153,7 @@
     };
   }
 
-  // Get style attributes for display - simplified
+  // Get style attributes for display - with debugging
   function getDisplayAttributes(selectedStyle: any) {
     if (!selectedStyle) return null;
 
@@ -157,6 +162,10 @@
     if (selectedStyle.extracted && selectedStyle.attributes?.text) {
       // Extracted style - show what we have
       const textAttrs = selectedStyle.attributes.text;
+      
+      // Debug logging
+      console.log('TextDropdown - textAttrs:', textAttrs);
+      console.log('TextDropdown - textAttrs keys:', Object.keys(textAttrs));
       
       if (textAttrs.FONT_SIZE) attributes.push(`${textAttrs.FONT_SIZE}pt`);
       if (textAttrs.FONT_FAMILY) attributes.push(textAttrs.FONT_FAMILY);
@@ -234,7 +243,7 @@
            border border-input bg-background text-sm shadow-sm 
            transition-all duration-200 hover:bg-accent hover:text-accent-foreground
            disabled:cursor-not-allowed disabled:opacity-50
-           {props.selectedStyle ? 'min-h-10' : 'h-9'}"
+           {props.selectedStyle ? 'min-h-12' : 'h-10'}"
     onclick={toggleOptions}
     disabled={props.disabled}
   >
