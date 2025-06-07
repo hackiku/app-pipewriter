@@ -5,7 +5,7 @@
   import { Button } from "$lib/components/ui/button";
   import { RefreshCcw, Heading, Save } from "@lucide/svelte";
   import { insertElement } from "$lib/services/google/docs";
-  import { applyTextStyle, updateAllMatchingHeadings, getStyleInfo } from "$lib/services/google/text";
+  import { applyTextStyle, updateAllMatchingHeadings, getStyleInfo, getAllDocumentStyles } from "$lib/services/google/text";
   import type { ElementTheme } from '$lib/types/elements';
   import type { HeadingType } from '$lib/services/google/text';
   import { onMount, onDestroy } from 'svelte';
@@ -34,6 +34,7 @@
     extracted?: boolean; // Flag to indicate if this was extracted from docs
     attributes?: any; // Store extracted attributes
   } | null>(null);
+  let savedStyles = $state<any[]>([]); // Reactive state for saved styles
   let elementsTheme = $state<ElementTheme>('light');
   let appTheme = $state<ElementTheme>('light');
   let observer: MutationObserver | null = null;
@@ -136,6 +137,63 @@
         type: 'error',
         message: errorMessage,
         details: 'Make sure your cursor is positioned in text and try again'
+      });
+    } finally {
+      isProcessing = false;
+      props.onProcessingEnd();
+    }
+  }
+
+  // Extract all styles from document (placeholder for future implementation)
+  async function extractAllStyles() {
+    if (isProcessing) return;
+    
+    isProcessing = true;
+    props.onProcessingStart();
+    
+    props.onStatusUpdate({
+      type: 'processing',
+      message: 'Getting all document styles...'
+    });
+
+    try {
+      const response = await Promise.race([
+        getAllDocumentStyles((statusUpdate) => {
+          props.onStatusUpdate(statusUpdate);
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Style extraction timed out after 15 seconds')), 15000)
+        )
+      ]) as any;
+      
+      if (response.success && response.data) {
+        // Process all styles and update saved styles
+        if (dropdownRef?.createExtractedStyle) {
+          const extractedStyles = response.data.styles?.map((styleData: any) => 
+            dropdownRef.createExtractedStyle(styleData)
+          ) || [];
+          
+          savedStyles = extractedStyles;
+          
+          props.onStatusUpdate({
+            type: 'success',
+            message: `Extracted ${extractedStyles.length} styles from document`,
+            executionTime: response.executionTime
+          });
+        } else {
+          throw new Error("Style mapping functions not available");
+        }
+      } else {
+        throw new Error(response.error || "Failed to extract all styles");
+      }
+    } catch (error) {
+      console.error("Failed to extract all styles:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to extract all styles";
+      
+      props.onStatusUpdate({
+        type: 'error',
+        message: errorMessage,
+        details: 'Make sure the document contains text content and try again'
       });
     } finally {
       isProcessing = false;
@@ -261,6 +319,30 @@
     }
   }
 
+  // Save current style to reactive state
+  function saveStyle() {
+    if (!selectedStyle) return;
+    
+    // Add to saved styles if not already present
+    const existingIndex = savedStyles.findIndex(style => 
+      style.headingType === selectedStyle.headingType && 
+      style.extracted === selectedStyle.extracted
+    );
+    
+    if (existingIndex >= 0) {
+      // Update existing style
+      savedStyles[existingIndex] = { ...selectedStyle };
+    } else {
+      // Add new style
+      savedStyles = [...savedStyles, { ...selectedStyle }];
+    }
+    
+    props.onStatusUpdate({
+      type: 'success',
+      message: `${selectedStyle.label} style saved`
+    });
+  }
+
   // Reset style selection
   function resetStyle() {
     selectedStyle = null;
@@ -295,7 +377,7 @@
     onSelect={selectStyle}
   />
 
-  <!-- Actions - Updated with Update All button instead of Get All Styles -->
+  <!-- Actions - Updated with all functions -->
   <TextActions
     isProcessing={isProcessing}
     selectedStyle={selectedStyle}
@@ -303,40 +385,41 @@
     svgUrl={getSvgUrl()}
     onStyleGuideInsert={handleStyleGuideInsert}
     onExtractStyle={extractStyle}
+    onExtractAllStyles={extractAllStyles}
     onUpdateAllStyles={updateAllStyles}
     onToggleTheme={toggleTheme}
   />
 
-  <!-- Action Buttons Row - Reset | Apply (aligned right) -->
-	<!-- TODO: full width button bar, keep h-9 in wrapper-->
-  <div class="flex justify-end gap-2 w-full">
-    
-		<!-- Reset Button (icon only, square) -->
+  <!-- Action Buttons Row - Full Width -->
+  <div class="flex gap-2 w-full">
+    <!-- Save Button -->
     <Button
       variant="outline"
-      class="aspect-square h-8 p-0 flex items-center justify-center"
+      class="flex-1 h-8 flex items-center justify-center text-xs"
       disabled={isProcessing || !selectedStyle}
-      onclick={resetStyle}
-      title="Reset style selection"
+      onclick={saveStyle}
+      title="Save current style to collection"
     >
-      <Save class="h-3 w-3" />
-			<span>Save</span>
-
+      <Save class="h-3 w-3 mr-2" />
+      <span>Save</span>
     </Button>
+
+    <!-- Reset Button -->
     <Button
       variant="outline"
-      class="aspect-square p-0 h-8 flex items-center justify-center"
+      class="flex-1 h-8 flex items-center justify-center text-xs"
       disabled={isProcessing || !selectedStyle}
       onclick={resetStyle}
       title="Reset style selection"
     >
-      <RefreshCcw class="h-3 w-3" />
+      <RefreshCcw class="h-3 w-3 mr-2" />
+      <span>Reset</span>
     </Button>
 
     <!-- Apply Style Button -->
     <Button
       variant={selectedStyle ? "default" : "outline"}
-      class="flex h-8 items-center justify-center text-xs px-4"
+      class="flex-1 h-8 flex items-center justify-center text-xs"
       disabled={isProcessing || !selectedStyle}
       onclick={applyStyle}
       title="Apply style to text at cursor"
