@@ -1,118 +1,145 @@
-<!-- src/lib/features/addon/features/table/InteractiveTable.svelte -->
+<!-- src/lib/features/addon/features/table/InteractiveTable.svelte - ULTRA SIMPLE CN() VERSION -->
 <script lang="ts">
   import { cn } from "$lib/utils";
 
-  // Props - scope toggle moved to parent
   const props = $props<{
     cellAlignment: 'top' | 'middle' | 'bottom';
     scope: 'cell' | 'table';
     borderWidth: number;
     borderColor: string;
     backgroundColor: string;
-    cellPadding: number; // in points
+    cellPadding: number;
   }>();
 
-  // Get cell content alignment class - ENHANCED for better visual feedback
-  function getCellAlignClass() {
-    switch (props.cellAlignment) {
-      case 'top': return 'justify-start items-start pt-1';
-      case 'middle': return 'justify-start items-center'; 
-      case 'bottom': return 'justify-start items-end pb-1';
-      default: return 'justify-start items-center';
-    }
+  // SIMPLE: Derived classes using cn()
+  const containerClass = $derived(cn(
+    "flex justify-center h-full items-center p-3" // Padding to contain borders
+  ));
+
+  const tableClass = $derived(cn(
+    "w-32 h-16 overflow-hidden",
+    // Border state: dashed gray OR solid colored
+    props.borderWidth === 0 
+      ? "border-2 border-dashed border-muted-foreground/40"
+      : `border-[${props.borderWidth}px] border-solid`,
+    // Background: chessboard pattern when no color
+    !props.backgroundColor && "bg-gradient-to-br from-muted/20 via-transparent to-muted/20"
+  ));
+
+  const gridClass = $derived(cn(
+    "grid grid-cols-2 grid-rows-2 h-full w-full",
+    // Internal borders - SAME for all cells
+    "[&>*]:border-r [&>*]:border-b",
+    "[&>*:nth-child(2)]:border-r-0", // Remove right border from top-right
+    "[&>*:nth-child(3)]:border-b-0", // Remove bottom border from bottom-left  
+    "[&>*:nth-child(4)]:border-r-0 [&>*:nth-child(4)]:border-b-0", // Remove both from bottom-right
+    // Internal border styling
+    props.borderWidth === 0
+      ? "[&>*]:border-dashed [&>*]:border-muted-foreground/40"
+      : "[&>*]:border-solid"
+  ));
+
+  // Cell alignment
+  const alignmentClass = $derived(cn(
+    props.cellAlignment === 'top' && "items-start justify-start",
+    props.cellAlignment === 'middle' && "items-center justify-start", 
+    props.cellAlignment === 'bottom' && "items-end justify-start"
+  ));
+
+  // Get cell class for each cell
+  function getCellClass(cellIndex: number) {
+    return cn(
+      "flex transition-all duration-200 relative",
+      alignmentClass,
+      // Cell selection opacity
+      props.scope === 'cell' && cellIndex !== 0 && "opacity-30",
+      // Padding
+      props.cellPadding === 0 && "p-1",
+      props.cellPadding === 5 && "p-1.5", 
+      props.cellPadding === 10 && "p-2",
+      props.cellPadding === 20 && "p-3",
+      props.cellPadding > 20 && "p-4"
+    );
   }
 
-  // Get border style - ALL DASHED when no border (as requested)
-  function getBorderStyle() {
-    if (props.borderWidth === 0) {
-      return 'border-dashed border-neutral-300 dark:border-neutral-600';
-    }
-    return `border-solid border-[${props.borderWidth}px]`;
-  }
-
-  // Get border color
-  function getBorderColor() {
-    if (props.borderWidth === 0) return '';
-    return `border-color: ${props.borderColor};`;
-  }
-
-  // Get background color for table or specific cell
-  function getBackgroundColor(cellIndex: number) {
-    if (!props.backgroundColor) return 'bg-white dark:bg-neutral-900';
+  // Get cell background
+  function getCellBgClass(cellIndex: number) {
+    if (!props.backgroundColor) return "";
     
     if (props.scope === 'table') {
-      // Apply to all cells
-      return '';
-    } else {
-      // Apply only to top-left cell (index 0)
-      return cellIndex === 0 ? '' : 'bg-white dark:bg-neutral-900';
+      return ""; // Applied to table container
+    } else if (props.scope === 'cell' && cellIndex === 0) {
+      return ""; // Applied inline
     }
+    return "";
   }
 
-  // Get cell padding - SIMPLE: just real padding, no scaling
-  function getCellPadding() {
-    return `${props.cellPadding}px`; // Direct padding, no math
-  }
-
-  // Check if cell should be highlighted (selected cell scope)  
-  function isCellHighlighted(cellIndex: number) {
-    return props.scope === 'cell' && cellIndex === 0;
-  }
-
-  // Get cell opacity - dim non-selected cells when in cell mode
-  function getCellOpacity(cellIndex: number) {
-    if (props.scope === 'cell' && cellIndex !== 0) {
-      return 'opacity-30';
+  // Table background style
+  const tableStyle = $derived(() => {
+    let style = '';
+    
+    // Border color for solid borders
+    if (props.borderWidth > 0) {
+      style += `border-color: ${props.borderColor}; `;
     }
-    return 'opacity-100';
-  }
+    
+    // Background color
+    if (props.backgroundColor) {
+      if (props.scope === 'table') {
+        style += `background-color: ${props.backgroundColor}; `;
+      }
+    }
+    
+    return style;
+  });
 
-  // SIMPLE: Fixed content size, just moves with padding
-  function getContentClass() {
-    return {
-      class: 'w-6 h-2 bg-neutral-400 dark:bg-neutral-500 rounded transition-all duration-200 flex-shrink-0',
-      style: '' // No dynamic sizing
-    };
-  }
+  // Grid style for internal border colors
+  const gridStyle = $derived(() => {
+    if (props.borderWidth > 0) {
+      return `--border-color: ${props.borderColor};`;
+    }
+    return '';
+  });
 
-  // Fixed 2x2 table for compact view
-  const rows = 2;
-  const cols = 2;
-  const totalCells = rows * cols;
+  // Individual cell style
+  function getCellStyle(cellIndex: number) {
+    if (props.backgroundColor && props.scope === 'cell' && cellIndex === 0) {
+      return `background-color: ${props.backgroundColor};`;
+    }
+    return '';
+  }
 </script>
 
-<!-- Table container - stretches to fill height -->
-<div class="flex justify-center h-full items-stretch">
+<div class={containerClass}>
   <div 
-    class="flex-1 max-w-32 {getBorderStyle()}"
-    style="{getBorderColor()} {props.backgroundColor && props.scope === 'table' ? `background-color: ${props.backgroundColor};` : 'background-color: white;'}"
+    class={tableClass}
+    style={tableStyle()}
   >
-    <!-- Grid with all borders - cells stretch vertically -->
-    <div class="grid grid-cols-2 grid-rows-2 h-full">
-      {#each Array(totalCells) as _, index}
-        {@const contentInfo = getContentClass()}
-        
+    <div 
+      class={gridClass}
+      style={gridStyle()}
+    >
+      {#each Array(4) as _, index}
         <div 
-          class={cn(
-            // Remove min-height, let cells stretch to fill
-            "min-w-16 flex transition-all duration-200 relative overflow-hidden",
-            props.borderWidth === 0 ? "border-dashed border-neutral-300 dark:border-neutral-600" : "border-solid border-neutral-300 dark:border-neutral-600",
-            getCellAlignClass(),
-            getBackgroundColor(index),
-            getCellOpacity(index)
-            // REMOVED: ring when highlighted - no gray border!
-          )}
-          style="padding: {getCellPadding()}; border-width: {props.borderWidth === 0 ? '1px' : props.borderWidth + 'px'}; {getBorderColor()} {props.backgroundColor && ((props.scope === 'table') || (props.scope === 'cell' && index === 0)) ? `background-color: ${props.backgroundColor};` : ''}"
+          class={getCellClass(index)}
+          style={getCellStyle(index)}
         >
-          <!-- Simple content that moves with padding -->
-          <div class={contentInfo.class} style={contentInfo.style}></div>
+          <!-- Content bar -->
+          <div class="w-3 h-1 bg-muted-foreground/60 rounded-sm flex-shrink-0"></div>
           
-          <!-- Just a small indicator, no ring -->
-          {#if isCellHighlighted(index)}
-            <div class="absolute -top-1 -left-1 w-2 h-2 bg-primary rounded-full"></div>
+          <!-- Selection indicator -->
+          {#if props.scope === 'cell' && index === 0}
+            <div class="absolute -top-0.5 -left-0.5 w-1.5 h-1.5 bg-primary rounded-full"></div>
           {/if}
         </div>
       {/each}
     </div>
   </div>
 </div>
+
+<style>
+  /* Apply border color to internal borders when solid */
+  :global([style*="--border-color"] > *) {
+    border-color: var(--border-color) !important;
+  }
+</style>

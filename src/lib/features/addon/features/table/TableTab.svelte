@@ -28,7 +28,7 @@
 	let cellAlignment = $state<'top' | 'middle' | 'bottom'>('middle');
 	let scope = $state<'cell' | 'table'>('table');
 	let cellPadding = $state(0); // in points
-	let borderWidth = $state(0); // in pixels
+	let borderWidth = $state(0); // in pixels  
 	let borderColor = $state('#000000');
 	let backgroundColor = $state('');
 	let isProcessing = $state(false);
@@ -51,15 +51,6 @@
 			backgroundColor !== defaultState.backgroundColor
 	);
 
-	let changesSummary = $derived(() => {
-		const changes = [];
-		if (cellAlignment !== defaultState.cellAlignment) changes.push(`${cellAlignment} align`);
-		if (cellPadding > 0) changes.push(`${cellPadding}pt padding`);
-		if (borderWidth > 0) changes.push(`${borderWidth}pt border`);
-		if (backgroundColor) changes.push('background');
-		return changes.length > 0 ? changes.join(', ') : 'No changes';
-	});
-
 	// Event handlers
 	function handleAlignmentChange(value: string) {
 		cellAlignment = value as 'top' | 'middle' | 'bottom';
@@ -78,6 +69,7 @@
 		backgroundColor = color;
 	}
 
+	// FIXED: Border changes always use table scope (no cell-level borders supported)
 	function handleBorderChange(width: number, color: string = '#000000') {
 		borderWidth = width;
 		borderColor = color;
@@ -92,7 +84,7 @@
 		backgroundColor = defaultState.backgroundColor;
 	}
 
-	// FIXED: Main apply function - ALWAYS allow applying current state
+	// Apply function - ALWAYS send table scope for borders
 	async function handleApply() {
 		if (isProcessing) return;
 
@@ -107,12 +99,7 @@
 			const client = getGoogleService();
 			const operations = [];
 
-			// ALWAYS apply current alignment (even if it matches default)
-			console.log('Sending alignment:', {
-				action: 'setCellAlignment',
-				scope,
-				alignment: cellAlignment
-			});
+			// Apply alignment with current scope
 			const alignmentResponse = await client.sendMessage(
 				'tableOps',
 				{
@@ -124,10 +111,9 @@
 			);
 			operations.push({ name: 'alignment', success: alignmentResponse.success });
 
-			// ALWAYS apply current padding
+			// Apply padding with current scope
 			const paddingValue = Number(cellPadding);
 			if (!isNaN(paddingValue) && paddingValue >= 0) {
-				console.log('Sending padding:', { action: 'setCellPadding', scope, padding: paddingValue });
 				const paddingResponse = await client.sendMessage(
 					'tableOps',
 					{
@@ -140,21 +126,15 @@
 				operations.push({ name: 'padding', success: paddingResponse.success });
 			}
 
-			// ALWAYS apply current borders
+			// FIXED: Apply borders always with table scope (API limitation)
 			const borderWidthValue = Number(borderWidth);
 			if (!isNaN(borderWidthValue) && borderWidthValue >= 0) {
 				const borderColorValue = borderColor || '#000000';
-				console.log('Sending borders:', {
-					action: 'setBorders',
-					scope: 'table',
-					borderWidth: borderWidthValue,
-					borderColor: borderColorValue
-				});
 				const borderResponse = await client.sendMessage(
 					'tableOps',
 					{
 						action: 'setBorders',
-						scope: 'table',
+						scope: 'table', // ALWAYS table scope for borders
 						borderWidth: borderWidthValue,
 						borderColor: borderColorValue
 					},
@@ -163,9 +143,8 @@
 				operations.push({ name: 'borders', success: borderResponse.success });
 			}
 
-			// ALWAYS apply current background (if specified)
+			// Apply background with current scope
 			if (backgroundColor) {
-				console.log('Sending background:', { action: 'setCellBackground', scope, backgroundColor });
 				const backgroundResponse = await client.sendMessage(
 					'tableOps',
 					{
@@ -176,16 +155,6 @@
 					props.onStatusUpdate
 				);
 				operations.push({ name: 'background', success: backgroundResponse.success });
-			}
-
-			// Check if all operations succeeded
-			if (operations.length === 0) {
-				props.onStatusUpdate?.({
-					type: 'success',
-					message: 'No valid changes to apply',
-					details: 'All values are at their defaults or invalid'
-				});
-				return;
 			}
 
 			const failedOps = operations.filter((op) => !op.success);
@@ -211,21 +180,20 @@
 		}
 	}
 
-	// Get scope toggle class
+	// FIXED: Full width scope toggle class to match table width
 	function getScopeToggleClass() {
 		return cn(
-			'flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs transition-colors hover:bg-accent',
+			'w-full flex items-center justify-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs transition-colors hover:bg-accent',
 			scope === 'table' ? 'bg-primary/5 border-primary/30' : 'bg-muted/30'
 		);
 	}
 </script>
 
-<!-- ENHANCED: Better grid layout with stretched spacing -->
 <div class="space-y-3">
 	<div class="flex h-full w-full flex-col gap-3">
 		<!-- Row 1: Preview + Controls - ENHANCED GRID STRETCHING -->
 		<div class="grid flex-1 grid-cols-2 gap-3" style="min-height: 120px;">
-			<!-- Left: Interactive Table Preview + Scope Toggle -->
+			<!-- Left: Interactive Table Preview + Full Width Scope Toggle -->
 			<div class="flex flex-col justify-between gap-2 h-full">
 				<!-- Table preview - ENHANCED: grows to fill more space -->
 				<div class="flex flex-1 items-center justify-center" style="min-height: 80px;">
@@ -239,7 +207,7 @@
 					/>
 				</div>
 
-				<!-- MOVED FROM CHILD: Scope Toggle - positioned at bottom -->
+				<!-- ENHANCED: Full width scope toggle to match table width above -->
 				<div class="flex items-center justify-center">
 					<button
 						class={getScopeToggleClass()}
@@ -258,7 +226,7 @@
 				</div>
 			</div>
 
-			<!-- Right: Alignment + Padding Controls - STRETCHED to align with left -->
+			<!-- Right: Alignment + Padding Controls - ENHANCED vertical alignment -->
 			<div class="flex h-full flex-col justify-between gap-2">
 				<AlignmentButtonGrid
 					{cellAlignment}
@@ -270,7 +238,7 @@
 
 				<hr class="border-border" />
 
-				<!-- ENHANCED: PaddingControls fills remaining space and aligns with scope toggle -->
+				<!-- ENHANCED: PaddingControls fills remaining space and aligns perfectly with scope toggle -->
 				<div class="flex-1 flex flex-col justify-end">
 					<PaddingControls {cellPadding} {isProcessing} onPaddingChange={handlePaddingChange} />
 				</div>
@@ -279,12 +247,13 @@
 	</div>
 
 	<hr/>
-	<!-- Enhanced ColorControls with color picker -->
+	<!-- ENHANCED: Expandable ColorControls with chevron -->
 	<ColorControls {backgroundColor} {isProcessing} onColorChange={handleColorChange} />
 	
 	<hr class="border-border" />
 	
-	<!-- Actions Row with BorderControls combobox -->
+	
+	<!-- ENHANCED: Border row with color support -->
 	<div class="flex items-center gap-2">
 		<div class="flex-1">
 			<BorderControls
