@@ -8,11 +8,13 @@
 	import PaddingControls from './PaddingControls.svelte';
 	import ColorControls from './ColorControls.svelte';
 	import BorderControls from './BorderControls.svelte';
+	import UpgradeDrawer from '$lib/components/pricing/UpgradeDrawer.svelte';
 	import { getGoogleService } from '$lib/services/google/client';
 
-	// Props
+	// Props - ENHANCED with features
 	const props = $props<{
 		context?: any;
+		features?: any; // Added features prop
 		onStatusUpdate?: (status: {
 			type: 'processing' | 'success' | 'error';
 			message: string;
@@ -32,6 +34,7 @@
 	let borderColor = $state('#000000');
 	let backgroundColor = $state('');
 	let isProcessing = $state(false);
+	let showUpgradeDrawer = $state(false); // Added upgrade drawer state
 
 	// Default state for reset
 	const defaultState = {
@@ -67,6 +70,15 @@
 
 	function handleColorChange(color: string) {
 		backgroundColor = color;
+	}
+
+	// Handle upgrade drawer
+	function handleUpgradeDrawerChange(open: boolean) {
+		showUpgradeDrawer = open;
+	}
+
+	function handleOpenUpgrade() {
+		showUpgradeDrawer = true;
 	}
 
 	// FIXED: Border changes always use table scope (no cell-level borders supported)
@@ -236,7 +248,6 @@
 					onScopeToggle={handleScopeToggle}
 				/>
 
-
 				<!-- ENHANCED: PaddingControls fills remaining space and aligns perfectly with scope toggle -->
 				<div class="flex-1 flex flex-col justify-end">
 					<PaddingControls {cellPadding} {isProcessing} onPaddingChange={handlePaddingChange} />
@@ -246,11 +257,17 @@
 	</div>
 
 	<hr/>
-	<!-- ENHANCED: Expandable ColorControls with chevron -->
-	<ColorControls {backgroundColor} {isProcessing} onColorChange={handleColorChange} />
+	
+	<!-- ENHANCED: Accordion ColorControls with upgrade functionality -->
+	<ColorControls 
+		{backgroundColor} 
+		{isProcessing} 
+		features={props.features}
+		onColorChange={handleColorChange}
+		onOpenUpgrade={handleOpenUpgrade}
+	/>
 	
 	<hr class="border-border" />
-	
 	
 	<!-- ENHANCED: Border row with color support -->
 	<div class="flex items-center gap-2">
@@ -289,4 +306,7 @@
 			{/if}
 		</Button>
 	</div>
+
+	<!-- Upgrade Drawer -->
+	<UpgradeDrawer isOpen={showUpgradeDrawer} onOpenChange={handleUpgradeDrawerChange} />
 </div>

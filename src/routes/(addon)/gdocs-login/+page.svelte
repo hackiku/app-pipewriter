@@ -142,7 +142,7 @@
         variant="ghost" 
         size="sm"
         class="h-8 px-3 text-xs font-medium"
-        onclick={() => window.open('/', '_blank')}
+        onclick={() => window.open('https://pipewriter.io', '_blank')}
         disabled={isSigningIn || isSwitching}
       >
         Main Website
