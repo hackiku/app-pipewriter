@@ -174,9 +174,9 @@
       <!-- Get Style Actions -->
       <div class={buttonClass}>
         <!-- Left side with label and icon -->
-        <div class="flex items-center gap-2 text-[0.8em]">
+        <div class="flex items-center gap-2 text-[0.9em] ml-1">
           <!-- <TextCursor class="h-4 w-4" /> -->
-          <span>Get Style</span>
+          <span>Get Styles</span>
         </div>
         
         <!-- Right side with action buttons -->
@@ -204,9 +204,9 @@
       <!-- Update Style Actions -->
       <div class={buttonClass}>
         <!-- Left side with label and icon -->
-        <div class="flex items-center gap-2 text-[0.8em]">
+					<div class="flex items-center gap-2 text-[0.9em] ml-1">
           <!-- <Heading class="h-4 w-4" /> -->
-          <span>Update Styles</span>
+          <span>Update</span>
         </div>
         
         <!-- Right side with action buttons -->

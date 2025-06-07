@@ -407,13 +407,12 @@
     <!-- Reset Button -->
     <Button
       variant="outline"
-      class="flex-1 h-8 flex items-center justify-center text-xs"
+      class="h-8 w-8 aspect-square flex items-center justify-center text-xs"
       disabled={isProcessing || !selectedStyle}
       onclick={resetStyle}
       title="Reset style selection"
     >
-      <RefreshCcw class="h-3 w-3 mr-2" />
-      <span>Reset</span>
+      <RefreshCcw class="h-3 w-3" />
     </Button>
 
     <!-- Apply Style Button -->
