@@ -1,4 +1,4 @@
-<!-- src/lib/features/addon/features/Dropper.svelte -->
+<!-- src/lib/features/addon/features/Dropper.svelte - MODERNIZED -->
 <script lang="ts">
   import { fade, slide, fly } from "svelte/transition";
   import type { ElementTheme, StatusUpdate } from '$lib/types/elements';
@@ -8,6 +8,10 @@
   import DropperGrid from "./dropper/DropperGrid.svelte";
   import DropperBar from "./dropper/DropperBar.svelte";
   import DocsLinks from "./dropper/DocsLinks.svelte";
+  
+  // MODERNIZED: Import access control utilities
+  import { useAccessControl } from '$lib/utils/access-control';
+  import type { SerializedUserAccess } from '$lib/utils/access-control';
 
   // New interface for queue items with individual themes
   interface QueueItem {
@@ -15,14 +19,42 @@
     theme: ElementTheme;
   }
   
-  // Props - server data instead of contexts
+  // MODERNIZED: Props now receive userAccess instead of legacy formats
   const { 
     context, 
     elements, 
-    userTier, 
-    features, 
+    userAccess,
     showInfo 
-  } = $props();
+  } = $props<{
+    context: any;
+    elements: Record<string, any[]>;
+    userAccess?: SerializedUserAccess; // CHANGED: From userTier and features to userAccess
+    showInfo?: boolean;
+  }>();
+  
+  // MODERNIZED: Create access control utilities with fallback
+  let access = $state();
+  
+  $effect(() => {
+    if (!userAccess) {
+      // Fallback to free tier if userAccess is not available
+      access = useAccessControl({
+        tier: 'free',
+        isPro: false,
+        trialActive: false,
+        trialDaysLeft: 0,
+        features: {
+          elements: { canUseBasicElements: true, canUseTrialElements: false, canUseProElements: false },
+          colors: { canUseBasicColors: true, canUsePremiumColorSchemes: false, canUseDocumentBackgrounds: false, canUseTableBackgrounds: false },
+          prompts: { canCreateCustom: false, canEditOwn: false, maxCustomPrompts: 0 },
+          ai: { canUseBasicPrompts: false, canUseAdvancedPrompts: false, canGenerateContent: false },
+          export: { canExportBasic: false, canExportAdvanced: false }
+        }
+      });
+    } else {
+      access = useAccessControl(userAccess);
+    }
+  });
   
   // Local state variables
   let isProcessing = $state(false);
@@ -151,7 +183,6 @@
     
     isProcessing = true;
     
-    // FIXED: Track start time for proper execution time calculation
     const startTime = Date.now();
     let totalExecutionTime = 0;
     
@@ -172,10 +203,8 @@
           elementId: item.id
         });
         
-        // ENHANCED: Use each item's individual theme
         const response = await insertElement(item.id, item.theme);
         
-        // FIXED: Accumulate execution times from each element
         if (response.executionTime) {
           totalExecutionTime += response.executionTime;
         }
@@ -189,7 +218,6 @@
         }
       }
       
-      // FIXED: Use accumulated execution time, not Date.now()
       const overallTime = Date.now() - startTime;
       
       setStatusWithTimeout({
@@ -259,20 +287,25 @@
 <div class="relative h-full z-0 bg-neutral-100/50 dark:bg-neutral-800/50">
   <!-- Main Container -->
   <div class="h-full __pb-8 pt-2 overflow-y-auto scrollbar-none">
-    <DropperGrid 
-      isProcessing={isProcessing}
-      context={context}
-      elements={elements}
-      userTier={userTier}
-      features={features}
-      theme={elementsTheme}
-      gridColumns={gridColumns}
-      chainMode={chainMode}
-      showInfo={showInfo}
-      getChainPosition={getChainPosition}
-      onElementSelect={handleElementSelect}
-      onChainToggle={handleChainToggle}
-    />
+    {#if access}
+      <DropperGrid 
+        isProcessing={isProcessing}
+        context={context}
+        elements={elements}
+        userAccess={userAccess}
+        theme={elementsTheme}
+        gridColumns={gridColumns}
+        chainMode={chainMode}
+        showInfo={showInfo}
+        getChainPosition={getChainPosition}
+        onElementSelect={handleElementSelect}
+        onChainToggle={handleChainToggle}
+      />
+    {:else}
+      <div class="h-full flex items-center justify-center">
+        <p class="text-muted-foreground text-sm">Loading access control...</p>
+      </div>
+    {/if}
     
     <!-- Spacer and Divider -->
     <div class="py-4 px-2">
@@ -280,10 +313,12 @@
     </div>
 
     <!-- Template Documents Section -->
-    <DocsLinks 
-      userTier={userTier}
-      showInfo={showInfo}
-    />
+    {#if access}
+      <DocsLinks 
+        userAccess={userAccess}
+        showInfo={showInfo}
+      />
+    {/if}
   </div>
 
   <!-- Bottom Control Bar -->
@@ -303,7 +338,7 @@
     />
   </div>
   
-  <!-- UPDATED: Use CompactStatus instead of StatusSonner -->
+  <!-- Status display -->
   <CompactStatus status={status} onStatusClose={handleStatusClose} />
 </div>
 

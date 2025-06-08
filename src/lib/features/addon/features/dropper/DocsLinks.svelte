@@ -1,13 +1,40 @@
-<!-- src/lib/features/addon/features/dropper/DocsLinks.svelte -->
+<!-- src/lib/features/addon/features/dropper/DocsLinks.svelte - MODERNIZED -->
 <script lang="ts">
   import { ExternalLink, Lock, FileText, Folder } from '@lucide/svelte';
   import { cn } from '$lib/utils';
   
-  // Props - minimal interface
+  // MODERNIZED: Import access control utilities
+  import { useAccessControl, type SerializedUserAccess } from '$lib/utils/access-control';
+  
+  // MODERNIZED: Props now receive userAccess instead of legacy userTier
   const props = $props<{
-    userTier: 'free' | 'trial' | 'pro';
+    userAccess?: SerializedUserAccess; // CHANGED: From userTier to userAccess
     showInfo?: boolean;
   }>();
+
+  // MODERNIZED: Create access control utilities with fallback
+  let access = $state();
+  
+  $effect(() => {
+    if (!props.userAccess) {
+      // Fallback to free tier if userAccess is not available
+      access = useAccessControl({
+        tier: 'free',
+        isPro: false,
+        trialActive: false,
+        trialDaysLeft: 0,
+        features: {
+          elements: { canUseBasicElements: true, canUseTrialElements: false, canUseProElements: false },
+          colors: { canUseBasicColors: true, canUsePremiumColorSchemes: false, canUseDocumentBackgrounds: false, canUseTableBackgrounds: false },
+          prompts: { canCreateCustom: false, canEditOwn: false, maxCustomPrompts: 0 },
+          ai: { canUseBasicPrompts: false, canUseAdvancedPrompts: false, canGenerateContent: false },
+          export: { canExportBasic: false, canExportAdvanced: false }
+        }
+      });
+    } else {
+      access = useAccessControl(props.userAccess);
+    }
+  });
 
   // Template documents - URLs embedded here
   const templateDocs = [
@@ -65,13 +92,15 @@
     }
   ];
 
-  // Check if item is locked for current user
+  // MODERNIZED: Check if item is locked using centralized access control
   function isLocked(tier: string): boolean {
-    if (tier === 'free') return false;
-    return props.userTier === 'free'; // Only free users see locks
+    if (!access) return tier !== 'free'; // Fallback behavior
+    
+    // UPDATED: Use centralized access control (trial users get full access)
+    return !access.canUseElement(tier);
   }
 
-  // Handle link clicks - always open (even if locked)
+  // Handle link clicks - always open (even if locked for preview)
   function handleLinkClick(url: string) {
     window.open(url, '_blank');
   }
@@ -82,7 +111,7 @@
     return FileText;
   }
 
-  // Card styling similar to ElementCard but adapted for links
+  // MODERNIZED: Card styling with access control awareness
   function getCardClass(tier: string) {
     const baseClass = "group relative w-full h-20 p-3 rounded-lg border transition-all duration-200 cursor-pointer";
     const themeClass = "bg-card hover:bg-accent border-border";
@@ -93,102 +122,100 @@
   }
 </script>
 
-<div class="space-y-4 px-2">
-  <!-- Template Documents Section -->
-  <section>
-    <!-- Category Header - always visible -->
-    <h3 class="mb-3 ml-2 text-xs font-normal capitalize text-neutral-400 dark:text-neutral-500">
-      Template Documents ({templateDocs.length})
-    </h3>
+{#if access}
+  <div class="space-y-4 px-2">
+    <!-- Template Documents Section -->
+    <section>
+      <!-- Category Header - always visible -->
+      <h3 class="mb-3 ml-2 text-xs font-normal capitalize text-neutral-400 dark:text-neutral-500">
+        Template Documents ({templateDocs.length})
+      </h3>
 
-    <!-- Documents Grid - always 3 columns -->
-    <div class="grid grid-cols-3 gap-2 mb-6">
-      {#each templateDocs as doc}
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div
-          class={getCardClass(doc.tier)}
-          onclick={() => handleLinkClick(doc.url)}
-        >
-          <!-- Content -->
-          <div class="flex flex-col h-full">
-            <!-- Header with icon and lock -->
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center gap-2">
-                <FileText class="h-4 w-4 text-blue-600" />
-                <span class="text-xs font-medium truncate">{doc.title}</span>
-              </div>
-              
-              <!-- Lock indicator for pro items -->
-              {#if isLocked(doc.tier)}
-                <div class="bg-background/90 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-1">
-                  <Lock class="h-3 w-3 text-muted-foreground" />
-                  <span class="text-xs text-muted-foreground font-medium">Pro</span>
+      <!-- Documents Grid - always 3 columns -->
+      <div class="grid grid-cols-3 gap-2 mb-6">
+        {#each templateDocs as doc}
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div
+            class={getCardClass(doc.tier)}
+            onclick={() => handleLinkClick(doc.url)}
+          >
+            <!-- Content -->
+            <div class="flex flex-col h-full">
+              <!-- Header with icon and lock -->
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <FileText class="h-4 w-4 text-blue-600" />
+                  <span class="text-xs font-medium truncate">{doc.title}</span>
                 </div>
-              {/if}
-            </div>
+                
+                <!-- MODERNIZED: Lock indicator using centralized access control -->
+                {#if isLocked(doc.tier)}
+                  <div class="bg-background/90 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-1">
+                    <Lock class="h-3 w-3 text-muted-foreground" />
+                    <span class="text-xs text-muted-foreground font-medium">
+                      {doc.tier === 'pro' ? 'Pro' : 'Trial'}
+                    </span>
+                  </div>
+                {/if}
+              </div>
 
-            <!-- Description -->
-            <!-- <p class="text-xs text-muted-foreground leading-relaxed flex-1">
-              {doc.description}
-            </p> -->
-
-            <!-- External link indicator -->
-            <div class="flex justify-end mt-2">
-              <ExternalLink class="h-3 w-3 text-muted-foreground/60 group-hover:text-muted-foreground transition-colors" />
+              <!-- External link indicator -->
+              <div class="flex justify-end mt-2">
+                <ExternalLink class="h-3 w-3 text-muted-foreground/60 group-hover:text-muted-foreground transition-colors" />
+              </div>
             </div>
           </div>
-        </div>
-      {/each}
-    </div>
-  </section>
+        {/each}
+      </div>
+    </section>
 
-  <!-- Drive Folders Section -->
-  <section>
-    <!-- Category Header -->
-    <h3 class="mb-3 ml-2 text-xs font-normal capitalize text-neutral-400 dark:text-neutral-500">
-      Drive Folders ({driveFolders.length})
-    </h3>
+    <!-- Drive Folders Section -->
+    <section>
+      <!-- Category Header -->
+      <h3 class="mb-3 ml-2 text-xs font-normal capitalize text-neutral-400 dark:text-neutral-500">
+        Drive Folders ({driveFolders.length})
+      </h3>
 
-    <!-- Folders Grid - always 3 columns -->
-    <div class="grid grid-cols-3 gap-2">
-      {#each driveFolders as folder}
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div
-          class={getCardClass(folder.tier)}
-          onclick={() => handleLinkClick(folder.url)}
-        >
-          <!-- Content -->
-          <div class="flex flex-col h-full">
-            <!-- Header with folder icon and lock -->
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center gap-2">
-                <Folder class="h-4 w-4 text-amber-600" />
-                <span class="text-xs font-medium truncate">{folder.title}</span>
-              </div>
-              
-              <!-- All folders are pro - show lock for non-pro users -->
-              {#if isLocked(folder.tier)}
-                <div class="bg-background/90 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-1">
-                  <Lock class="h-3 w-3 text-muted-foreground" />
-                  <span class="text-xs text-muted-foreground font-medium">Pro</span>
+      <!-- Folders Grid - always 3 columns -->
+      <div class="grid grid-cols-3 gap-2">
+        {#each driveFolders as folder}
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div
+            class={getCardClass(folder.tier)}
+            onclick={() => handleLinkClick(folder.url)}
+          >
+            <!-- Content -->
+            <div class="flex flex-col h-full">
+              <!-- Header with folder icon and lock -->
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <Folder class="h-4 w-4 text-amber-600" />
+                  <span class="text-xs font-medium truncate">{folder.title}</span>
                 </div>
-              {/if}
-            </div>
+                
+                <!-- MODERNIZED: All folders are pro - show lock for free users only -->
+                {#if isLocked(folder.tier)}
+                  <div class="bg-background/90 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-1">
+                    <Lock class="h-3 w-3 text-muted-foreground" />
+                    <span class="text-xs text-muted-foreground font-medium">Pro</span>
+                  </div>
+                {/if}
+              </div>
 
-            <!-- Description -->
-            <!-- <p class="text-xs text-muted-foreground leading-relaxed flex-1">
-              {folder.description}
-            </p> -->
-
-            <!-- External link indicator -->
-            <div class="flex justify-end mt-2">
-              <ExternalLink class="h-3 w-3 text-muted-foreground/60 group-hover:text-muted-foreground transition-colors" />
+              <!-- External link indicator -->
+              <div class="flex justify-end mt-2">
+                <ExternalLink class="h-3 w-3 text-muted-foreground/60 group-hover:text-muted-foreground transition-colors" />
+              </div>
             </div>
           </div>
-        </div>
-      {/each}
-    </div>
-  </section>
-</div>
+        {/each}
+      </div>
+    </section>
+  </div>
+{:else}
+  <div class="p-4 text-center">
+    <p class="text-muted-foreground text-sm">Loading templates...</p>
+  </div>
+{/if}

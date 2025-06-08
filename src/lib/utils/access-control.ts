@@ -57,24 +57,21 @@ export interface AccessControlUtils {
  */
 export function createAccessControlUtils(userAccess: SerializedUserAccess): AccessControlUtils {
 
-	// Recreate server-side canUseElement logic
+	// Recreate server-side canUseElement logic - UPDATED for trial users
 	const canUseElement = (elementTier: string): boolean => {
-		if (userAccess.tier === 'pro') return true;
-		if (userAccess.tier === 'trial') return elementTier !== 'pro';
+		if (userAccess.tier === 'pro' || userAccess.tier === 'trial') return true; // TRIAL GETS FULL ACCESS
 		return elementTier === 'free';
 	};
 
-	// Recreate server-side canUseColor logic
+	// Recreate server-side canUseColor logic - UPDATED for trial users  
 	const canUseColor = (colorTier: string): boolean => {
-		if (userAccess.tier === 'pro') return true;
-		if (userAccess.tier === 'trial') return colorTier !== 'pro';
+		if (userAccess.tier === 'pro' || userAccess.tier === 'trial') return true; // TRIAL GETS FULL ACCESS
 		return colorTier === 'free';
 	};
 
-	// Recreate server-side canUsePrompt logic
+	// Recreate server-side canUsePrompt logic - UPDATED for trial users
 	const canUsePrompt = (promptTier: string): boolean => {
-		if (userAccess.tier === 'pro') return true;
-		if (userAccess.tier === 'trial') return promptTier !== 'pro';
+		if (userAccess.tier === 'pro' || userAccess.tier === 'trial') return true; // TRIAL GETS FULL ACCESS
 		return promptTier === 'free';
 	};
 

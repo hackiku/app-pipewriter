@@ -199,8 +199,8 @@
 	}
 </script>
 
-<div class="space-y-3">
-	<div class="flex h-full w-full flex-col gap-3">
+<div class="space-y-2">
+	<div class="flex h-full w-full flex-col gap-2">
 		<!-- Row 1: Preview + Controls -->
 		<div class="grid flex-1 grid-cols-2 gap-3" style="min-height: 120px;">
 			<!-- Left: Interactive Table Preview + Scope Toggle -->

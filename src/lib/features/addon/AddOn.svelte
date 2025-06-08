@@ -128,10 +128,10 @@
 						bind:this={dropperRef} 
 						context={serviceContext}
 						elements={data.elements}
-						userTier={data.userFeatures.tier}
-						features={data.userFeatures.features}
+						userAccess={data.userAccess}
 						showInfo={showInfo}
 					/>
+
 				{:else}
 					<div class="h-full flex items-center justify-center text-gray-400">
 						<p>Loading Dropper...</p>
