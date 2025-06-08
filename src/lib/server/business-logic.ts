@@ -1,92 +1,298 @@
 // src/lib/server/business-logic.ts
-export interface UserTierAccess {
-  tier: 'free' | 'trial' | 'pro';
-  isPro: boolean;
-  trialActive: boolean;
-  trialDaysLeft: number;
-  canUseElement: (elementTier: string) => boolean;
-  canUsePrompt: (promptTier: string) => boolean;
-  canUseFeature: (feature: string) => boolean;
+import { adminFirestore } from '$lib/server/firebase-admin';
+
+const TRIAL_PERIOD_DAYS = 14;
+
+export interface UserAccess {
+	tier: 'free' | 'trial' | 'pro';
+	isPro: boolean;
+	trialActive: boolean;
+	trialDaysLeft: number;
+
+	// Feature access flags
+	features: {
+		// Element access
+		elements: {
+			canUseBasicElements: boolean;
+			canUseTrialElements: boolean;
+			canUseProElements: boolean;
+		};
+
+		// Color features (your immediate need)
+		colors: {
+			canUseBasicColors: boolean;
+			canUsePremiumColorSchemes: boolean;
+			canUseDocumentBackgrounds: boolean;
+			canUseTableBackgrounds: boolean;
+		};
+
+		// Prompts (your working UGC system)
+		prompts: {
+			canCreateCustom: boolean;
+			canEditOwn: boolean;
+			maxCustomPrompts: number;
+		};
+
+		// AI features
+		ai: {
+			canUseBasicPrompts: boolean;
+			canUseAdvancedPrompts: boolean;
+			canGenerateContent: boolean;
+		};
+
+		// Future features (easy to add)
+		export: {
+			canExportBasic: boolean;
+			canExportAdvanced: boolean;
+		};
+	};
+
+	// Helper methods
+	canUseElement: (elementTier: string) => boolean;
+	canUseColor: (colorTier: string) => boolean;
+	canUsePrompt: (promptTier: string) => boolean;
+	canUseFeature: (feature: string) => boolean;
 }
 
 /**
- * SINGLE SOURCE OF TRUTH for all business logic
- * Called server-side only, passed as props to components
+ * SINGLE SOURCE OF TRUTH for all user access logic
  */
-export function calculateUserAccess(userData: any): UserTierAccess {
-  const now = new Date();
-  const trialStart = userData.trialStartDate?.toDate?.() || userData.trialStartDate;
+export async function getUserAccess(uid: string): Promise<UserAccess> {
+	try {
+		const userDoc = await adminFirestore.collection('users').doc(uid).get();
 
-  // Calculate trial status
-  let trialActive = false;
-  let trialDaysLeft = 0;
+		if (!userDoc.exists) {
+			return getDefaultUserAccess();
+		}
 
-  if (trialStart && !userData.pro) {
-    const trialEnd = new Date(trialStart);
-    trialEnd.setDate(trialEnd.getDate() + 14); // 14 day trial
+		const userData = userDoc.data()!;
+		const now = new Date();
 
-    if (now < trialEnd) {
-      trialActive = true;
-      trialDaysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    }
-  }
+		// Calculate trial status
+		let trialActive = false;
+		let trialDaysLeft = 0;
 
-  // Determine tier
-  const tier: 'free' | 'trial' | 'pro' = userData.pro ? 'pro' : trialActive ? 'trial' : 'free';
+		if (!userData.pro && userData.trialStartDate) {
+			const trialStart = userData.trialStartDate.toDate();
+			const trialEnd = new Date(trialStart);
+			trialEnd.setDate(trialEnd.getDate() + TRIAL_PERIOD_DAYS);
 
-  return {
-    tier,
-    isPro: userData.pro || false,
-    trialActive,
-    trialDaysLeft,
+			if (now < trialEnd) {
+				trialActive = true;
+				trialDaysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+			}
+		}
 
-    canUseElement: (elementTier: string) => {
-      if (tier === 'pro') return true;
-      if (tier === 'trial') return elementTier !== 'pro';
-      return elementTier === 'free';
-    },
+		// Determine tier
+		const tier: 'free' | 'trial' | 'pro' = userData.pro ? 'pro' : (trialActive ? 'trial' : 'free');
+		const isPro = userData.pro || false;
 
-    canUsePrompt: (promptTier: string) => {
-      if (tier === 'pro') return true;
-      if (tier === 'trial') return promptTier !== 'pro';
-      return promptTier === 'free';
-    },
+		// Calculate feature access based on tier
+		const features = calculateFeatureAccess(tier);
 
-    canUseFeature: (feature: string) => {
-      const proFeatures = ['export', 'advanced-styling', 'ai-generation'];
-      const trialFeatures = ['basic-styling', 'some-elements'];
+		// Helper methods
+		const canUseElement = (elementTier: string) => {
+			if (tier === 'pro') return true;
+			if (tier === 'trial') return elementTier !== 'pro';
+			return elementTier === 'free';
+		};
 
-      if (tier === 'pro') return true;
-      if (tier === 'trial') return !proFeatures.includes(feature);
-      return !proFeatures.includes(feature) && !trialFeatures.includes(feature);
-    }
-  };
+		const canUseColor = (colorTier: string) => {
+			if (tier === 'pro') return true;
+			if (tier === 'trial') return colorTier !== 'pro'; // Trial gets some color access
+			return colorTier === 'free';
+		};
+
+		const canUsePrompt = (promptTier: string) => {
+			if (tier === 'pro') return true;
+			if (tier === 'trial') return promptTier !== 'pro';
+			return promptTier === 'free';
+		};
+
+		const canUseFeature = (feature: string) => {
+			const featureParts = feature.split('.');
+			let current: any = features;
+			for (const part of featureParts) {
+				current = current[part];
+				if (current === undefined) return false;
+			}
+			return current;
+		};
+
+		return {
+			tier,
+			isPro,
+			trialActive,
+			trialDaysLeft,
+			features,
+			canUseElement,
+			canUseColor,
+			canUsePrompt,
+			canUseFeature
+		};
+
+	} catch (error) {
+		console.error('Error getting user access:', error);
+		return getDefaultUserAccess();
+	}
 }
 
 /**
- * Filter elements based on user access + mark locked status
+ * Calculate feature access based on user tier
+ */
+function calculateFeatureAccess(tier: 'free' | 'trial' | 'pro') {
+	switch (tier) {
+		case 'pro':
+			return {
+				elements: {
+					canUseBasicElements: true,
+					canUseTrialElements: true,
+					canUseProElements: true,
+				},
+				colors: {
+					canUseBasicColors: true,
+					canUsePremiumColorSchemes: true,
+					canUseDocumentBackgrounds: true,
+					canUseTableBackgrounds: true,
+				},
+				prompts: {
+					canCreateCustom: true,
+					canEditOwn: true,
+					maxCustomPrompts: 999,
+				},
+				ai: {
+					canUseBasicPrompts: true,
+					canUseAdvancedPrompts: true,
+					canGenerateContent: true,
+				},
+				export: {
+					canExportBasic: true,
+					canExportAdvanced: true,
+				}
+			};
+
+		case 'trial':
+			return {
+				elements: {
+					canUseBasicElements: true,
+					canUseTrialElements: true,
+					canUseProElements: false,
+				},
+				colors: {
+					canUseBasicColors: true,
+					canUsePremiumColorSchemes: false, // Trial users get basic colors only
+					canUseDocumentBackgrounds: true,
+					canUseTableBackgrounds: false, // Table backgrounds are pro-only
+				},
+				prompts: {
+					canCreateCustom: true,
+					canEditOwn: true,
+					maxCustomPrompts: 50,
+				},
+				ai: {
+					canUseBasicPrompts: true,
+					canUseAdvancedPrompts: false,
+					canGenerateContent: true,
+				},
+				export: {
+					canExportBasic: true,
+					canExportAdvanced: false,
+				}
+			};
+
+		default: // free
+			return {
+				elements: {
+					canUseBasicElements: true,
+					canUseTrialElements: false,
+					canUseProElements: false,
+				},
+				colors: {
+					canUseBasicColors: true,
+					canUsePremiumColorSchemes: false,
+					canUseDocumentBackgrounds: false,
+					canUseTableBackgrounds: false,
+				},
+				prompts: {
+					canCreateCustom: false,
+					canEditOwn: false,
+					maxCustomPrompts: 0,
+				},
+				ai: {
+					canUseBasicPrompts: false,
+					canUseAdvancedPrompts: false,
+					canGenerateContent: false,
+				},
+				export: {
+					canExportBasic: false,
+					canExportAdvanced: false,
+				}
+			};
+	}
+}
+
+/**
+ * Default access for new/error cases
+ */
+function getDefaultUserAccess(): UserAccess {
+	return {
+		tier: 'free',
+		isPro: false,
+		trialActive: false,
+		trialDaysLeft: 0,
+		features: calculateFeatureAccess('free'),
+		canUseElement: (elementTier: string) => elementTier === 'free',
+		canUseColor: (colorTier: string) => colorTier === 'free',
+		canUsePrompt: (promptTier: string) => false,
+		canUseFeature: () => false
+	};
+}
+
+/**
+ * Filter elements with access control and locking
  */
 export function filterElementsWithAccess(
-  allElements: any[],
-  userAccess: UserTierAccess
+	allElements: any[],
+	userAccess: UserAccess
 ): any[] {
-  return allElements.map(element => ({
-    ...element,
-    isLocked: !userAccess.canUseElement(element.metadata?.tier || 'free'),
-    isAccessible: userAccess.canUseElement(element.metadata?.tier || 'free')
-  }));
+	return allElements.map(element => ({
+		...element,
+		isLocked: !userAccess.canUseElement(element.metadata?.tier || 'free'),
+		isAccessible: userAccess.canUseElement(element.metadata?.tier || 'free')
+	}));
 }
 
 /**
- * Filter prompts based on user access + mark locked status
+ * Filter prompts with access control
  */
 export function filterPromptsWithAccess(
-  allPrompts: any[],
-  userAccess: UserTierAccess
+	allPrompts: any[],
+	userAccess: UserAccess
 ): any[] {
-  return allPrompts.map(prompt => ({
-    ...prompt,
-    isLocked: !userAccess.canUsePrompt(prompt.metadata?.tier || 'free'),
-    isAccessible: userAccess.canUsePrompt(prompt.metadata?.tier || 'free')
-  }));
+	return allPrompts.map(prompt => ({
+		...prompt,
+		isLocked: !userAccess.canUsePrompt(prompt.metadata?.tier || 'free'),
+		isAccessible: userAccess.canUsePrompt(prompt.metadata?.tier || 'free')
+	}));
+}
+
+/**
+ * Backward compatibility - returns features in old format
+ */
+export function getLegacyUserFeatures(userAccess: UserAccess) {
+	return {
+		tier: userAccess.tier,
+		isPro: userAccess.isPro,
+		trialActive: userAccess.trialActive,
+		trialDaysLeft: userAccess.trialDaysLeft,
+		features: {
+			// Map new structure to old component expectations
+			canUseAI: userAccess.features.ai.canUseBasicPrompts,
+			canExport: userAccess.features.export.canExportBasic,
+			canCustomize: userAccess.features.colors.canUseDocumentBackgrounds,
+			canUseTrialElements: userAccess.features.elements.canUseTrialElements,
+			canUseProElements: userAccess.features.elements.canUseProElements,
+			maxProjects: 999 // Legacy field you said you don't use
+		}
+	};
 }

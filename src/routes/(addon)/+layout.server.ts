@@ -1,28 +1,25 @@
-// src/routes/(addon)/+layout.server.ts
+// src/routes/(addon)/+layout.server.ts - FIXED
 import type { LayoutServerLoad } from './$types';
-import { getUserWithFeatures } from '$lib/server/user-features';
+import { getUserAccess } from '$lib/server/business-logic';
 import { getFilteredElements, getFilteredPrompts } from '$lib/server/data-loaders';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
 	console.log(`[ADDON] Route: ${url.pathname}, Authenticated: ${locals.authenticated}`);
 
-	// For login route, return minimal data
 	if (url.pathname === '/gdocs-login') {
 		return {
 			route: 'gdocs-login',
 			showLogin: true,
 			showApp: false,
 			user: null,
-			userFeatures: null,
+			userAccess: null,
 			elements: {},
 			prompts: {}
 		};
 	}
 
-	// For addon route, check authentication
 	if (url.pathname === '/addon') {
 		if (!locals.authenticated || !locals.user) {
-			console.log('[ADDON] Not authenticated, redirecting');
 			return {
 				route: 'addon-redirect',
 				showLogin: false,
@@ -33,65 +30,71 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 
 		try {
 			const uid = locals.user.uid;
-			console.log(`[ADDON] Loading data for user: ${uid}`);
 
-			// Load user features first
-			const userFeatures = await getUserWithFeatures(uid);
-			console.log(`[ADDON] User tier: ${userFeatures.tier}`);
+			// Get user access - but only serialize the data parts
+			const userAccess = await getUserAccess(uid);
 
-			// Load data - elements first (known working), then prompts with fallback
-			console.log('[ADDON] Loading elements...');
-			const elements = await getFilteredElements(userFeatures.tier);
-			console.log(`[ADDON] Elements loaded: ${Object.keys(elements).length} categories`);
+			// FIXED: Only pass serializable data
+			const serializableUserAccess = {
+				tier: userAccess.tier,
+				isPro: userAccess.isPro,
+				trialActive: userAccess.trialActive,
+				trialDaysLeft: userAccess.trialDaysLeft,
+				features: userAccess.features
+				// Remove the function methods
+			};
 
-			console.log('[ADDON] Loading prompts...');
+			const elements = await getFilteredElements(userAccess.tier);
 			let prompts = {};
+
 			try {
-				prompts = await getFilteredPrompts(userFeatures.tier, uid);
-				console.log(`[ADDON] Prompts loaded: ${Object.keys(prompts).length} categories`);
+				prompts = await getFilteredPrompts(userAccess.tier, uid);
 			} catch (error) {
 				console.error('[ADDON] Prompts loading failed:', error);
-				console.error('[ADDON] Prompts error stack:', error.stack);
-				prompts = {}; // Fallback to empty
+				prompts = {};
 			}
-
-			// Log what we got
-			const elementCount = Object.values(elements).flat().length;
-			const promptCount = Object.values(prompts).flat().length;
-
-			console.log(`[ADDON] Loaded ${elementCount} elements, ${promptCount} prompts`);
-			console.log(`[ADDON] Element categories: ${Object.keys(elements).join(', ')}`);
-			console.log(`[ADDON] Prompt categories: ${Object.keys(prompts).join(', ')}`);
 
 			return {
 				route: 'addon',
 				showLogin: false,
 				showApp: true,
 				user: locals.user,
-				userFeatures,
+
+				// FIXED: Serializable user access
+				userAccess: serializableUserAccess,
+
 				elements,
 				prompts,
+
 				// Legacy compatibility
-				isPro: userFeatures.isPro,
-				trialActive: userFeatures.trialActive,
-				trialDaysLeft: userFeatures.trialDaysLeft,
-				features: userFeatures.features
+				userFeatures: {
+					tier: userAccess.tier,
+					isPro: userAccess.isPro,
+					trialActive: userAccess.trialActive,
+					trialDaysLeft: userAccess.trialDaysLeft,
+					features: {
+						canUseAI: userAccess.features.ai.canUseBasicPrompts,
+						canExport: userAccess.features.export.canExportBasic,
+						canCustomize: userAccess.features.colors.canUseDocumentBackgrounds,
+						canUseTrialElements: userAccess.features.elements.canUseTrialElements,
+						canUseProElements: userAccess.features.elements.canUseProElements,
+						maxProjects: 999
+					}
+				}
 			};
 
 		} catch (error) {
 			console.error('[ADDON] Error loading user data:', error);
-			console.error('[ADDON] Error details:', error.message);
 			return {
 				route: 'addon-error',
 				showLogin: false,
 				showApp: false,
 				redirectTo: '/gdocs-login',
-				error: error.message
+				error: 'Failed to load user data'
 			};
 		}
 	}
 
-	// Fallback
 	return {
 		route: 'unknown',
 		showLogin: false,

@@ -1,7 +1,8 @@
 // src/routes/api/auth/provision-user/+server.ts
 import { json } from '@sveltejs/kit';
 import { adminAuth } from '$lib/server/firebase-admin';
-import { provisionNewUser } from '$lib/services/firestore/user-provisioning';
+// import { provisionNewUser } from '$lib/services/firestore/user-provisioning';
+import { provisionUserComplete } from '$lib/server/provisioning';
 
 export async function POST({ request, cookies }) {
 	try {
@@ -19,7 +20,7 @@ export async function POST({ request, cookies }) {
 		const authUser = await adminAuth.getUser(uid);
 
 		// Provision the user in Firestore
-		const userData = await provisionNewUser({
+		const userData = await provisionUserComplete({
 			uid: authUser.uid,
 			email: authUser.email!,
 			displayName: authUser.displayName,

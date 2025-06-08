@@ -3,7 +3,7 @@
 	import { X } from '@lucide/svelte';
 	import QueueCard from './QueueCard.svelte';
 	import type { ElementWithAccess, ElementTheme } from '$lib/types/elements';
-	import { elementsService } from '$lib/services/firestore/elements';
+	import { elementsService } from '$lib/services/data/elements';
 	import { useSortable, reorder } from './useSortable.svelte';
 
 	// Enhanced interface for queue items with themes
