@@ -119,7 +119,7 @@
         </Button>
       </div>
 
-      <div class="flex items-center justify-center space-x-3 px-2">
+      <!-- <div class="flex items-center justify-center space-x-3 px-2">
         <Checkbox 
           id="show-tutorial-gdocs" 
           bind:checked={showTutorial}
@@ -131,7 +131,7 @@
         >
           Show tutorial
         </label>
-      </div>
+      </div> -->
 
     </div>
   </div>
