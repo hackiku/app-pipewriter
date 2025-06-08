@@ -1,31 +1,46 @@
-<!-- src/lib/features/addon/features/table/ColorControls.svelte -->
+<!-- src/lib/features/addon/features/table/ColorControls.svelte - MODERNIZED -->
 <script lang="ts">
   import { cn } from "$lib/utils";
-  import XIcon from "@lucide/svelte/icons/x";
-  import ChevronDownIcon from "@lucide/svelte/icons/chevron-down";
-  import ChevronRightIcon from "@lucide/svelte/icons/chevron-right";
-  import CopyIcon from "@lucide/svelte/icons/copy";
-  import CheckIcon from "@lucide/svelte/icons/check";
-  import Crown from "@lucide/svelte/icons/crown";
+  import { X, ChevronDown, ChevronRight, Copy, Check, Crown, Lock } from "@lucide/svelte";
   import { Button } from "$lib/components/ui/button";
   import { fade, slide } from "svelte/transition";
   import ColorPicker from "../colors/ColorPicker.svelte";
+  
+  // MODERNIZED: Import access control utilities
+  import { useAccessControl, type SerializedUserAccess } from '$lib/utils/access-control';
 
-  // Props - ENHANCED with features and upgrade support
+  // MODERNIZED: Props now receive userAccess instead of legacy features
   const props = $props<{
     backgroundColor: string;
     isProcessing: boolean;
-    features?: any; // Added features prop
+    userAccess?: SerializedUserAccess; // CHANGED: From features to userAccess
     onColorChange: (color: string) => void;
-    onOpenUpgrade?: () => void; // Added upgrade callback
+    onOpenUpgrade?: () => void;
   }>();
 
-  // User tier access control
-  const userTier = props.features?.tier || 'free';
+  // MODERNIZED: Create access control utilities with fallback
+  let access = $state();
   
-  function canUseFeature(): boolean {
-    return userTier === 'pro' || userTier === 'trial';
-  }
+  $effect(() => {
+    if (!props.userAccess) {
+      // Fallback to free tier if userAccess is not available
+      access = useAccessControl({
+        tier: 'free',
+        isPro: false,
+        trialActive: false,
+        trialDaysLeft: 0,
+        features: {
+          elements: { canUseBasicElements: true, canUseTrialElements: false, canUseProElements: false },
+          colors: { canUseBasicColors: true, canUsePremiumColorSchemes: false, canUseDocumentBackgrounds: false, canUseTableBackgrounds: false },
+          prompts: { canCreateCustom: false, canEditOwn: false, maxCustomPrompts: 0 },
+          ai: { canUseBasicPrompts: false, canUseAdvancedPrompts: false, canGenerateContent: false },
+          export: { canExportBasic: false, canExportAdvanced: false }
+        }
+      });
+    } else {
+      access = useAccessControl(props.userAccess);
+    }
+  });
 
   // State for accordion and color picker
   let isOpen = $state(false);
@@ -34,13 +49,13 @@
 
   // Quick color presets - 7 colors + clear button = 8 total
   const colorPresets = [
-    { color: '#ffffff', label: 'White' },
-    { color: '#f3f3f3', label: 'Light Gray' },
-    { color: '#e0e0e0', label: 'Gray' },
-    { color: '#e3f2fd', label: 'Light Blue' },
-    { color: '#e8f5e8', label: 'Light Green' },
-    { color: '#fff9c4', label: 'Light Yellow' },
-    { color: '#333333', label: 'Dark Gray' }
+    { color: '#ffffff', label: 'White', tier: 'free' },
+    { color: '#f3f3f3', label: 'Light Gray', tier: 'free' },
+    { color: '#e0e0e0', label: 'Gray', tier: 'trial' },
+    { color: '#e3f2fd', label: 'Light Blue', tier: 'trial' },
+    { color: '#e8f5e8', label: 'Light Green', tier: 'pro' },
+    { color: '#fff9c4', label: 'Light Yellow', tier: 'pro' },
+    { color: '#333333', label: 'Dark Gray', tier: 'pro' }
   ];
 
   // Toggle accordion - ALWAYS allow opening to show what they're missing
@@ -48,49 +63,51 @@
     isOpen = !isOpen;
   }
 
-  // Get button class for color swatches
-  function getColorClass(color: string) {
+  // MODERNIZED: Get button class for color swatches using access utilities
+  function getColorClass(color: string, tier: string) {
     const isSelected = props.backgroundColor === color;
+    const canUse = access.canUseColor(tier);
+    
     return cn(
-      "w-6 h-6 rounded border-2 transition-all",
+      "w-6 h-6 rounded border-2 transition-all relative",
       isSelected 
         ? "border-primary shadow-md scale-110" 
         : "border-border hover:border-primary hover:scale-105",
-      (props.isProcessing || !canUseFeature()) && "opacity-50 cursor-not-allowed"
+      (props.isProcessing || !canUse) && "opacity-50 cursor-not-allowed"
     );
   }
 
-  // Handle color click - either use feature or prompt upgrade
-  function handleColorClick(color: string) {
-    if (!props.isProcessing && canUseFeature()) {
+  // MODERNIZED: Handle color click using access utilities
+  function handleColorClick(color: string, tier: string) {
+    if (!props.isProcessing && access.canUseColor(tier)) {
       props.onColorChange(color);
     }
   }
 
-  // Handle clear background - either use feature or prompt upgrade  
+  // MODERNIZED: Handle clear background using access utilities
   function handleClear() {
-    if (!props.isProcessing && canUseFeature()) {
+    if (!props.isProcessing && access.canUseFeature('colors.canUseTableBackgrounds')) {
       props.onColorChange('');
     }
   }
 
-  // Toggle color picker - only works if user has access
+  // MODERNIZED: Toggle color picker using access utilities
   function toggleColorPicker() {
-    if (canUseFeature()) {
+    if (access.canUseFeature('colors.canUseTableBackgrounds')) {
       showColorPicker = !showColorPicker;
     }
   }
 
-  // Handle color update from picker
+  // MODERNIZED: Handle color update from picker using access utilities
   function handleColorUpdate(color: string) {
-    if (canUseFeature()) {
+    if (access.canUseFeature('colors.canUseTableBackgrounds')) {
       props.onColorChange(color);
     }
   }
 
   // Copy color to clipboard
   async function copyColorToClipboard() {
-    if (!props.backgroundColor || !canUseFeature()) return;
+    if (!props.backgroundColor || !access.canUseFeature('colors.canUseTableBackgrounds')) return;
     
     try {
       await navigator.clipboard.writeText(props.backgroundColor);
@@ -115,11 +132,15 @@
   function getDisplayColor(): string {
     return props.backgroundColor || '#FFFFFF';
   }
+
+  // MODERNIZED: Check if user can use table backgrounds
+  const canUseTableBackgrounds = $derived(access.canUseFeature('colors.canUseTableBackgrounds'));
+  const shouldShowUpgrade = $derived(!canUseTableBackgrounds);
 </script>
 
 <div class="relative">
   <!-- Color Picker Overlay - positioned above entire control -->
-  {#if showColorPicker && isOpen && canUseFeature()}
+  {#if showColorPicker && isOpen && canUseTableBackgrounds}
     <div
       class="absolute bottom-full left-0 right-0 z-20 mb-2 bg-card border border-border rounded-xl shadow-lg p-4"
       transition:fade={{ duration: 150 }}
@@ -132,7 +153,7 @@
           class="h-6 w-6"
           onclick={toggleColorPicker}
         >
-          <ChevronDownIcon class="h-3 w-3" />
+          <ChevronDown class="h-3 w-3" />
         </Button>
       </div>
       
@@ -155,31 +176,32 @@
     
     <div class="flex items-center gap-1">
       {#if isOpen}
-        <ChevronDownIcon class="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-all" />
+        <ChevronDown class="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-all" />
       {:else}
-        <ChevronRightIcon class="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-all" />
+        <ChevronRight class="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-all" />
       {/if}
     </div>
   </button>
 
-  <!-- Accordion Content -->
-  {#if isOpen && canUseFeature()}
+  <!-- MODERNIZED: Accordion Content - ALWAYS show content, use overlays for restrictions -->
+  {#if isOpen}
     <div transition:slide={{ duration: 200 }}>
       <!-- 2 Column Layout (original design) -->
-      <div class="grid grid-cols-2 gap-3 h-full mt-2">
+      <div class="grid grid-cols-2 gap-3 h-full mt-2 relative">
         
         <!-- LEFT: Color Picker -->
         <div class="flex flex-col justify-between gap-2 h-full">
           <!-- Color picker button -->
           <button
-            class="flex items-center rounded-lg overflow-hidden border border-border bg-card text-sm shadow-sm transition-all duration-200 hover:bg-accent disabled:opacity-50 group h-8"
+            class="flex items-center rounded-lg overflow-hidden border border-border bg-card text-sm shadow-sm transition-all duration-200 hover:bg-accent disabled:opacity-50 group h-8
+                   {!canUseTableBackgrounds ? 'cursor-not-allowed' : ''}"
             onclick={(e) => {
-              // Only open picker if clicking outside copy button
-              if (!e.target.closest('.copy-button')) {
+              // Only open picker if clicking outside copy button and user has access
+              if (!e.target.closest('.copy-button') && canUseTableBackgrounds) {
                 toggleColorPicker();
               }
             }}
-            disabled={props.isProcessing}
+            disabled={props.isProcessing || !canUseTableBackgrounds}
           >
             <!-- Color preview -->
             <div class="h-6 ml-[1px] aspect-square relative">
@@ -191,107 +213,148 @@
             
             <!-- Color value and copy button -->
             <div class="relative px-2 flex items-center justify-between min-w-0 flex-1">
-              <span class="font-mono text-xs tracking-wider uppercase truncate">
-                {stripAlpha(getDisplayColor())}
-              </span>
-              
-              {#if props.backgroundColor}
-                <!-- Copy button -->
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  class="copy-button h-4 w-4 -mr-1 p-0 hover:bg-background/80 ml-1"
-                  onclick={(e) => {
-                    e.stopPropagation();
-                    copyColorToClipboard();
-                  }}
-                  title="Copy color code"
-                  disabled={props.isProcessing}
-                >
-                  {#if copySuccess}
-                    <CheckIcon class="h-2 w-2 text-green-500" />
-                  {:else}
-                    <CopyIcon class="h-2 w-2 text-muted-foreground" />
-                  {/if}
-                </Button>
+              {#if !canUseTableBackgrounds}
+                <span class="font-mono text-xs tracking-wider uppercase truncate text-muted-foreground">
+                  #PRO
+                </span>
+              {:else}
+                <span class="font-mono text-xs tracking-wider uppercase truncate">
+                  {stripAlpha(getDisplayColor())}
+                </span>
+                
+                {#if props.backgroundColor}
+                  <!-- Copy button -->
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    class="copy-button h-4 w-4 -mr-1 p-0 hover:bg-background/80 ml-1"
+                    onclick={(e) => {
+                      e.stopPropagation();
+                      copyColorToClipboard();
+                    }}
+                    title="Copy color code"
+                    disabled={props.isProcessing}
+                  >
+                    {#if copySuccess}
+                      <Check class="h-2 w-2 text-green-500" />
+                    {:else}
+                      <Copy class="h-2 w-2 text-muted-foreground" />
+                    {/if}
+                  </Button>
+                {/if}
               {/if}
             </div>
           </button>
         </div>
 
-        <!-- RIGHT: Color Swatches Grid (2 rows x 4 columns) -->
+        <!-- RIGHT: Color Swatches Grid (2 rows x 4 columns) - ALWAYS VISIBLE -->
         <div class="flex flex-col gap-2 h-full justify-between">
           <!-- Row 1: Clear + 3 colors -->
           <div class="grid grid-cols-4 gap-1.5">
             <!-- Clear button first -->
             <button
               class={cn(
-                "w-6 h-6 rounded border-2 border-dashed border-border hover:border-red-400 transition-all flex items-center justify-center",
+                "w-6 h-6 rounded border-2 border-dashed border-border hover:border-red-400 transition-all flex items-center justify-center relative",
                 !props.backgroundColor && "border-red-400 bg-red-50 dark:bg-red-950/20",
-                props.isProcessing && "opacity-50 cursor-not-allowed"
+                (props.isProcessing || !canUseTableBackgrounds) && "opacity-50 cursor-not-allowed"
               )}
               onclick={handleClear}
-              disabled={props.isProcessing}
-              title="Clear background"
+              disabled={props.isProcessing || !canUseTableBackgrounds}
+              title={canUseTableBackgrounds ? "Clear background" : "Pro feature"}
             >
-              <XIcon class="w-3 h-3 text-muted-foreground" />
+              <X class="w-3 h-3 text-muted-foreground" />
+              
+              <!-- Lock overlay for restricted access -->
+              {#if !canUseTableBackgrounds}
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <Lock class="h-2 w-2 text-muted-foreground" />
+                </div>
+              {/if}
             </button>
             
             <!-- First 3 color swatches -->
             {#each colorPresets.slice(0, 3) as preset}
-              <button
-                class={getColorClass(preset.color)}
-                style="background-color: {preset.color};"
-                onclick={() => handleColorClick(preset.color)}
-                disabled={props.isProcessing}
-                title={preset.label}
-              >
-                <span class="sr-only">{preset.label}</span>
-              </button>
+              <div class="relative">
+                <button
+                  class={getColorClass(preset.color, preset.tier)}
+                  style="background-color: {preset.color};"
+                  onclick={() => handleColorClick(preset.color, preset.tier)}
+                  disabled={props.isProcessing || !access.canUseColor(preset.tier)}
+                  title={access.canUseColor(preset.tier) ? preset.label : `${preset.label} (${access.getUpgradeMessage(preset.tier)})`}
+                >
+                  <span class="sr-only">{preset.label}</span>
+                </button>
+                
+                <!-- Lock overlay for restricted colors -->
+                {#if !access.canUseColor(preset.tier)}
+                  <div class="absolute inset-0 rounded flex items-center justify-center pointer-events-none">
+                    <Lock class="h-2 w-2 text-muted-foreground" />
+                  </div>
+                {:else if preset.tier === 'pro'}
+                  <!-- Pro badge for accessible premium colors -->
+                  <div class="absolute -top-1 -right-1 w-2 h-2 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center">
+                    <div class="w-1 h-1 bg-white rounded-full"></div>
+                  </div>
+                {/if}
+              </div>
             {/each}
           </div>
           
           <!-- Row 2: Last 4 colors -->
           <div class="grid grid-cols-4 gap-1.5">
             {#each colorPresets.slice(3) as preset}
-              <button
-                class={getColorClass(preset.color)}
-                style="background-color: {preset.color};"
-                onclick={() => handleColorClick(preset.color)}
-                disabled={props.isProcessing}
-                title={preset.label}
-              >
-                <span class="sr-only">{preset.label}</span>
-              </button>
+              <div class="relative">
+                <button
+                  class={getColorClass(preset.color, preset.tier)}
+                  style="background-color: {preset.color};"
+                  onclick={() => handleColorClick(preset.color, preset.tier)}
+                  disabled={props.isProcessing || !access.canUseColor(preset.tier)}
+                  title={access.canUseColor(preset.tier) ? preset.label : `${preset.label} (${access.getUpgradeMessage(preset.tier)})`}
+                >
+                  <span class="sr-only">{preset.label}</span>
+                </button>
+                
+                <!-- Lock overlay for restricted colors -->
+                {#if !access.canUseColor(preset.tier)}
+                  <div class="absolute inset-0 rounded flex items-center justify-center pointer-events-none">
+                    <Lock class="h-2 w-2 text-muted-foreground" />
+                  </div>
+                {:else if preset.tier === 'pro'}
+                  <!-- Pro badge for accessible premium colors -->
+                  <div class="absolute -top-1 -right-1 w-2 h-2 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center">
+                    <div class="w-1 h-1 bg-white rounded-full"></div>
+                  </div>
+                {/if}
+              </div>
             {/each}
           </div>
         </div>
       </div>
     </div>
-  {/if}
 
-  <!-- Upgrade Bar (below accordion content when needed) -->
-  {#if isOpen && !canUseFeature()}
-    <div 
-      class="mt-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/50 dark:to-orange-950/50 
-             border border-amber-200 dark:border-amber-800 rounded-md backdrop-blur-sm
-             flex items-center justify-between px-3 py-2"
-      transition:slide={{ duration: 200 }}
-    >
-      <div class="flex items-center gap-2">
-        <Crown class="h-4 w-4 text-amber-600 dark:text-amber-400" />
-        <span class="text-xs font-medium text-amber-800 dark:text-amber-200">
-          Upgrade for background colors
-        </span>
-      </div>
-      <Button
-        variant="default"
-        size="sm"
-        class="h-6 px-3 text-xs bg-amber-600 hover:bg-amber-700 text-white"
-        onclick={() => props.onOpenUpgrade?.()}
+    <!-- MODERNIZED: Upgrade Bar using access utilities -->
+    {#if shouldShowUpgrade}
+      <div 
+        class="mt-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/50 dark:to-orange-950/50 
+               border border-amber-200 dark:border-amber-800 rounded-md backdrop-blur-sm
+               flex items-center justify-between px-3 py-2"
+        transition:slide={{ duration: 200 }}
       >
-        Upgrade
-      </Button>
-    </div>
+        <div class="flex items-center gap-2">
+          <Crown class="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <span class="text-xs font-medium text-amber-800 dark:text-amber-200">
+            {access.getUpgradeMessage('pro')}
+          </span>
+        </div>
+        <Button
+          variant="default"
+          size="sm"
+          class="h-6 px-3 text-xs bg-amber-600 hover:bg-amber-700 text-white"
+          onclick={() => props.onOpenUpgrade?.()}
+        >
+          Upgrade
+        </Button>
+      </div>
+    {/if}
   {/if}
 </div>

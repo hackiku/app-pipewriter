@@ -1,4 +1,4 @@
-<!-- src/lib/features/addon/features/table/TableTab.svelte -->
+<!-- src/lib/features/addon/features/table/TableTab.svelte - MODERNIZED -->
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
 	import { Save, Loader2, RotateCcw, Table, Focus } from '@lucide/svelte';
@@ -10,11 +10,12 @@
 	import BorderControls from './BorderControls.svelte';
 	import UpgradeDrawer from '$lib/components/pricing/UpgradeDrawer.svelte';
 	import { getGoogleService } from '$lib/services/google/client';
+	import type { SerializedUserAccess } from '$lib/utils/access-control';
 
-	// Props - ENHANCED with features
+	// MODERNIZED: Props now receive userAccess instead of legacy features
 	const props = $props<{
 		context?: any;
-		features?: any; // Added features prop
+		userAccess?: SerializedUserAccess; // CHANGED: From features to userAccess
 		onStatusUpdate?: (status: {
 			type: 'processing' | 'success' | 'error';
 			message: string;
@@ -34,7 +35,7 @@
 	let borderColor = $state('#000000');
 	let backgroundColor = $state('');
 	let isProcessing = $state(false);
-	let showUpgradeDrawer = $state(false); // Added upgrade drawer state
+	let showUpgradeDrawer = $state(false);
 
 	// Default state for reset
 	const defaultState = {
@@ -59,7 +60,6 @@
 		cellAlignment = value as 'top' | 'middle' | 'bottom';
 	}
 
-	// MOVED FROM CHILD: Scope toggle handler
 	function handleScopeToggle() {
 		scope = scope === 'cell' ? 'table' : 'cell';
 	}
@@ -81,7 +81,6 @@
 		showUpgradeDrawer = true;
 	}
 
-	// FIXED: Border changes always use table scope (no cell-level borders supported)
 	function handleBorderChange(width: number, color: string = '#000000') {
 		borderWidth = width;
 		borderColor = color;
@@ -96,7 +95,7 @@
 		backgroundColor = defaultState.backgroundColor;
 	}
 
-	// Apply function - ALWAYS send table scope for borders
+	// Apply function - table operations with proper scope handling
 	async function handleApply() {
 		if (isProcessing) return;
 
@@ -138,7 +137,7 @@
 				operations.push({ name: 'padding', success: paddingResponse.success });
 			}
 
-			// FIXED: Apply borders always with table scope (API limitation)
+			// Apply borders always with table scope (API limitation)
 			const borderWidthValue = Number(borderWidth);
 			if (!isNaN(borderWidthValue) && borderWidthValue >= 0) {
 				const borderColorValue = borderColor || '#000000';
@@ -192,7 +191,6 @@
 		}
 	}
 
-	// FIXED: Full width scope toggle class to match table width
 	function getScopeToggleClass() {
 		return cn(
 			'w-full flex items-center justify-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs transition-colors hover:bg-accent',
@@ -203,11 +201,11 @@
 
 <div class="space-y-3">
 	<div class="flex h-full w-full flex-col gap-3">
-		<!-- Row 1: Preview + Controls - ENHANCED GRID STRETCHING -->
+		<!-- Row 1: Preview + Controls -->
 		<div class="grid flex-1 grid-cols-2 gap-3" style="min-height: 120px;">
-			<!-- Left: Interactive Table Preview + Full Width Scope Toggle -->
+			<!-- Left: Interactive Table Preview + Scope Toggle -->
 			<div class="flex flex-col justify-between gap-2 h-full">
-				<!-- Table preview - ENHANCED: grows to fill more space -->
+				<!-- Table preview -->
 				<div class="flex flex-1 items-center justify-center" style="min-height: 80px;">
 					<InteractiveTable
 						{cellAlignment}
@@ -219,7 +217,7 @@
 					/>
 				</div>
 
-				<!-- ENHANCED: Full width scope toggle to match table width above -->
+				<!-- Scope toggle -->
 				<div class="flex items-center justify-center">
 					<button
 						class={getScopeToggleClass()}
@@ -238,7 +236,7 @@
 				</div>
 			</div>
 
-			<!-- Right: Alignment + Padding Controls - ENHANCED vertical alignment -->
+			<!-- Right: Alignment + Padding Controls -->
 			<div class="flex h-full flex-col justify-between gap-2">
 				<AlignmentButtonGrid
 					{cellAlignment}
@@ -248,7 +246,6 @@
 					onScopeToggle={handleScopeToggle}
 				/>
 
-				<!-- ENHANCED: PaddingControls fills remaining space and aligns perfectly with scope toggle -->
 				<div class="flex-1 flex flex-col justify-end">
 					<PaddingControls {cellPadding} {isProcessing} onPaddingChange={handlePaddingChange} />
 				</div>
@@ -258,18 +255,18 @@
 
 	<hr/>
 	
-	<!-- ENHANCED: Accordion ColorControls with upgrade functionality -->
+	<!-- MODERNIZED: ColorControls now receives userAccess instead of features -->
 	<ColorControls 
 		{backgroundColor} 
 		{isProcessing} 
-		features={props.features}
+		userAccess={props.userAccess}
 		onColorChange={handleColorChange}
 		onOpenUpgrade={handleOpenUpgrade}
 	/>
 	
 	<hr class="border-border" />
 	
-	<!-- ENHANCED: Border row with color support -->
+	<!-- Border controls and action buttons -->
 	<div class="flex items-center gap-2">
 		<div class="flex-1">
 			<BorderControls

@@ -167,7 +167,9 @@
 			prompts={data.prompts}
 			features={data.userFeatures.features}
 			userAccess={data.userAccess}
+			showInfo={showInfo}
 		/>
+
 	</div>
 
 	<!-- TrialBanner -->

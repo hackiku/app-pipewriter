@@ -188,6 +188,7 @@
 				{#if activeTab === "table"}
 					<TableTab
 						{context}
+						userAccess={userAccess}
 						onStatusUpdate={handleStatus}
 						onProcessingStart={handleProcessingStart}
 						onProcessingEnd={handleProcessingEnd}
