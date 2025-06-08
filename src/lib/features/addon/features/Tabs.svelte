@@ -8,7 +8,7 @@
 		Type,
 		Code,
 		X,
-	} from "lucide-svelte";
+	} from "@lucide/svelte";
 
 	// Import tab components
 	import TableTab from "./table/TableTab.svelte";
@@ -22,11 +22,13 @@
 		context, 
 		prompts,
 		features,
+		userAccess,
 		showInfo = false
 	} = $props<{ 
 		context: any;
 		prompts: any;
 		features: any;
+		userAccess: any;
 		showInfo?: boolean;
 	}>();
 
@@ -193,6 +195,7 @@
 				{:else if activeTab === "color"}
 					<ColorTab
 						{context}
+						userAccess={userAccess}
 						onProcessingStart={handleProcessingStart}
 						onProcessingEnd={handleProcessingEnd}
 					/>

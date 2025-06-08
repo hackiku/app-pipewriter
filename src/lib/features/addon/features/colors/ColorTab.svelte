@@ -1,4 +1,4 @@
-<!-- src/lib/features/addon/features/colors/ColorTab.svelte -->
+<!-- src/lib/features/addon/features/colors/ColorTab.svelte - MODERNIZED -->
 <script lang="ts">
   import { fade } from "svelte/transition";
   import { Button } from "$lib/components/ui/button";
@@ -8,15 +8,15 @@
   import ColorButton from "./ColorButton.svelte";
   import { changeBackground, getCurrentColor } from "$lib/services/google/colors";
   import { colorCategories, type ColorScheme } from './color-data';
-  
   import UpgradeDrawer from '$lib/components/pricing/UpgradeDrawer.svelte';
+  
+  // MODERNIZED: Import access control utilities
+  import { useAccessControl, type SerializedUserAccess } from '$lib/utils/access-control';
 
-
-
-  // Props using SvelteKit 5 syntax - UPDATED with features and onStatusUpdate
+  // MODERNIZED: Props now receive userAccess instead of legacy features
   const props = $props<{
     context: any;
-    features: any;
+    userAccess: SerializedUserAccess; // CHANGED: From features to userAccess
 		onStatusUpdate?: (status: {
 			type: 'processing' | 'success' | 'error';
 			message: string;
@@ -28,24 +28,17 @@
     onProcessingEnd: () => void;
   }>();
   
-  // User tier access control
-  const userTier = props.features?.tier || 'free';
-  
-  function canUseColor(colorTier: string): boolean {
-    if (userTier === 'pro') return true;
-    if (userTier === 'trial') return colorTier !== 'pro';
-    return colorTier === 'free';
-  }
+  // MODERNIZED: Create access control utilities from userAccess
+  const access = useAccessControl(props.userAccess);
   
   // State
   let currentColor = $state("#FFFFFF");
   let showColorPicker = $state(false);
   let isProcessing = $state(false);
-  let activeTab = $state(colorCategories[0]?.id || "base"); // Always start with first tab
+  let activeTab = $state(colorCategories[0]?.id || "base");
   let copySuccess = $state(false);
   let isEditingHex = $state(false);
   let hexInputValue = $state("#FFFFFF");
-
   let showUpgradeDrawer = $state(false);
 
   // Initialize by getting the current color
@@ -68,7 +61,7 @@
     
     try {
       const response = await getCurrentColor((statusUpdate) => {
-        props.onStatusUpdate(statusUpdate);
+        props.onStatusUpdate?.(statusUpdate);
       });
       
       if (response.success && response.data?.color) {
@@ -96,7 +89,7 @@
 
     isProcessing = true;
     props.onProcessingStart();
-    props.onStatusUpdate({
+    props.onStatusUpdate?.({
       type: 'processing',
       message: 'Applying color...',
       details: `Changing background to ${color}`
@@ -106,12 +99,12 @@
       const cleanColor = stripAlpha(color);
       
       const response = await changeBackground(cleanColor, (statusUpdate) => {
-        props.onStatusUpdate(statusUpdate);
+        props.onStatusUpdate?.(statusUpdate);
       });
 
       if (response.success) {
         currentColor = cleanColor;
-        props.onStatusUpdate({
+        props.onStatusUpdate?.({
           type: 'success',
           message: 'Color applied',
           executionTime: response.executionTime
@@ -121,7 +114,7 @@
       }
     } catch (error) {
       console.error("Failed to change background:", error);
-      props.onStatusUpdate({
+      props.onStatusUpdate?.({
         type: 'error',
         message: error instanceof Error ? error.message : "Failed to change color",
         error
@@ -146,14 +139,13 @@
     showUpgradeDrawer = open;
   }
 
-
-  // UPDATED: Handle preset color clicks with access control
+  // MODERNIZED: Simplified preset color click handling using access utilities
   function handlePresetColorClick(preset: ColorScheme) {
-    if (!canUseColor(preset.tier)) {
-      props.onStatusUpdate({
+    if (!access.canUseColor(preset.tier)) {
+      props.onStatusUpdate?.({
         type: 'error',
         message: 'Upgrade required',
-        details: `${preset.title} requires ${preset.tier === 'pro' ? 'Pro' : 'Trial'} plan`
+        details: access.getUpgradeMessage(preset.tier)
       });
       return;
     }
@@ -203,7 +195,7 @@
         copySuccess = false;
       }, 1500);
       
-      props.onStatusUpdate({
+      props.onStatusUpdate?.({
         type: 'success',
         message: 'Color copied to clipboard',
         details: `Copied ${currentColor}`
@@ -227,21 +219,21 @@
     };
   }
 
-  // Check if category has pro colors
+  // MODERNIZED: Simplified category access check using utilities
   function hasPro(category: typeof colorCategories[0]): boolean {
     return category.tier === 'pro' || category.colors.some(color => color.tier === 'pro');
   }
 
-  // Check if current active tab is pro and user can't access it
+  // MODERNIZED: Simplified upgrade bar logic using utilities
   function shouldShowUpgradeBar(): boolean {
     const activeCategory = colorCategories.find(cat => cat.id === activeTab);
-    return activeCategory?.tier === 'pro' && !canUseColor('pro');
+    return activeCategory?.tier === 'pro' && access.shouldShowUpgrade('pro');
   }
   
-  // Check if user should be able to interact with colors in current tab
+  // MODERNIZED: Simplified interaction check using utilities
   function canInteractWithCurrentTab(): boolean {
     const activeCategory = colorCategories.find(cat => cat.id === activeTab);
-    return !activeCategory || canUseColor(activeCategory.tier);
+    return !activeCategory || access.canUseColor(activeCategory.tier);
   }
 </script>
 
@@ -306,15 +298,15 @@
                   <div class="relative p-0.5">
                     <ColorButton
                       color={preset.color}
-                      title={canUseColor(preset.tier) ? preset.title : `${preset.title} (${preset.tier === 'pro' ? 'Pro' : 'Trial'} required)`}
+                      title={access.canUseColor(preset.tier) ? preset.title : `${preset.title} (${access.getUpgradeMessage(preset.tier)})`}
                       isSelected={currentColor === preset.color}
-                      isProcessing={isProcessing || !canUseColor(preset.tier)}
+                      isProcessing={isProcessing || !access.canUseColor(preset.tier)}
                       onClick={() => handlePresetColorClick(preset)}
                     />
                     
-                    <!-- Lock overlay for inaccessible colors -->
-                    {#if !canUseColor(preset.tier)}
-                      <div class="absolute inset-0 __bg-background/60 __backdrop-blur-[1px] rounded-full flex items-center justify-center pointer-events-none">
+                    <!-- MODERNIZED: Lock overlay using access utilities -->
+                    {#if !access.canUseColor(preset.tier)}
+                      <div class="absolute inset-0 rounded-full flex items-center justify-center pointer-events-none">
                         <Lock class="h-3 w-3 mb-1 text-muted-foreground" />
                       </div>
                     {:else if preset.tier === 'pro'}
@@ -334,15 +326,15 @@
                     <div class="relative p-0.5">
                       <ColorButton
                         color={preset.color}
-                        title={canUseColor(preset.tier) ? preset.title : `${preset.title} (${preset.tier === 'pro' ? 'Pro' : 'Trial'} required)`}
+                        title={access.canUseColor(preset.tier) ? preset.title : `${preset.title} (${access.getUpgradeMessage(preset.tier)})`}
                         isSelected={currentColor === preset.color}
-                        isProcessing={isProcessing || !canUseColor(preset.tier)}
+                        isProcessing={isProcessing || !access.canUseColor(preset.tier)}
                         onClick={() => handlePresetColorClick(preset)}
                       />
                       
-                      <!-- Lock overlay for inaccessible colors -->
-                      {#if !canUseColor(preset.tier)}
-                        <div class="absolute inset-0 __bg-background/60 __backdrop-blur-[1px] rounded-full flex items-center justify-center pointer-events-none">
+                      <!-- MODERNIZED: Lock overlay using access utilities -->
+                      {#if !access.canUseColor(preset.tier)}
+                        <div class="absolute inset-0 rounded-full flex items-center justify-center pointer-events-none">
                           <Lock class="h-3 w-3 mb-1 text-muted-foreground" />
                         </div>
                       {:else if preset.tier === 'pro'}
@@ -363,7 +355,7 @@
 
     <!-- Bottom Controls: Hex Button + Apply -->
     <div class="flex gap-2 mt-auto h-9 relative">
-      <!-- Upgrade Bar Overlay -->
+      <!-- MODERNIZED: Upgrade Bar Overlay using access utilities -->
       {#if shouldShowUpgradeBar()}
         <div class="absolute inset-0 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/50 dark:to-orange-950/50 
                     border border-amber-200 dark:border-amber-800 rounded-md backdrop-blur-sm z-10
@@ -372,7 +364,7 @@
           <div class="flex items-center gap-2">
             <Crown class="h-4 w-4 text-amber-600 dark:text-amber-400" />
             <span class="text-xs font-medium text-amber-800 dark:text-amber-200">
-              Upgrade to Pro for premium colors
+              {access.getUpgradeMessage('pro')}
             </span>
           </div>
           <Button

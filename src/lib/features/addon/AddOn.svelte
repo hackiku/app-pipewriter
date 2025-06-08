@@ -166,6 +166,7 @@
 			context={serviceContext} 
 			prompts={data.prompts}
 			features={data.userFeatures.features}
+			userAccess={data.userAccess}
 		/>
 	</div>
 
