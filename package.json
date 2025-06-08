@@ -52,11 +52,8 @@
 		"seed:elements": "bun run scripts/seed/seed-elements.ts",
 		"seed:prompts": "bun run scripts/seed/better-prompts.ts",
 		"seed:prod": "bun run scripts/seed-production.ts",
-		"seed:dev": "bun run scripts/seed/dev.ts",
-		"test:firebase": "bun run scripts/test-firebase-setup.ts",
-		"db:reset": "npm run emulators:clear",
-		"dev:fresh": "npm run emulators:clear && npm run seed && npm run dev",
-		"start:dev": "concurrently \"firebase emulators:start\" \"wait-on http://localhost:5000 && bun run seed\""
+		"dev:fresh": "npm run emulators:clear && npm run seed:dev && npm run dev",
+		"start:dev": "concurrently \"firebase emulators:start\" \"wait-on http://localhost:5000 && bun run seed:dev\""
 	},
 	"type": "module",
 	"dependencies": {
