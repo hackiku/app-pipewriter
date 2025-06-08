@@ -1,4 +1,4 @@
-// src/lib/server/business-logic.ts
+// src/lib/server/business-logic.ts - ALIGNED VERSION
 import { adminFirestore } from '$lib/server/firebase-admin';
 
 const TRIAL_PERIOD_DAYS = 14;
@@ -18,7 +18,7 @@ export interface UserAccess {
 			canUseProElements: boolean;
 		};
 
-		// Color features (your immediate need)
+		// Color features (aligned with client-side)
 		colors: {
 			canUseBasicColors: boolean;
 			canUsePremiumColorSchemes: boolean;
@@ -33,7 +33,7 @@ export interface UserAccess {
 			maxCustomPrompts: number;
 		};
 
-		// AI features
+		// AI features (keep structure for future metering)
 		ai: {
 			canUseBasicPrompts: boolean;
 			canUseAdvancedPrompts: boolean;
@@ -90,22 +90,19 @@ export async function getUserAccess(uid: string): Promise<UserAccess> {
 		// Calculate feature access based on tier
 		const features = calculateFeatureAccess(tier);
 
-		// Helper methods
+		// ALIGNED: Helper methods match client-side access-control.ts exactly
 		const canUseElement = (elementTier: string) => {
-			if (tier === 'pro') return true;
-			if (tier === 'trial') return elementTier !== 'pro';
+			if (tier === 'pro' || tier === 'trial') return true; // 🔥 TRIAL GETS FULL ACCESS
 			return elementTier === 'free';
 		};
 
 		const canUseColor = (colorTier: string) => {
-			if (tier === 'pro') return true;
-			if (tier === 'trial') return colorTier !== 'pro'; // Trial gets some color access
+			if (tier === 'pro' || tier === 'trial') return true; // 🔥 TRIAL GETS FULL ACCESS
 			return colorTier === 'free';
 		};
 
 		const canUsePrompt = (promptTier: string) => {
-			if (tier === 'pro') return true;
-			if (tier === 'trial') return promptTier !== 'pro';
+			if (tier === 'pro' || tier === 'trial') return true; // 🔥 TRIAL GETS FULL ACCESS
 			return promptTier === 'free';
 		};
 
@@ -138,7 +135,7 @@ export async function getUserAccess(uid: string): Promise<UserAccess> {
 }
 
 /**
- * Calculate feature access based on user tier
+ * ALIGNED: Calculate feature access - trial users get FULL ACCESS
  */
 function calculateFeatureAccess(tier: 'free' | 'trial' | 'pro') {
 	switch (tier) {
@@ -172,31 +169,32 @@ function calculateFeatureAccess(tier: 'free' | 'trial' | 'pro') {
 			};
 
 		case 'trial':
+			// 🔥 ALIGNED: Trial users get FULL ACCESS (matches devlog + client-side)
 			return {
 				elements: {
 					canUseBasicElements: true,
 					canUseTrialElements: true,
-					canUseProElements: false,
+					canUseProElements: true, // 🔥 FULL ACCESS
 				},
 				colors: {
 					canUseBasicColors: true,
-					canUsePremiumColorSchemes: false, // Trial users get basic colors only
+					canUsePremiumColorSchemes: true, // 🔥 FULL ACCESS
 					canUseDocumentBackgrounds: true,
-					canUseTableBackgrounds: false, // Table backgrounds are pro-only
+					canUseTableBackgrounds: true, // 🔥 FULL ACCESS
 				},
 				prompts: {
 					canCreateCustom: true,
 					canEditOwn: true,
-					maxCustomPrompts: 50,
+					maxCustomPrompts: 999, // 🔥 UNLIMITED (for now)
 				},
 				ai: {
 					canUseBasicPrompts: true,
-					canUseAdvancedPrompts: false,
+					canUseAdvancedPrompts: true, // 🔥 FULL ACCESS (can meter later)
 					canGenerateContent: true,
 				},
 				export: {
 					canExportBasic: true,
-					canExportAdvanced: false,
+					canExportAdvanced: true, // 🔥 FULL ACCESS
 				}
 			};
 
