@@ -1,20 +1,30 @@
-<!-- src/routes/(dash)/+layout.svelte -->
+<!-- src/routes/(dash)/+layout.svelte - FINAL CORRECTED VERSION -->
 <script lang="ts">
   import * as Resizable from "$lib/components/ui/resizable";
   import Sidebar from '$lib/features/dashboard/layout/Sidebar.svelte';
+  import Header from '$lib/features/dashboard/layout/Header.svelte';
   import { ModeWatcher } from "mode-watcher";
   import { setContext } from 'svelte';
-  import { page } from '$app/state';
-  // import AuthModal from '$lib/components/auth/AuthModal.svelte';
-  import { createTrialContext } from '$lib/context/trial.svelte';
-  import { goto } from '$app/navigation';
+  import { useAccessControl } from '$lib/utils/access-control';
 
-  // Props for getting data and children - proper Runes syntax
+  // Props for getting data and children 
   const { data, children } = $props();
   
-  // Create and set up the trial context
-  const trialContext = createTrialContext();
-  setContext('trialFeatures', trialContext);
+  // FIXED: Create access control immediately and set context right away
+  let access = $state(data?.userAccess ? useAccessControl(data.userAccess) : null);
+  
+  // FIXED: Set contexts immediately so Header has access on first render
+  setContext('access', access);
+  setContext('dashboardData', data);
+  
+  // Update access when data changes (but context is already set)
+  $effect(() => {
+    if (data?.userAccess) {
+      access = useAccessControl(data.userAccess);
+    } else {
+      access = null;
+    }
+  });
   
   // Sidebar state
   let isCollapsed = $state(false);
@@ -27,44 +37,18 @@
     isCollapsed = sidebarSize < collapseThreshold;
   }
   
-  // Handle redirects from server
-  $effect(() => {
-    if (data?.redirectTo) {
-      console.log(`[DASH LAYOUT] Redirecting to: ${data.redirectTo}`);
-      goto(data.redirectTo, { replaceState: true });
-    }
-  });
-  
-  // Initialize features whenever data changes
-  $effect(() => {
-    if (data?.features) {
-      trialContext.initFeatures(data.features);
-    }
-  });
-  
-  // Show auth modal when auth parameter is present and user is not authenticated
-  let showAuthModal = $derived(
-    $page.url.searchParams.get('auth') === 'required' && !data?.user
-  );
-
-  // Log authentication status changes
+  // Debug logging
   $effect(() => {
     if (data?.user) {
-      console.log('User authenticated:', data.user.displayName);
-    } else {
-      console.log('User not authenticated');
+      console.log('[DASH] User authenticated:', data.user.displayName, `(${access?.userAccess?.tier || 'unknown'})`);
     }
   });
 </script>
 
 <ModeWatcher />
 
-<!-- {#if showAuthModal}
-  <AuthModal />
-{/if} -->
-
 <div class="flex h-screen flex-col overflow-hidden bg-background text-foreground">
-  <!-- <Header /> -->
+  <Header />
 
   <Resizable.PaneGroup 
     direction="horizontal"

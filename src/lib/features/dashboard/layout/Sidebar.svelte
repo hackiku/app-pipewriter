@@ -1,7 +1,7 @@
-<!-- src/lib/features/dashboard/layout/Sidebar.svelte -->
+<!-- src/lib/features/dashboard/layout/Sidebar.svelte - Fixed page import -->
 <script lang="ts">
   import { Home, LayoutTemplate, FileText, Settings, HelpCircle, PenLine, ShoppingCart } from 'lucide-svelte';
-  import { page } from '$app/stores';
+  import { page } from '$app/stores'; // FIXED: Import page store
   import * as Tooltip from '$lib/components/ui/tooltip';
   import { cn } from '$lib/utils';
   
@@ -56,19 +56,6 @@
   // Check if a link is active
   function isActive(href: string) {
     return $page.url.pathname === href;
-  }
-  
-  // Helper to render icon based on type
-  function renderIcon(IconComponent: any, className: string) {
-    // FIXED: Replace svelte:component with conditional rendering
-    if (IconComponent === Home) return `<Home class="${className}" />`;
-    if (IconComponent === FileText) return `<FileText class="${className}" />`;
-    if (IconComponent === LayoutTemplate) return `<LayoutTemplate class="${className}" />`;
-    if (IconComponent === ShoppingCart) return `<ShoppingCart class="${className}" />`;
-    if (IconComponent === PenLine) return `<PenLine class="${className}" />`;
-    if (IconComponent === Settings) return `<Settings class="${className}" />`;
-    if (IconComponent === HelpCircle) return `<HelpCircle class="${className}" />`;
-    return '';
   }
 </script>
 
