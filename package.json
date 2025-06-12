@@ -50,7 +50,7 @@
 		"emulators:clear": "firebase emulators:exec --only firestore 'echo Clearing data...'",
 		"seed": "bun run scripts/seed/seed-elements.ts",
 		"seed:elements": "bun run scripts/seed/seed-elements.ts",
-		"seed:prompts": "bun run scripts/seed/better-prompts.ts",
+		"seed:prompts": "bun run scripts/seed/seed-prompts.ts",
 		"seed:prod": "bun run scripts/seed-production.ts",
 		"dev:fresh": "npm run emulators:clear && npm run seed:dev && npm run dev",
 		"start:dev": "concurrently \"firebase emulators:start\" \"wait-on http://localhost:5000 && bun run seed:dev\""

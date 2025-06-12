@@ -61,9 +61,10 @@
 	
 	// Chain mode tracking - ENHANCED to get queue items with themes
 	$effect(() => {
-		if (dropperRef && typeof dropperRef.getChainModeState === 'function') {
+		if (dropperRef?.getChainModeState) {
+			// Force reactivity by calling it in the effect
 			const state = dropperRef.getChainModeState();
-			const theme = dropperRef.getTheme ? dropperRef.getTheme() : 'light';
+			const theme = dropperRef.getTheme?.() || 'light';
 			chainModeState = { ...state, theme };
 		}
 	});
