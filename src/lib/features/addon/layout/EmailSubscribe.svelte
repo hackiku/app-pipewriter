@@ -1,18 +1,47 @@
-<!-- src/lib/components/email/EmailSubscribe.svelte -->
+<!-- src/lib/features/addon/layout/EmailSubscribe.svelte -->
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
   import { Check, Loader2, Mail } from '@lucide/svelte';
+  import { onMount } from 'svelte';
   
   // Props
   const props = $props<{
     source?: string;
   }>();
   
+  // Famous writer emails for placeholder rotation
+  const writerEmails = [
+    "ernie@hemingway.gg",
+    "franz@kafka.dev", 
+    "fyodor@dostoevsky.ru",
+    "margaret@atwood.ca",
+    "jane@austen.io",
+    "james@joyce.ie",
+    "italo@calvino.it",
+    "albert@camus.dz",
+    "isabel@allende.cl",
+    "edgar@poe.xyz",
+    "ursula@leguin.net",
+    "toni@morrison.lit"
+  ];
+  
   // Local state
   let email = $state("");
   let isSubmitting = $state(false);
   let isSubmitted = $state(false);
   let errorMessage = $state("");
+  let currentPlaceholder = $state(writerEmails[0]);
+  
+  // Rotate placeholder every 3 seconds (slower than before)
+  onMount(() => {
+    let index = 0;
+    const interval = setInterval(() => {
+      index = (index + 1) % writerEmails.length;
+      currentPlaceholder = writerEmails[index];
+    }, 3000); // 3 seconds to linger more
+    
+    return () => clearInterval(interval);
+  });
   
   async function handleSubmit(event: Event) {
     event.preventDefault();
@@ -60,10 +89,10 @@
       <input
         type="email"
         bind:value={email}
-        placeholder="your@email.com"
+        placeholder={currentPlaceholder}
         class="w-full h-10 pl-10 pr-4 text-sm bg-background border border-input rounded-md 
                focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-               disabled:opacity-50 disabled:cursor-not-allowed"
+               disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         disabled={isSubmitting}
         required
       />
