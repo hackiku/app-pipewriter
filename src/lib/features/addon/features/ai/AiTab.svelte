@@ -1,8 +1,11 @@
-<!-- src/lib/features/addon/features/ai/AiTab.svelte - FIXED FINAL -->
+<!-- src/lib/features/addon/features/ai/AiTab.svelte - FINAL WITH DOWNLOAD -->
 <script lang="ts">
   import PromptDropdown from "./PromptDropdown.svelte";
   import DropCode from "./DropCode.svelte";
   import StripCode from "./StripCode.svelte";
+  import { Button } from "$lib/components/ui/button";
+  import { Download } from "@lucide/svelte";
+  import { downloadHtmlFile } from "$lib/services/google/html";
 
   const props = $props<{
     context: any;
@@ -69,6 +72,41 @@
   function handlePromptClear() {
     activePrompt = null;
     console.log('🧹 AiTab: Prompt cleared');
+  }
+
+  // Download HTML file
+  async function handleDownloadHtml() {
+    if (isProcessing) return;
+    
+    handleProcessingStart();
+    handleStatusUpdate({
+      type: 'processing',
+      message: 'Generating HTML file...'
+    });
+
+    try {
+      const response = await downloadHtmlFile((status) => {
+        handleStatusUpdate(status);
+      });
+      
+      if (response.success) {
+        handleStatusUpdate({
+          type: 'success',
+          message: 'HTML file download ready',
+          executionTime: response.executionTime
+        });
+      } else {
+        throw new Error(response.error || 'Failed to generate HTML file');
+      }
+    } catch (error) {
+      console.error('Failed to download HTML:', error);
+      handleStatusUpdate({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Failed to download HTML'
+      });
+    } finally {
+      handleProcessingEnd();
+    }
   }
 
   // FIXED: Actual refresh implementation
@@ -161,4 +199,17 @@
     onProcessingStart={handleProcessingStart}
     onProcessingEnd={handleProcessingEnd}
   />
+
+  <!-- Download HTML Button -->
+  <div class="flex justify-end">
+    <Button
+      variant="default"
+      class="h-8 px-3 text-xs"
+      disabled={isProcessing}
+      onclick={handleDownloadHtml}
+    >
+      <Download class="h-3 w-3 mr-2" />
+      Download HTML
+    </Button>
+  </div>
 </div>

@@ -1,7 +1,7 @@
 // src/lib/services/google/html.ts
 import { getGoogleService } from './client';
 import type { StatusCallback } from './client';
-import type { ApiResponse } from '$lib/data/addon/types';
+import type { ApiResponse } from '$lib/types/elements';
 
 /**
  * Insert HTML into document
@@ -55,6 +55,26 @@ export async function stripHtml(
 		}, onStatus);
 	} catch (error) {
 		console.error('Error in stripHtml:', error);
+		throw error;
+	}
+}
+
+/**
+ * Download HTML as file
+ */
+export async function downloadHtmlFile(
+	onStatus?: StatusCallback
+): Promise<ApiResponse> {
+	try {
+		const client = getGoogleService();
+
+		if (!client) {
+			throw new Error('Google Apps Service is not available');
+		}
+
+		return client.sendMessage('downloadHtmlFile', {}, onStatus);
+	} catch (error) {
+		console.error('Error in downloadHtmlFile:', error);
 		throw error;
 	}
 }

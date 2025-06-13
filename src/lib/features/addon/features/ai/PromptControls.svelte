@@ -2,7 +2,6 @@
 <script lang="ts">
 	import { Copy, Plus, ArrowLeft, Play, Edit } from "@lucide/svelte";
 	import { Button } from "$lib/components/ui/button";
-	import { Checkbox } from "$lib/components/ui/checkbox";
 
 	const props = $props<{
 		onBack?: () => void;
@@ -10,19 +9,9 @@
 		onDrop?: () => void;
 		onSave?: () => void;
 		onEdit?: () => void;
-		includeCode?: boolean;
-		onIncludeCodeChange?: (value: boolean) => void;
 		disabled?: boolean;
 		mode?: 'view' | 'edit'; // view = copy/drop/edit, edit = save/drop
-		showCodeOption?: boolean;
 	}>();
-
-	let includeCode = $state(props.includeCode || false);
-
-	function handleIncludeCodeChange() {
-		includeCode = !includeCode;
-		props.onIncludeCodeChange?.(includeCode);
-	}
 </script>
 
 <div class="flex items-center gap-2 p-2 border-t bg-muted/20">
@@ -37,24 +26,6 @@
 		>
 			<ArrowLeft class="h-3 w-3" />
 		</Button>
-	{/if}
-
-	<!-- Code Option Checkbox -->
-	{#if props.showCodeOption}
-		<div class="flex items-center space-x-2">
-			<Checkbox 
-				id="include-code"
-				checked={includeCode}
-				onCheckedChange={handleIncludeCodeChange}
-				disabled={props.disabled}
-			/>
-			<label 
-				for="include-code" 
-				class="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-			>
-				Context
-			</label>
-		</div>
 	{/if}
 
 	<!-- Right Side Actions -->
