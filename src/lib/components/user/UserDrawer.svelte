@@ -1,4 +1,4 @@
-<!-- src/lib/components/user/UserDrawer.svelte - HACKED FOR VAUL COMPATIBILITY -->
+<!-- src/lib/components/user/UserDrawer.svelte - FINAL WITH HIDDEN SCROLLBAR -->
 <script lang="ts">
   import * as Drawer from "$lib/components/ui/drawer/index.js";
   import { cn } from '$lib/utils';
@@ -100,18 +100,18 @@
   }
 </script>
 
-<!-- HACK: Use internal open state to reduce conflicts -->
+<!-- FINAL: Keep your max-h-[90%] and mx-4 -->
 <Drawer.Root open={internalOpen} onOpenChange={handleOpenChange}>
   <Drawer.Content class="max-h-[90%] mx-4">
     <div class="mx-auto w-full max-w-md">
       
-      <!-- HACK: Much simpler sliding - just show/hide with CSS transforms -->
-      <div class="relative overflow-auto">
+      <!-- FINAL: Add hidden scrollbar to the sliding container -->
+      <div class="relative overflow-hidden">
         
-        <!-- Profile View -->
+        <!-- Profile View with individual scrolling -->
         <div
           class={cn(
-            "transition-transform duration-300 ease-out",
+            "scrollable-content transition-transform duration-300 ease-out",
             currentView === 'profile' ? 'translate-x-0' : '-translate-x-full'
           )}
           style="min-height: 200px;"
@@ -126,10 +126,10 @@
           />
         </div>
 
-        <!-- Upgrade View - HACK: Always render but position absolutely -->
+        <!-- Upgrade View with individual scrolling - Always render but position absolutely -->
         <div
           class={cn(
-            "absolute top-0 left-0 w-full transition-transform duration-300 ease-out",
+            "scrollable-content absolute top-0 left-0 w-full transition-transform duration-300 ease-out",
             currentView === 'upgrade' ? 'translate-x-0' : 'translate-x-full'
           )}
           style="min-height: 400px;"
@@ -143,7 +143,7 @@
         </div>
       </div>
 
-      <!-- Navigation Dots - HACK: Simpler click handlers -->
+      <!-- Navigation Dots Footer -->
       <Drawer.Footer class="pt-2 pb-4">
         <div class="flex justify-center items-center gap-2">
           <button
@@ -173,3 +173,26 @@
     </div>
   </Drawer.Content>
 </Drawer.Root>
+
+<style>
+  /* FINAL: Hidden scrollbar for smooth overflow */
+  .scrollable-content {
+    max-height: calc(90vh - 120px); /* Account for footer and drawer chrome */
+    overflow-y: auto;
+    overflow-x: hidden;
+    
+    /* Hide scrollbar for WebKit browsers */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+  
+  .scrollable-content::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+  
+  /* Smooth scrolling */
+  .scrollable-content {
+    scroll-behavior: smooth;
+  }
+</style>

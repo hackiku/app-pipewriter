@@ -5,7 +5,7 @@
   import { Button } from '$lib/components/ui/button';
   import AppAbout from './AppAbout.svelte';
   import UserAvatar from '$lib/components/user/UserAvatar.svelte';
-  import UserAvatarOld from '$lib/components/user/UserAvatarOld.svelte';
+  // import UserAvatarOld from '$lib/components/user/UserAvatarOld.svelte';
   import { docLinks, DRIVE_FOLDER_URL } from '$lib/data/addon/templateDocs';
   
   // Props
@@ -99,7 +99,7 @@
   <!-- Right side: User Avatars (Old and New for comparison) -->
   <div class="flex items-center gap-4 mr-2">
     <!-- Old Avatar (for comparison) -->
-    <div class="opacity-50">
+    <!-- <div class="opacity-50">
       <UserAvatarOld
         user={props.user}
         isPro={props.isPro}
@@ -107,7 +107,7 @@
         trialDaysLeft={props.trialDaysLeft}
         onSignOut={props.onSignOut}
       />
-    </div>
+    </div> -->
 
     <!-- New Avatar System -->
     <UserAvatar 
