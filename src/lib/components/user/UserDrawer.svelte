@@ -1,4 +1,4 @@
-<!-- src/lib/components/user/UserDrawer.svelte -->
+<!-- src/lib/components/user/UserDrawer.svelte - HACKED FOR VAUL COMPATIBILITY -->
 <script lang="ts">
   import * as Drawer from "$lib/components/ui/drawer/index.js";
   import { cn } from '$lib/utils';
@@ -21,95 +21,129 @@
     onSignOut: () => Promise<void>;
   }>();
 
-  // Local state
+  // HACK: Simplify state management - let drawer handle open/close naturally
   let currentView: 'profile' | 'upgrade' = $state('profile');
-  let isSliding = $state(false);
-
-  // Reset to profile view when drawer opens
+  let internalOpen = $state(props.isOpen);
+  
+  // HACK: Track when user intentionally navigates vs when drawer auto-closes
+  let userNavigating = $state(false);
+  
+  // Sync internal open state with props
   $effect(() => {
-    if (props.isOpen) {
-      currentView = 'profile';
-      isSliding = false;
+    if (props.isOpen !== internalOpen && !userNavigating) {
+      internalOpen = props.isOpen;
+      // Always reset to profile when drawer opens
+      if (props.isOpen) {
+        currentView = 'profile';
+      }
     }
   });
 
-  // Navigate between views
+  // HACK: Simple navigation without blocking drawer lifecycle
   function navigateToUpgrade() {
-    if (isSliding) return;
-    isSliding = true;
+    console.log('🚀 Navigating to upgrade');
+    userNavigating = true;
     currentView = 'upgrade';
-    setTimeout(() => isSliding = false, 300);
+    
+    // Release navigation lock after a brief moment
+    setTimeout(() => {
+      userNavigating = false;
+    }, 100);
   }
 
   function navigateToProfile() {
-    if (isSliding) return;
-    isSliding = true;
+    console.log('🔙 Navigating to profile');
+    userNavigating = true;
     currentView = 'profile';
-    setTimeout(() => isSliding = false, 300);
+    
+    setTimeout(() => {
+      userNavigating = false;
+    }, 100);
   }
 
-  // Handle upgrade button click from profile
+  // Handle upgrade button from ProfileCard
   function handleUpgradeClick() {
+    console.log('💎 Upgrade clicked from ProfileCard');
     navigateToUpgrade();
   }
 
-  // Handle back from upgrade
+  // Handle back button from UpgradeCard
   function handleBackToProfile() {
+    console.log('⬅️ Back clicked from UpgradeCard');
     navigateToProfile();
   }
 
-  // Handle drawer close
+  // HACK: Let drawer close naturally, just sync the state
   function handleOpenChange(open: boolean) {
-    if (!isSliding) {
+    console.log('📱 Drawer open change:', open, 'userNavigating:', userNavigating);
+    
+    internalOpen = open;
+    
+    // Always propagate to parent unless we're in the middle of navigation
+    if (!userNavigating) {
       props.onOpenChange(open);
+      
+      // Reset to profile when drawer closes
+      if (!open) {
+        currentView = 'profile';
+      }
+    }
+  }
+
+  // Handle navigation dots
+  function handleNavDot(view: 'profile' | 'upgrade') {
+    if (view === 'upgrade') {
+      navigateToUpgrade();
+    } else {
+      navigateToProfile();
     }
   }
 </script>
 
-<Drawer.Root open={props.isOpen} onOpenChange={handleOpenChange}>
-  <Drawer.Content class="max-h-[85vh]">
+<!-- HACK: Use internal open state to reduce conflicts -->
+<Drawer.Root open={internalOpen} onOpenChange={handleOpenChange}>
+  <Drawer.Content class="max-h-[90%] mx-4">
     <div class="mx-auto w-full max-w-md">
       
-      <!-- Sliding Content Container -->
-      <div class="relative overflow-hidden">
-        <!-- Profile Card -->
+      <!-- HACK: Much simpler sliding - just show/hide with CSS transforms -->
+      <div class="relative overflow-auto">
+        
+        <!-- Profile View -->
         <div
           class={cn(
             "transition-transform duration-300 ease-out",
             currentView === 'profile' ? 'translate-x-0' : '-translate-x-full'
           )}
+          style="min-height: 200px;"
         >
-          {#if currentView === 'profile' || isSliding}
-            <ProfileCard
-              user={props.user}
-              isPro={props.isPro}
-              trialActive={props.trialActive}
-              trialDaysLeft={props.trialDaysLeft}
-              onSignOut={props.onSignOut}
-              onUpgrade={handleUpgradeClick}
-            />
-          {/if}
+          <ProfileCard
+            user={props.user}
+            isPro={props.isPro}
+            trialActive={props.trialActive}
+            trialDaysLeft={props.trialDaysLeft}
+            onSignOut={props.onSignOut}
+            onUpgrade={handleUpgradeClick}
+          />
         </div>
 
-        <!-- Upgrade Card -->
+        <!-- Upgrade View - HACK: Always render but position absolutely -->
         <div
           class={cn(
             "absolute top-0 left-0 w-full transition-transform duration-300 ease-out",
             currentView === 'upgrade' ? 'translate-x-0' : 'translate-x-full'
           )}
+          style="min-height: 400px;"
         >
-          {#if currentView === 'upgrade' || isSliding}
-            <UpgradeCard
-              isPro={props.isPro}
-              trialActive={props.trialActive}
-              trialDaysLeft={props.trialDaysLeft}
-              onBack={handleBackToProfile}
-            />
-          {/if}
+          <UpgradeCard
+            isPro={props.isPro}
+            trialActive={props.trialActive}
+            trialDaysLeft={props.trialDaysLeft}
+            onBack={handleBackToProfile}
+          />
         </div>
       </div>
 
-      <!-- Navigation Dots Footer -->
+      <!-- Navigation Dots - HACK: Simpler click handlers -->
       <Drawer.Footer class="pt-2 pb-4">
         <div class="flex justify-center items-center gap-2">
           <button
@@ -119,8 +153,7 @@
                 ? 'bg-primary scale-125' 
                 : 'bg-muted-foreground/40 hover:bg-muted-foreground/60'
             )}
-            onclick={navigateToProfile}
-            disabled={isSliding}
+            onclick={() => handleNavDot('profile')}
             aria-label="Profile"
           ></button>
           
@@ -131,8 +164,7 @@
                 ? 'bg-primary scale-125' 
                 : 'bg-muted-foreground/40 hover:bg-muted-foreground/60'
             )}
-            onclick={navigateToUpgrade}
-            disabled={isSliding}
+            onclick={() => handleNavDot('upgrade')}
             aria-label="Upgrade"
           ></button>
         </div>

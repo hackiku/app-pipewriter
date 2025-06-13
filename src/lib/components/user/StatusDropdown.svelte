@@ -129,7 +129,7 @@
   <DropdownMenu.Root>
     <!-- FIXED: Remove asChild and let:builder pattern -->
     <DropdownMenu.Trigger 
-      class="flex items-center justify-between w-full h-11 px-3 py-2 text-sm font-medium border border-input bg-background rounded-md hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+      class="flex items-center justify-between w-full h-10 px-3 py-2 text-sm font-medium border border-input bg-background rounded-md hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
       disabled={props.disabled || isChanging}
     >
       <div class="flex items-center gap-2">

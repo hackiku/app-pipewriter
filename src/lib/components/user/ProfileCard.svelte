@@ -82,7 +82,7 @@
   }
 </script>
 
-<div class="p-6">
+<div class="p-4">
   <!-- User Info -->
   <div class="text-center space-y-4">
     <!-- Avatar -->
@@ -135,7 +135,7 @@
   <div class="space-y-3 mt-6">
     <!-- Upgrade/Manage Button -->
     <Button
-      class="w-full h-11 font-medium"
+      class="w-full h-10 font-medium"
       onclick={props.onUpgrade}
       disabled={isLoggingOut || isSwitching}
     >
@@ -161,9 +161,9 @@
     {/if}
 
     <!-- Account Switch Button -->
-    <Button 
+		<Button 
       variant="outline"
-      class="w-full h-9 text-sm"
+      class="w-full h-8 text-sm"
       onclick={handleAccountSwitch}
       disabled={isLoggingOut || isSwitching}
     >
@@ -179,7 +179,7 @@
     <!-- Logout Button -->
     <Button 
       variant="outline"
-      class="w-full h-9 text-sm"
+      class="w-full h-8 text-sm"
       onclick={handleLogout}
       disabled={isLoggingOut || isSwitching}
     >
