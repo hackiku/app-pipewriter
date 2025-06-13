@@ -78,3 +78,34 @@ export async function downloadHtmlFile(
 		throw error;
 	}
 }
+
+/**
+ * Drop prompt content into document at cursor
+ */
+export async function dropPrompt(
+	options: {
+		promptContent: string;
+		promptTitle?: string;
+	},
+	onStatus?: StatusCallback
+): Promise<ApiResponse> {
+	try {
+		const client = getGoogleService();
+
+		if (!client) {
+			throw new Error('Google Apps Service is not available');
+		}
+
+		if (!options.promptContent) {
+			throw new Error('Prompt content is required');
+		}
+
+		return client.sendMessage('dropPrompt', {
+			promptContent: options.promptContent,
+			promptTitle: options.promptTitle
+		}, onStatus);
+	} catch (error) {
+		console.error('Error in dropPrompt:', error);
+		throw error;
+	}
+}

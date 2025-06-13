@@ -1,4 +1,4 @@
-<!-- src/lib/features/addon/features/ai/PromptDropdown.svelte - SIMPLIFIED -->
+<!-- src/lib/features/addon/features/ai/PromptDropdown.svelte - WITH DROP FUNCTIONALITY -->
 <script lang="ts">
 	import { slide, fade } from 'svelte/transition';
 	import { Button } from '$lib/components/ui/button';
@@ -8,6 +8,7 @@
 	import PromptControls from './PromptControls.svelte';
 	import PromptTabs from './PromptTabs.svelte';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
+	import { dropPrompt } from '$lib/services/google/html';
 
 	const props = $props<{
 		prompts: Record<string, any[]>;
@@ -26,7 +27,6 @@
 	let createMode = $state(false);
 	let selectedCategory = $state('all');
 	let isOperating = $state(false);
-	let includeCode = $state(false);
 	let deletePromptId = $state<string | null>(null);
 
 	// Debug prompts - SIMPLIFIED
@@ -123,9 +123,30 @@
 		createMode = false;
 	}
 
-	function dropPrompt() {
-		if (!props.activePrompt) return;
-		props.onToggleOpen();
+	// NEW: Drop prompt functionality
+	async function dropPromptToDoc() {
+		if (!props.activePrompt || isOperating) return;
+		
+		isOperating = true;
+		try {
+			console.log('🎯 Dropping prompt to doc:', props.activePrompt.title);
+			
+			const response = await dropPrompt({
+				promptContent: props.activePrompt.content,
+				promptTitle: props.activePrompt.title
+			});
+
+			if (response.success) {
+				console.log('✅ Prompt dropped successfully');
+				props.onToggleOpen(); // Close the dropdown
+			} else {
+				throw new Error(response.error || 'Failed to drop prompt');
+			}
+		} catch (error) {
+			console.error('❌ Failed to drop prompt:', error);
+		} finally {
+			isOperating = false;
+		}
 	}
 
 	async function copyPrompt() {
@@ -248,7 +269,7 @@
 						prompt={props.activePrompt}
 						onBack={backToList}
 						onSave={(data) => savePrompt(data, false)}
-						onDrop={dropPrompt}
+						onDrop={dropPromptToDoc}
 						isProcessing={isOperating || props.isProcessing}
 					/>
 				</div>
@@ -257,10 +278,7 @@
 					mode="edit"
 					onBack={backToList}
 					onSave={() => {}}
-					onDrop={dropPrompt}
-					showCodeOption={true}
-					{includeCode}
-					onIncludeCodeChange={(value) => (includeCode = value)}
+					onDrop={dropPromptToDoc}
 					disabled={isOperating || props.isProcessing}
 				/>
 			{:else if createMode}
@@ -297,9 +315,6 @@
 					onBack={backToList}
 					onSave={() => {}}
 					onDrop={() => {}}
-					showCodeOption={true}
-					{includeCode}
-					onIncludeCodeChange={(value) => (includeCode = value)}
 					disabled={isOperating || props.isProcessing}
 				/>
 			{:else if Object.keys(plainPrompts).length === 0}
@@ -354,12 +369,6 @@
 												>
 													{prompt?.category}
 												</span>
-												<!-- {#if prompt?.metadata?.isDefault}
-													<span
-														class="rounded border bg-emerald-100 px-1 py-0.5 text-[0.55rem] text-emerald-800"
-														>Default</span
-													>
-												{/if} -->
 											</div>
 											<p class="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
 												{truncateContent(prompt?.content || 'No content')}
@@ -419,10 +428,7 @@
 							mode="view"
 							onCopy={copyPrompt}
 							onEdit={() => startEdit(props.activePrompt)}
-							onDrop={dropPrompt}
-							showCodeOption={true}
-							{includeCode}
-							onIncludeCodeChange={(value) => (includeCode = value)}
+							onDrop={dropPromptToDoc}
 							disabled={isOperating || props.isProcessing}
 						/>
 					{/if}
