@@ -1,7 +1,9 @@
-<!-- $lib/iframe/layout/AppAbout.svelte -->
+<!-- src/lib/features/addon/layout/AppAbout.svelte - REDESIGNED -->
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import { Copy, Check, X, Mail } from "lucide-svelte";
+  import { X, ExternalLink, Heart } from '@lucide/svelte';
+  import { Button } from "$lib/components/ui/button";
+  import EmailSubscribe from './EmailSubscribe.svelte';
 
   // Props
   const props = $props<{
@@ -9,139 +11,85 @@
     onToggleAboutModal: () => void;
   }>();
 
-  const writerEmails = [
-    "ernie@hemingway.gg",
-    "franz@kafka.dev",
-    "fyodor@dostoevsky.ru",
-    "margaret@atwood.ca",
-    "jane@austen.io",
-    "james@joyce.ie",
-    "italo@calvino.it",
-    "albert@camus.dz",
-    "hank@moody.ny",
-    "isabel@allende.cl",
-    "edgar@poe.xyz",
-  ];
-
-  let email = $state("");
-  let isSubmitting = $state(false);
-  let copied = $state(false);
-  let placeholder = $state(
-    writerEmails[Math.floor(Math.random() * writerEmails.length)]
-  );
-
   function closeModal() {
     props.onToggleAboutModal();
   }
 
-  function handleSubscriptionSuccess() {
-    setTimeout(() => {
-      closeModal();
-    }, 1500);
-  }
-
-  async function copyEmail() {
-    await navigator.clipboard.writeText("ivan@pipewriter.io");
-    copied = true;
-    setTimeout(() => (copied = false), 2000);
+  function openPipewriter() {
+    window.open('https://pipewriter.io', '_blank');
   }
 </script>
 
-<!-- Container -->
+<!-- Modal Overlay -->
 {#if props.showAboutModal}
   <div
-    role="button"
-    tabindex="0"
-    class="fixed inset-0 z-[100] bg-gray-900/80 dark:bg-gray-950/80 h-screen"
+    class="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
     onclick={closeModal}
-    onkeydown={(e) => e.key === "Escape" && closeModal()}
+    transition:fade={{ duration: 200 }}
   >
-    <!-- Modal content -->
+    <!-- Modal Content - Matching drawer card design -->
     <div
-      class="fixed left-2 right-2 bottom-12 max-w-xl mx-auto"
-      in:fade={{ duration: 200 }}
-      out:fade={{ duration: 200 }}
+      class="bg-background border border-border rounded-lg shadow-lg w-full max-w-md mx-4"
+      onclick={(e) => e.stopPropagation()}
+      transition:fade={{ duration: 200, delay: 100 }}
     >
-      <!-- Simple container for the modal -->
-      <div
-        role="button"
-        class="p-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700"
-        onclick={(e) => e.stopPropagation()}
-      >
-        <div class="flex justify-between items-start mb-6">
-          <div>
-            <h2 class="text-xl font-semibold">
-              Great products start with words
-            </h2>
-            <p class="text-sm text-gray-600 dark:text-gray-300 mt-2">
-              Google Docs is where writers write.
-              <a
-                href="https://pipewriter.io"
-                class="text-primary font-semibold hover:underline hover:text-primary/90 transition-colors"
-              >
-                Pipewriter
-              </a>
-              makes it a bit more product designey so you can 10x your website copy
-              decks and wireframes.
-            </p>
-            <p class="text-sm text-gray-600 dark:text-gray-300 mt-2">
-              Obsessively designed for fellow copywriters, content strategists,
-              and UX pros.
+      <!-- Header -->
+      <div class="flex items-center justify-between p-4 border-b border-border">
+        <h2 class="text-lg font-semibold">About Pipewriter</h2>
+        <Button
+          variant="ghost"
+          size="icon"
+          class="h-8 w-8 rounded-full"
+          onclick={closeModal}
+        >
+          <X class="h-4 w-4" />
+        </Button>
+      </div>
+
+      <!-- Content -->
+      <div class="p-4 space-y-4">
+        <!-- Description -->
+        <div class="text-center space-y-3">
+          <div class="w-12 h-12 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+            <Heart class="h-6 w-6 text-primary" />
+          </div>
+          
+          <div class="space-y-2">
+            <p class="text-sm text-muted-foreground">
+              Design-focused wireframing and prototyping tools for Google Docs. 
+              Built for copywriters, content strategists, and UX professionals.
             </p>
           </div>
-          <button
-            class="h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            onclick={closeModal}
-          >
-            <X class="h-4 w-4 mx-auto" />
-          </button>
         </div>
 
-        <!-- Add a feedback form here -->
-        <div class="mb-4">
-          <div class="flex gap-2 mb-4">
-            <input
-              type="email"
-              placeholder={placeholder}
-              class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              bind:value={email}
-              disabled={isSubmitting}
-            />
-            <button
-              class="px-3 py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
-              disabled={isSubmitting}
-            >
-              Subscribe
-            </button>
+        <!-- Email Subscribe -->
+        <div class="space-y-3">
+          <div class="text-center">
+            <p class="text-sm font-medium">Stay updated</p>
+            <p class="text-xs text-muted-foreground">Get notified about new features and templates</p>
           </div>
-          <p class="text-xs text-gray-500 dark:text-gray-400">
-            Sign up for updates on new features, templates & design tips.
-          </p>
+          
+          <EmailSubscribe source="addon-about" />
         </div>
-        
-        <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
-            Support & talk life:
-          </p>
-          <div class="flex items-center justify-between">
-            <a
-              href="mailto:ivan@pipewriter.io"
-              class="text-xl text-primary hover:text-primary/90 transition-colors"
-            >
-              ivan@pipewriter.io
-            </a>
-            <button
-              class="h-8 w-8 p-0 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              onclick={copyEmail}
-            >
-              {#if copied}
-                <Check class="h-4 w-4 text-green-500 mx-auto" />
-              {:else}
-                <Copy class="h-4 w-4 mx-auto" />
-              {/if}
-            </button>
-          </div>
+
+        <!-- Website Link -->
+        <div class="pt-3 border-t border-border">
+          <Button
+            variant="outline"
+            class="w-full h-9 text-sm"
+            onclick={openPipewriter}
+          >
+            <span>Visit pipewriter.io</span>
+            <ExternalLink class="h-3 w-3 ml-2" />
+          </Button>
         </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="p-4 pt-0 text-center border-t border-border">
+        <p class="text-xs text-muted-foreground">
+          v1.0 • Made with ❤️ for writers
+        </p>
       </div>
     </div>
   </div>

@@ -61,7 +61,7 @@
 		"@thisux/sveltednd": "^0.0.20",
 		"firebase": "^11.7.3",
 		"mode-watcher": "0.5.1",
-		"sortablejs": "^1.15.6",
+		"resend": "^4.5.2",
 		"vanilla-picker": "^2.12.3"
 	}
 }
