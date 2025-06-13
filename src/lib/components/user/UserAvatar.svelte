@@ -1,9 +1,11 @@
-<!-- src/lib/components/user/UserAvatar.svelte -->
+<!-- src/lib/components/user/UserAvatar.svelte - NEW TASTEFUL DESIGN -->
 <script lang="ts">
   import * as Avatar from "$lib/components/ui/avatar/index.js";
-  import ProfileCard from './ProfileCard.svelte';
+  import { Crown, Clock } from '@lucide/svelte';
+  import { cn } from '$lib/utils';
+  import UserDrawer from './UserDrawer.svelte';
 
-  // Simple props - no contexts
+  // Props
   const props = $props<{
     user: {
       uid: string;
@@ -18,23 +20,16 @@
   }>();
 
   // Local state
-  let showProfile = $state(false);
+  let showDrawer = $state(false);
+
+  // QUICK TESTING: Switch between badge styles here
+  const BADGE_STYLE: 'dot' | 'ring' | 'corner' | 'minimal' | 'none' = 'dot';
 
   // Get subscription status
   function getSubscriptionStatus() {
-    if (props.isPro) return "Pro";
-    if (props.trialActive) return "Trial";
-    return "Free";
-  }
-
-  // Badge color based on status
-  function getBadgeColor() {
-    const status = getSubscriptionStatus();
-    switch (status) {
-      case "Pro": return "bg-primary text-primary-foreground";
-      case "Trial": return "bg-amber-600 text-white";
-      default: return "bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300";
-    }
+    if (props.isPro) return "pro";
+    if (props.trialActive) return "trial";
+    return "free";
   }
 
   // Generate initials for fallback
@@ -55,44 +50,114 @@
     return 'U';
   }
 
-  function toggleProfile() {
-    showProfile = !showProfile;
+  function toggleDrawer() {
+    showDrawer = !showDrawer;
+  }
+
+  // Badge Style Options
+  function getDotBadge() {
+    const status = getSubscriptionStatus();
+    const dotColors = {
+      pro: 'bg-emerald-500',
+      trial: 'bg-amber-500', 
+      free: 'bg-neutral-400'
+    };
+    
+    return `absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${dotColors[status]}`;
+  }
+
+  function getRingClass() {
+    const status = getSubscriptionStatus();
+    const ringColors = {
+      pro: 'ring-emerald-500',
+      trial: 'ring-amber-500',
+      free: 'ring-neutral-300'
+    };
+    
+    return `ring-2 ring-offset-1 ${ringColors[status]}`;
+  }
+
+  function getCornerBadge() {
+    const status = getSubscriptionStatus();
+    const cornerColors = {
+      pro: 'border-t-emerald-500',
+      trial: 'border-t-amber-500',
+      free: 'border-t-neutral-400'
+    };
+    
+    return `absolute top-0 right-0 w-0 h-0 border-l-[10px] border-l-transparent border-t-[10px] ${cornerColors[status]}`;
+  }
+
+  function getMinimalBadge() {
+    const status = getSubscriptionStatus();
+    const icons = {
+      pro: Crown,
+      trial: Clock,
+      free: null
+    };
+    const colors = {
+      pro: 'bg-emerald-500/90 text-white',
+      trial: 'bg-amber-500/90 text-white',
+      free: 'bg-neutral-400/90 text-white'
+    };
+
+    return { icon: icons[status], colorClass: colors[status] };
   }
 </script>
 
 <div class="relative">
   <button
-    class="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full"
-    onclick={toggleProfile}
-    aria-label="Toggle profile menu"
+    class="flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full transition-all duration-200 hover:scale-105"
+    onclick={toggleDrawer}
+    aria-label="Open profile"
   >
-    <Avatar.Root class="h-7 w-7">
+    <Avatar.Root class={cn(
+      "h-8 w-8 transition-all duration-200",
+      BADGE_STYLE === 'ring' && getRingClass()
+    )}>
       {#if props.user.photoURL}
         <Avatar.Image 
           src={props.user.photoURL} 
           alt="User avatar" 
         />
       {/if}
-      <Avatar.Fallback class="bg-neutral-300 text-sm dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-medium">
+      <Avatar.Fallback class="bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-medium text-sm">
         {getInitials()}
       </Avatar.Fallback>
     </Avatar.Root>
     
-    <!-- Status Badge -->
-    <div class="absolute -top-2 -right-3 rounded-md text-[0.5rem] font-bold px-1 min-w-5 h-5 flex items-center justify-center {getBadgeColor()} shadow-sm">
-      {getSubscriptionStatus()}
-    </div>
+    <!-- Badge Style A: Dot Indicator -->
+    {#if BADGE_STYLE === 'dot'}
+      <div class={getDotBadge()}></div>
+    {/if}
+
+    <!-- Badge Style C: Corner Notch -->
+    {#if BADGE_STYLE === 'corner'}
+      <div class={getCornerBadge()}></div>
+    {/if}
+
+    <!-- Badge Style D: Minimal Icon -->
+    {#if BADGE_STYLE === 'minimal'}
+      {@const minimal = getMinimalBadge()}
+      {#if minimal.icon}
+        <div class={cn(
+          "absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center",
+          minimal.colorClass
+        )}>
+          <svelte:component this={minimal.icon} class="w-2 h-2" />
+        </div>
+      {/if}
+    {/if}
   </button>
   
-  {#if showProfile}
-    <ProfileCard 
-      showProfileCard={showProfile} 
-      onToggleProfileCard={toggleProfile}
-      user={props.user}
-      isPro={props.isPro}
-      trialActive={props.trialActive}
-      trialDaysLeft={props.trialDaysLeft}
-      onSignOut={props.onSignOut}
-    />
-  {/if}
+  <!-- User Drawer -->
+  <UserDrawer 
+    isOpen={showDrawer}
+    onOpenChange={(open) => showDrawer = open}
+    user={props.user}
+    isPro={props.isPro}
+    trialActive={props.trialActive}
+    trialDaysLeft={props.trialDaysLeft}
+    onSignOut={props.onSignOut}
+  />
 </div>
