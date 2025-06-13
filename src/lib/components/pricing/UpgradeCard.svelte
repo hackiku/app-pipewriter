@@ -132,10 +132,10 @@
     
     <div class="flex items-center gap-2">
       {#if props.isPro}
-        <Crown class="h-5 w-5 text-primary" />
-        <h2 class="text-lg font-semibold">Manage Subscription</h2>
+        <!-- <Crown class="h-5 w-5 text-primary" /> -->
+        <h2 class="text-md font-semibold">Manage Subscription</h2>
       {:else}
-        <Sparkles class="h-5 w-5 text-primary" />
+        <!-- <Sparkles class="h-5 w-5 text-primary" /> -->
         <h2 class="text-lg font-semibold">Upgrade to Pro</h2>
       {/if}
     </div>

@@ -87,7 +87,7 @@
   <div class="text-center space-y-4">
     <!-- Avatar -->
     <div class="flex justify-center">
-      <Avatar.Root class="h-16 w-16">
+      <Avatar.Root class="h-12 w-12">
         {#if props.user.photoURL}
           <Avatar.Image 
             src={props.user.photoURL} 
@@ -105,8 +105,8 @@
       <h2 class="text-lg font-semibold">
         {props.user.displayName || 'User'}
       </h2>
-      <div class="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-        <Mail class="h-4 w-4" />
+      <div class="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+        <Mail class="h-3.5 w-3.5" />
         <span class="truncate">{props.user.email}</span>
       </div>
     </div>

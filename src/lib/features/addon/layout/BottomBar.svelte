@@ -38,10 +38,10 @@
   }
 </script>
 
-<div class="w-full pr-5 h-12 flex items-center justify-between">
+<div class="w-full pr-3.5 h-12 flex items-center justify-between">
   <!-- Docs Dropdown -->
   <div class="relative">
-    <Button
+    <!-- <Button
       variant="outline"
       size="sm"
       class="h-8 flex items-center gap-1"
@@ -49,7 +49,7 @@
     >
       Docs
       <ChevronDown class="h-4 w-4 transition-transform {dropdownOpen ? 'rotate-180' : ''}" />
-    </Button>
+    </Button> -->
 
     {#if dropdownOpen}
       <div 
