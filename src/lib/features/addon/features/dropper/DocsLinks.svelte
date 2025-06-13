@@ -89,11 +89,11 @@
 <div class="space-y-3 px-2 pb-4">
 	<!-- Template Documents Section -->
 	<section>
-		{#if showInfo}
+		<!-- {#if showInfo} -->
 			<h3 class="mb-2 ml-1 text-[0.7rem] font-medium uppercase tracking-wide text-muted-foreground">
-				Template Documents
+				Template Docs
 			</h3>
-		{/if}
+		<!-- {/if} -->
 
 		<!-- Documents Grid - tight 3 columns -->
 		<div class="mb-4 grid grid-cols-3 gap-1.5">
@@ -141,11 +141,11 @@
 
 	<!-- Drive Folders Section -->
 	<section>
-		{#if showInfo}
+		<!-- {#if showInfo} -->
 			<h3 class="mb-2 ml-1 text-[0.7rem] font-medium uppercase tracking-wide text-muted-foreground">
 				Drive Folders
 			</h3>
-		{/if}
+		<!-- {/if} -->
 
 		<!-- Folders Grid - same tight layout -->
 		<div class="mb-3 grid grid-cols-3 gap-1.5">

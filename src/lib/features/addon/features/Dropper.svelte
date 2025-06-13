@@ -310,16 +310,16 @@
     
     <!-- IMPROVED: Better visual separator -->
     <div class="py-3 px-2">
-      <hr class="border-border/20" />
+      <hr class="border-border" />
     </div>
 
     <!-- IMPROVED: Template Documents Section with proper bottom spacing -->
-    {#if access}
+    <!-- {#if access} -->
       <DocsLinks 
         userAccess={userAccess}
         showInfo={showInfo}
       />
-    {/if}
+    <!-- {/if} -->
 
     <!-- IMPROVED: Bottom spacer that accounts for DropperBar height -->
     <div class="h-16"></div>

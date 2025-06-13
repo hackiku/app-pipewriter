@@ -118,7 +118,7 @@
   <!-- Right side: Upgrade Button and User Avatar - same as before -->
   <div class="flex items-center gap-2 mr-2">
     <!-- Round Upgrade Button - same styling -->
-    <Button
+    <!-- <Button
       variant={isPro() ? "default" : "outline"}
       size="icon"
       class="h-6 w-6 rounded-full flex items-center justify-center
@@ -132,7 +132,7 @@
       title={isPro() ? 'Manage Subscription' : 'Upgrade to Pro'}
     >
       <Crown class="h-3 w-4" />
-    </Button>
+    </Button> -->
 
     <!-- User Avatar with props -->
     <UserAvatar 
