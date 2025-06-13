@@ -1,221 +1,202 @@
-<!-- src/lib/features/addon/features/dropper/DocsLinks.svelte - MODERNIZED -->
+<!-- src/lib/features/addon/features/dropper/DocsLinks.svelte - CLEAN -->
 <script lang="ts">
-  import { ExternalLink, Lock, FileText, Folder } from '@lucide/svelte';
-  import { cn } from '$lib/utils';
-  
-  // MODERNIZED: Import access control utilities
-  import { useAccessControl, type SerializedUserAccess } from '$lib/utils/access-control';
-  
-  // MODERNIZED: Props now receive userAccess instead of legacy userTier
-  const props = $props<{
-    userAccess?: SerializedUserAccess; // CHANGED: From userTier to userAccess
-    showInfo?: boolean;
-  }>();
+	import { ExternalLink, Crown, FileText, Folder } from '@lucide/svelte';
+	// Tooltips removed for now - will add back with simpler approach
+	import { cn } from '$lib/utils';
 
-  // MODERNIZED: Create access control utilities with fallback
-  let access = $state();
-  
-  $effect(() => {
-    if (!props.userAccess) {
-      // Fallback to free tier if userAccess is not available
-      access = useAccessControl({
-        tier: 'free',
-        isPro: false,
-        trialActive: false,
-        trialDaysLeft: 0,
-        features: {
-          elements: { canUseBasicElements: true, canUseTrialElements: false, canUseProElements: false },
-          colors: { canUseBasicColors: true, canUsePremiumColorSchemes: false, canUseDocumentBackgrounds: false, canUseTableBackgrounds: false },
-          prompts: { canCreateCustom: false, canEditOwn: false, maxCustomPrompts: 0 },
-          ai: { canUseBasicPrompts: false, canUseAdvancedPrompts: false, canGenerateContent: false },
-          export: { canExportBasic: false, canExportAdvanced: false }
-        }
-      });
-    } else {
-      access = useAccessControl(props.userAccess);
-    }
-  });
+	// Keep props for future use
+	let {
+		userAccess,
+		showInfo
+	}: {
+		userAccess?: any;
+		showInfo?: boolean;
+	} = $props();
 
-  // Template documents - URLs embedded here
-  const templateDocs = [
-    {
-      id: 'starter-template',
-      title: 'Starter',
-      description: 'Basic wireframe template',
-      url: 'https://docs.google.com/document/d/1VsjRgy_dAccHhRF2iG_jEknv8bQn6t47wX3GD-_uoaQ',
-      tier: 'free',
-      type: 'doc'
-    },
-    {
-      id: 'pro-template',
-      title: 'Pro',
-      description: 'Advanced design template',
-      url: 'https://docs.google.com/document/d/1hjIdUjCRPGLFJhK6NNmV24zxZxGivWOQX959aUPfXR0',
-      tier: 'pro',
-      type: 'doc'
-    },
-    {
-      id: 'dark-template',
-      title: 'Dark',
-      description: 'Dark theme template',
-      url: 'https://docs.google.com/document/d/1MBSDZ7EDJ4JBenwoUnna5dbbXr7oCAOv1__m8LVJfSA',
-      tier: 'pro',
-      type: 'doc'
-    }
-  ];
+	// Template documents with REAL links
+	const templateDocs = [
+		{
+			id: 'starter-template',
+			title: 'Starter',
+			description:
+				'Basic wireframe elements and layouts for getting started with content-first design',
+			url: 'https://docs.google.com/document/d/1VsjRgy_dAccHhRF2iG_jEknv8bQn6t47wX3GD-_uoaQ',
+			tier: 'free',
+			type: 'doc'
+		},
+		{
+			id: 'pro-template',
+			title: 'Pro',
+			description:
+				'Advanced wireframe system with complex layouts, data tables, and premium components',
+			url: 'https://docs.google.com/document/d/1hjIdUjCRPGLFJhK6NNmV24zxZxGivWOQX959aUPfXR0',
+			tier: 'pro',
+			type: 'doc'
+		},
+		{
+			id: 'dark-template',
+			title: 'Dark',
+			description: 'Complete dark-mode wireframe collection for modern app and website designs',
+			url: 'https://docs.google.com/document/d/1MBSDZ7EDJ4JBenwoUnna5dbbXr7oCAOv1__m8LVJfSA',
+			tier: 'pro',
+			type: 'doc'
+		}
+	];
 
-  // Drive folders - all pro tier
-  const driveFolders = [
-    {
-      id: 'pro-folder',
-      title: 'Pro Templates',
-      description: 'Premium template collection',
-      url: 'https://drive.google.com/drive/folders/1pro-templates-folder',
-      tier: 'pro',
-      type: 'drive'
-    },
-    {
-      id: 'prompts-folder', 
-      title: 'AI Prompts',
-      description: 'Curated prompt library',
-      url: 'https://drive.google.com/drive/folders/1prompts-library-folder',
-      tier: 'pro',
-      type: 'drive'
-    },
-    {
-      id: 'samples-folder',
-      title: 'Sample Docs',
-      description: 'Real-world examples',
-      url: 'https://drive.google.com/drive/folders/1samples-examples-folder',
-      tier: 'pro',
-      type: 'drive'
-    }
-  ];
+	// Drive folders with REAL links
+	const driveFolders = [
+		{
+			id: 'pro-folder',
+			title: 'Pro Templates',
+			description: 'Complete collection of 100+ premium wireframe elements organized by category',
+			url: 'https://drive.google.com/drive/folders/1dxgvwlakeZpK9nwP4Uu4MfQefn6Uz5Ur',
+			tier: 'pro',
+			type: 'drive'
+		},
+		{
+			id: 'prompts-folder',
+			title: 'AI Prompts',
+			description: 'Curated library of copywriting and UX writing prompts for content generation',
+			url: 'https://drive.google.com/drive/folders/1WYJObf1OWdxrFFWYyxc6aAAP2TZShm-L',
+			tier: 'pro',
+			type: 'drive'
+		},
+		{
+			id: 'samples-folder',
+			title: 'Sample Docs',
+			description: 'Real-world examples and case studies from successful copywriting projects',
+			url: 'https://drive.google.com/drive/folders/1egnPOFg2I4dRn4v87GUC00WAwQxXrjHb',
+			tier: 'pro',
+			type: 'drive'
+		}
+	];
 
-  // MODERNIZED: Check if item is locked using centralized access control
-  function isLocked(tier: string): boolean {
-    if (!access) return tier !== 'free'; // Fallback behavior
-    
-    // UPDATED: Use centralized access control (trial users get full access)
-    return !access.canUseElement(tier);
-  }
+	// Handle link clicks
+	function handleLinkClick(url: string) {
+		window.open(url, '_blank');
+	}
 
-  // Handle link clicks - always open (even if locked for preview)
-  function handleLinkClick(url: string) {
-    window.open(url, '_blank');
-  }
-
-  // Get appropriate icon for item type
-  function getItemIcon(type: string, tier: string) {
-    if (type === 'drive') return Folder;
-    return FileText;
-  }
-
-  // MODERNIZED: Card styling with access control awareness
-  function getCardClass(tier: string) {
-    const baseClass = "group relative w-full h-20 p-3 rounded-lg border transition-all duration-200 cursor-pointer";
-    const themeClass = "bg-card hover:bg-accent border-border";
-    const lockClass = isLocked(tier) ? "opacity-75" : "";
-    const hoverClass = "hover:-translate-y-0.5 hover:shadow-md";
-    
-    return cn(baseClass, themeClass, lockClass, hoverClass);
-  }
+	// CLEAN: Simple card styling for 300px width
+	function getCardClass() {
+		return cn(
+			'group relative w-full h-16 p-2 rounded-lg border transition-all duration-200 cursor-pointer',
+			'bg-card hover:bg-accent border-border',
+			'hover:-translate-y-0.5 hover:shadow-sm'
+		);
+	}
 </script>
 
-{#if access}
-  <div class="space-y-4 px-2">
-    <!-- Template Documents Section -->
-    <section>
-      <!-- Category Header - always visible -->
-      <h3 class="mb-3 ml-2 text-xs font-normal capitalize text-neutral-400 dark:text-neutral-500">
-        Template Documents ({templateDocs.length})
-      </h3>
+<div class="space-y-3 px-2 pb-4">
+	<!-- Template Documents Section -->
+	<section>
+		{#if showInfo}
+			<h3 class="mb-2 ml-1 text-[0.7rem] font-medium uppercase tracking-wide text-muted-foreground">
+				Template Documents
+			</h3>
+		{/if}
 
-      <!-- Documents Grid - always 3 columns -->
-      <div class="grid grid-cols-3 gap-2 mb-6">
-        {#each templateDocs as doc}
-          <!-- svelte-ignore a11y_click_events_have_key_events -->
-          <!-- svelte-ignore a11y_no_static_element_interactions -->
-          <div
-            class={getCardClass(doc.tier)}
-            onclick={() => handleLinkClick(doc.url)}
-          >
-            <!-- Content -->
-            <div class="flex flex-col h-full">
-              <!-- Header with icon and lock -->
-              <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center gap-2">
-                  <FileText class="h-4 w-4 text-blue-600" />
-                  <span class="text-xs font-medium truncate">{doc.title}</span>
-                </div>
-                
-                <!-- MODERNIZED: Lock indicator using centralized access control -->
-                {#if isLocked(doc.tier)}
-                  <div class="bg-background/90 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-1">
-                    <Lock class="h-3 w-3 text-muted-foreground" />
-                    <span class="text-xs text-muted-foreground font-medium">
-                      {doc.tier === 'pro' ? 'Pro' : 'Trial'}
-                    </span>
-                  </div>
-                {/if}
-              </div>
+		<!-- Documents Grid - tight 3 columns -->
+		<div class="mb-4 grid grid-cols-3 gap-1.5">
+			{#each templateDocs as doc}
+				<!-- svelte-ignore a11y_click_events_have_key_events -->
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<div
+					class={getCardClass()}
+					onclick={() => handleLinkClick(doc.url)}
+					title={doc.description}
+				>
+					<div class="flex h-full flex-col justify-between">
+						<!-- Header with Google Docs icon -->
+						<div class="relative flex items-center justify-between">
+							<div class="flex min-w-0 flex-col items-start gap-1">
+								<img
+									src="/icons/google-docs.svg"
+									alt="Google Docs"
+									class="h-4 w-4 flex-shrink-0"
+								/>
+								<span class="truncate text-xs font-medium">{doc.title}</span>
+							</div>
 
-              <!-- External link indicator -->
-              <div class="flex justify-end mt-2">
-                <ExternalLink class="h-3 w-3 text-muted-foreground/60 group-hover:text-muted-foreground transition-colors" />
-              </div>
-            </div>
-          </div>
-        {/each}
-      </div>
-    </section>
+							<!-- Crown for pro items -->
+							{#if doc.tier === 'pro'}
+								<div
+									class="absolute -right-1 -top-1 flex items-center gap-0.5 rounded px-1 py-0.5 backdrop-blur-sm"
+								>
+									<Crown class="h-2.5 w-2.5 text-amber-600" />
+								</div>
+							{/if}
+						</div>
 
-    <!-- Drive Folders Section -->
-    <section>
-      <!-- Category Header -->
-      <h3 class="mb-3 ml-2 text-xs font-normal capitalize text-neutral-400 dark:text-neutral-500">
-        Drive Folders ({driveFolders.length})
-      </h3>
+						<!-- Bottom right external link -->
+						<div class="flex justify-end">
+							<ExternalLink
+								class="h-2.5 w-2.5 text-muted-foreground/60 transition-colors group-hover:text-muted-foreground"
+							/>
+						</div>
+					</div>
+				</div>
+			{/each}
+		</div>
+	</section>
 
-      <!-- Folders Grid - always 3 columns -->
-      <div class="grid grid-cols-3 gap-2">
-        {#each driveFolders as folder}
-          <!-- svelte-ignore a11y_click_events_have_key_events -->
-          <!-- svelte-ignore a11y_no_static_element_interactions -->
-          <div
-            class={getCardClass(folder.tier)}
-            onclick={() => handleLinkClick(folder.url)}
-          >
-            <!-- Content -->
-            <div class="flex flex-col h-full">
-              <!-- Header with folder icon and lock -->
-              <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center gap-2">
-                  <Folder class="h-4 w-4 text-amber-600" />
-                  <span class="text-xs font-medium truncate">{folder.title}</span>
-                </div>
-                
-                <!-- MODERNIZED: All folders are pro - show lock for free users only -->
-                {#if isLocked(folder.tier)}
-                  <div class="bg-background/90 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-1">
-                    <Lock class="h-3 w-3 text-muted-foreground" />
-                    <span class="text-xs text-muted-foreground font-medium">Pro</span>
-                  </div>
-                {/if}
-              </div>
+	<!-- Drive Folders Section -->
+	<section>
+		{#if showInfo}
+			<h3 class="mb-2 ml-1 text-[0.7rem] font-medium uppercase tracking-wide text-muted-foreground">
+				Drive Folders
+			</h3>
+		{/if}
 
-              <!-- External link indicator -->
-              <div class="flex justify-end mt-2">
-                <ExternalLink class="h-3 w-3 text-muted-foreground/60 group-hover:text-muted-foreground transition-colors" />
-              </div>
-            </div>
-          </div>
-        {/each}
-      </div>
-    </section>
-  </div>
-{:else}
-  <div class="p-4 text-center">
-    <p class="text-muted-foreground text-sm">Loading templates...</p>
-  </div>
-{/if}
+		<!-- Folders Grid - same tight layout -->
+		<div class="mb-3 grid grid-cols-3 gap-1.5">
+			{#each driveFolders as folder}
+				<!-- svelte-ignore a11y_click_events_have_key_events -->
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<div
+					class={getCardClass()}
+					onclick={() => handleLinkClick(folder.url)}
+					title={folder.description}
+				>
+					<div class="flex h-full flex-col justify-between">
+						<!-- Header with Google Drive icon -->
+						<div class="relative flex items-center justify-between">
+							<div class="flex min-w-0 flex-col items-start gap-1">
+								<img
+									src="/icons/google-drive.svg"
+									alt="Google Drive"
+									class="h-4 w-4 flex-shrink-0"
+								/>
+								<span class="truncate text-[0.7rem] font-medium">{folder.title}</span>
+							</div>
+
+							<!-- Crown for pro folders -->
+							{#if folder.tier === 'pro'}
+								<div
+									class="absolute -right-1 -top-1 flex items-center gap-0.5 rounded px-1 py-0.5 backdrop-blur-sm"
+								>
+									<Crown class="h-2.5 w-2.5 text-amber-600" />
+								</div>
+							{/if}
+						</div>
+
+						<!-- Bottom right external link -->
+						<div class="flex justify-end">
+							<ExternalLink
+								class="h-2.5 w-2.5 text-muted-foreground/60 transition-colors group-hover:text-muted-foreground"
+							/>
+						</div>
+					</div>
+				</div>
+			{/each}
+		</div>
+
+		<!-- Bottom CTA copy -->
+		<div class="mt-3 px-1">
+			<p class="text-center text-[0.6rem] leading-relaxed text-muted-foreground">
+				Pro templates include 100+ elements. 
+				<a href="https://pipewriter.io/pricing" target="_blank"
+				class="border-b border-foreground/20 hover:border-foreground hover:font-bold">See pricing</a>  →
+			</p>
+		</div>
+	</section>
+</div>

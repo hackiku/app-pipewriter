@@ -1,4 +1,4 @@
-<!-- src/lib/features/addon/features/Dropper.svelte - MODERNIZED -->
+<!-- src/lib/features/addon/features/Dropper.svelte - IMPROVED SPACING -->
 <script lang="ts">
   import { fade, slide, fly } from "svelte/transition";
   import type { ElementTheme, StatusUpdate } from '$lib/types/elements';
@@ -285,9 +285,10 @@
 </script>
 
 <div class="relative h-full z-0 bg-neutral-100/50 dark:bg-neutral-800/50">
-  <!-- Main Container -->
-  <div class="h-full __pb-8 pt-2 overflow-y-auto scrollbar-none">
+  <!-- IMPROVED: Main Container with better spacing -->
+  <div class="h-full pt-2 overflow-y-auto scrollbar-none">
     {#if access}
+      <!-- Elements Grid -->
       <DropperGrid 
         isProcessing={isProcessing}
         context={context}
@@ -307,22 +308,25 @@
       </div>
     {/if}
     
-    <!-- Spacer and Divider -->
-    <div class="py-4 px-2">
-      <hr class="border-border/30" />
+    <!-- IMPROVED: Better visual separator -->
+    <div class="py-3 px-2">
+      <hr class="border-border/20" />
     </div>
 
-    <!-- Template Documents Section -->
+    <!-- IMPROVED: Template Documents Section with proper bottom spacing -->
     {#if access}
       <DocsLinks 
         userAccess={userAccess}
         showInfo={showInfo}
       />
     {/if}
+
+    <!-- IMPROVED: Bottom spacer that accounts for DropperBar height -->
+    <div class="h-16"></div>
   </div>
 
   <!-- Bottom Control Bar -->
-  <div class="w-full transition-all duration-200">
+  <div class="absolute bottom-0 left-0 right-0 w-full transition-all duration-200">
     <DropperBar 
       isProcessing={isProcessing}
       theme={elementsTheme}

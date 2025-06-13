@@ -154,7 +154,7 @@
             <!-- Pricing -->
             <div class="text-center p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg border">
               <div class="space-y-1">
-                <p class="text-2xl font-bold">$9<span class="text-lg font-normal text-muted-foreground">/month</span></p>
+                <p class="text-2xl font-bold">$10<span class="text-lg font-normal text-muted-foreground">/month</span></p>
                 <p class="text-sm text-muted-foreground">Pro Tester Plan</p>
               </div>
             </div>
