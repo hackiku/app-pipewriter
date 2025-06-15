@@ -14,7 +14,7 @@ async function seedProduction() {
 	try {
 		// Import using the correct paths
 		const { seedElements } = await import('./seed/seed-elements.ts');
-		const { seedSimplePrompts } = await import('./seed/simple-prompts.ts');
+		const { seedSimplePrompts } = await import('./seed/seed-prompts.ts');
 
 		console.log('📦 Seeding elements...');
 		const elementsSuccess = await seedElements();
