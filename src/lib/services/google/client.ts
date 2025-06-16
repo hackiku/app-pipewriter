@@ -1,5 +1,5 @@
 // src/lib/services/google/client.ts
-import type { StatusUpdate, ApiResponse } from '$lib/data/addon/types';
+import type { StatusUpdate, ApiResponse } from '$lib/types/elements';
 import type { GasFunction } from '$lib/data/addon/functions';
 
 export type StatusCallback = (status: StatusUpdate) => void;
