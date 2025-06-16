@@ -1,6 +1,6 @@
 <!-- src/lib/features/addon/features/ai/PromptControls.svelte -->
 <script lang="ts">
-	import { Copy, Plus, ArrowLeft, Play, Edit } from "@lucide/svelte";
+	import { Copy, Edit, ArrowLeft, Play, Save } from "@lucide/svelte";
 	import { Button } from "$lib/components/ui/button";
 
 	const props = $props<{
@@ -10,7 +10,7 @@
 		onSave?: () => void;
 		onEdit?: () => void;
 		disabled?: boolean;
-		mode?: 'view' | 'edit'; // view = copy/drop/edit, edit = save/drop
+		mode?: 'view' | 'edit'; // view = edit/copy/drop, edit = save (drop handled elsewhere)
 	}>();
 </script>
 
@@ -28,47 +28,39 @@
 		</Button>
 	{/if}
 
-	<!-- Right Side Actions -->
-	<div class="ml-auto flex items-center gap-1">
-		{#if props.mode === 'edit'}
-			<!-- Edit Mode: Save + Drop -->
+	{#if props.mode === 'edit'}
+		<!-- Edit Mode: Just Save (Drop handled by editor itself) -->
+		<div class="ml-auto flex items-center gap-1">
 			{#if props.onSave}
 				<Button 
-					variant="outline" 
 					size="sm" 
-					class="h-7 px-2"
+					class="h-7 px-3 gap-1"
 					onclick={props.onSave}
 					disabled={props.disabled}
 				>
+					<Save class="h-3 w-3" />
 					<span class="text-xs">Save</span>
 				</Button>
 			{/if}
-			
-			{#if props.onDrop}
-				<Button 
-					size="sm" 
-					class="h-7 px-2 gap-1"
-					onclick={props.onDrop}
-					disabled={props.disabled}
-				>
-					<Play class="h-3 w-3" />
-					<span class="text-xs">Drop</span>
-				</Button>
-			{/if}
-		{:else}
-			<!-- View Mode: Copy + Edit + Drop -->
+		</div>
+	{:else}
+		<!-- View Mode: Edit (left) + Copy + Drop (right) -->
+		<div class="flex items-center gap-1">
 			{#if props.onEdit}
 				<Button 
 					variant="outline" 
 					size="sm" 
-					class="h-7 w-7 p-0"
+					class="h-7 px-2 gap-1"
 					onclick={props.onEdit}
 					disabled={props.disabled}
 				>
 					<Edit class="h-3 w-3" />
+					<span class="text-xs">Edit</span>
 				</Button>
 			{/if}
-			
+		</div>
+
+		<div class="ml-auto flex items-center gap-1">
 			{#if props.onCopy}
 				<Button 
 					variant="secondary" 
@@ -88,10 +80,10 @@
 					onclick={props.onDrop}
 					disabled={props.disabled}
 				>
-					<Plus class="h-3 w-3" />
+					<Play class="h-3 w-3" />
 					<span class="text-xs">Drop</span>
 				</Button>
 			{/if}
-		{/if}
-	</div>
+		</div>
+	{/if}
 </div>
