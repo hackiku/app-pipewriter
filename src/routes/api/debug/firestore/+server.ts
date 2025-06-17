@@ -3,10 +3,11 @@ import { json } from '@sveltejs/kit';
 import { adminFirestore } from '$lib/server/firebase-admin';
 import { dev } from '$app/environment';
 
-export async function GET() {
-	// Only allow in development or if explicitly enabled
-	if (!dev && !process.env.ENABLE_DEBUG_ENDPOINTS) {
-		return json({ error: 'Debug endpoints not enabled' }, { status: 403 });
+export async function GET({ url }) {
+	// Allow with secret parameter in production
+	const secret = url.searchParams.get('secret');
+	if (!dev && secret !== 'debug123') {
+		return json({ error: 'Unauthorized' }, { status: 401 });
 	}
 
 	try {
