@@ -12,8 +12,9 @@ interface SeedOptions {
 }
 
 // Environment detection
+// Environment detection - FIXED VERSION
 function detectEnvironment(): 'dev' | 'prod' {
-	// Check explicit flags first
+	// Check explicit flags first (these should take priority)
 	if (process.env.USE_FIREBASE_EMULATOR === 'true') return 'dev';
 	if (process.env.USE_FIREBASE_EMULATOR === 'false') return 'prod';
 
@@ -21,20 +22,24 @@ function detectEnvironment(): 'dev' | 'prod' {
 	if (process.env.NODE_ENV === 'production') return 'prod';
 	if (process.env.NODE_ENV === 'development') return 'dev';
 
-	// Check for emulator environment variables
+	// FIXED: Don't check for emulator env vars when --prod is explicit
+	// Check for production service account FIRST
+	if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+		console.log('🔍 Found FIREBASE_SERVICE_ACCOUNT, defaulting to prod');
+		return 'prod';
+	}
+
+	// Check for emulator environment variables (only if no service account)
 	if (process.env.FIRESTORE_EMULATOR_HOST || process.env.FIREBASE_AUTH_EMULATOR_HOST) {
 		return 'dev';
 	}
-
-	// Check for production service account
-	if (process.env.FIREBASE_SERVICE_ACCOUNT) return 'prod';
 
 	// Default to dev for safety
 	console.log('⚠️  Could not detect environment, defaulting to dev');
 	return 'dev';
 }
 
-// Parse command line arguments
+// Parse command line arguments - FIXED VERSION
 function parseArgs(): SeedOptions {
 	const args = process.argv.slice(2);
 
@@ -44,8 +49,16 @@ function parseArgs(): SeedOptions {
 	let verbose = false;
 
 	args.forEach(arg => {
-		if (arg === '--dev' || arg === '-d') environment = 'dev';
-		if (arg === '--prod' || arg === '-p') environment = 'prod';
+		if (arg === '--dev' || arg === '-d') {
+			environment = 'dev';
+			// FIXED: Explicitly set emulator flag for dev
+			process.env.USE_FIREBASE_EMULATOR = 'true';
+		}
+		if (arg === '--prod' || arg === '-p') {
+			environment = 'prod';
+			// FIXED: Explicitly disable emulator for prod
+			process.env.USE_FIREBASE_EMULATOR = 'false';
+		}
 		if (arg === '--force' || arg === '-f') force = true;
 		if (arg === '--verbose' || arg === '-v') verbose = true;
 		if (arg === '--elements') targets = ['elements'];
@@ -55,6 +68,7 @@ function parseArgs(): SeedOptions {
 
 	return { environment, targets, force, verbose };
 }
+
 
 // Safety checks
 function validateEnvironment(environment: 'dev' | 'prod'): boolean {

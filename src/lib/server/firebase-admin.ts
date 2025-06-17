@@ -1,4 +1,4 @@
-// src/lib/server/firebase-admin.ts
+// src/lib/server/firebase-admin.ts - FIXED CLOUD CONNECTION
 
 import { getApps, initializeApp, cert, type App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
@@ -11,7 +11,7 @@ let isBuildTime = false;
 // FIXED: Proper build-time vs runtime detection
 isBuildTime = process.env.BUILDING === 'true' ||
 	process.argv.some(arg => arg.includes('build')) ||
-	process.env.VITE_BUILDING === 'true'; // SvelteKit build detection
+	process.env.VITE_BUILDING === 'true';
 
 if (isBuildTime) {
 	console.log(`🔥 Firebase Admin: BUILD TIME (analysis only)`);
@@ -42,13 +42,13 @@ function getAdminApp(): App {
 
 	// BUILD TIME: Use minimal config for static analysis only
 	if (isBuildTime) {
-		return initializeApp({ projectId: 'pipewriter' });
+		return initializeApp({ projectId: 'pipewriter-app' }); // FIXED: Use correct project ID
 	}
 
 	// RUNTIME DEV: Use emulator
 	if (isDev) {
 		console.log('🔧 Using Firebase emulator in development');
-		return initializeApp({ projectId: 'pipewriter' });
+		return initializeApp({ projectId: 'pipewriter-app' }); // FIXED: Use correct project ID
 	}
 
 	// RUNTIME PRODUCTION: Require service account
@@ -66,7 +66,7 @@ function getAdminApp(): App {
 
 		return initializeApp({
 			credential: cert(parsedAccount),
-			projectId: 'pipewriter'
+			projectId: 'pipewriter-app' // FIXED: Use correct project ID
 		});
 	} catch (parseError) {
 		console.error('❌ Failed to parse FIREBASE_SERVICE_ACCOUNT JSON:', parseError);
@@ -78,7 +78,7 @@ const app = getAdminApp();
 export const adminAuth = getAuth(app);
 export const adminFirestore = getFirestore(app);
 
-// Emulator setup (only in dev, not during build)
+// FIXED: Only configure emulators in dev AND not during build
 if (isDev && !isBuildTime) {
 	console.log('🔧 Configuring Firebase emulators');
 	process.env.FIREBASE_AUTH_EMULATOR_HOST = "localhost:9099";
@@ -88,5 +88,19 @@ if (isDev && !isBuildTime) {
 		adminFirestore.settings({ host: 'localhost:8080', ssl: false });
 	} catch (error) {
 		console.warn('⚠️ Could not configure Firestore emulator settings:', error.message);
+	}
+} else if (!isDev && !isBuildTime) {
+	// PRODUCTION: Explicitly clear emulator settings
+	console.log('🌐 Configuring Firebase for PRODUCTION');
+	delete process.env.FIREBASE_AUTH_EMULATOR_HOST;
+	delete process.env.FIRESTORE_EMULATOR_HOST;
+
+	// Ensure Firestore uses production settings
+	try {
+		adminFirestore.settings({
+			ignoreUndefinedProperties: true
+		});
+	} catch (error) {
+		console.warn('⚠️ Could not configure Firestore production settings:', error.message);
 	}
 }

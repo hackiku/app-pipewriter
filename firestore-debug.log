@@ -30,3 +30,34 @@ Jun 17, 2025 9:59:06 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channe
 INFO: Detected HTTP/2 connection.
 Jun 17, 2025 9:59:37 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
 INFO: Detected HTTP/2 connection.
+Jun 17, 2025 10:00:24 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected HTTP/2 connection.
+Jun 17, 2025 10:00:42 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected HTTP/2 connection.
+Jun 17, 2025 10:03:17 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected HTTP/2 connection.
+Jun 17, 2025 10:03:23 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected HTTP/2 connection.
+Jun 17, 2025 10:03:32 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected HTTP/2 connection.
+Jun 17, 2025 10:09:19 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected HTTP/2 connection.
+Multiple projectIds are not recommended in single project mode. Requested project ID pipewriter-app, but the emulator is configured for pipewriter. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
+Multiple projectIds are not recommended in single project mode. Requested project ID pipewriter-app, but the emulator is configured for pipewriter. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
+Multiple projectIds are not recommended in single project mode. Requested project ID pipewriter-app, but the emulator is configured for pipewriter. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
+Multiple projectIds are not recommended in single project mode. Requested project ID pipewriter-app, but the emulator is configured for pipewriter. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
+Jun 17, 2025 10:10:12 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected HTTP/2 connection.
+Multiple projectIds are not recommended in single project mode. Requested project ID pipewriter-app, but the emulator is configured for pipewriter. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
+Multiple projectIds are not recommended in single project mode. Requested project ID pipewriter-app, but the emulator is configured for pipewriter. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
+Multiple projectIds are not recommended in single project mode. Requested project ID pipewriter-app, but the emulator is configured for pipewriter. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
+Multiple projectIds are not recommended in single project mode. Requested project ID pipewriter-app, but the emulator is configured for pipewriter. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
+Jun 17, 2025 10:10:29 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected HTTP/2 connection.
+Multiple projectIds are not recommended in single project mode. Requested project ID pipewriter-app, but the emulator is configured for pipewriter. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
+Jun 17, 2025 10:11:17 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected HTTP/2 connection.
+Multiple projectIds are not recommended in single project mode. Requested project ID pipewriter-app, but the emulator is configured for pipewriter. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
+Multiple projectIds are not recommended in single project mode. Requested project ID pipewriter-app, but the emulator is configured for pipewriter. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
+Multiple projectIds are not recommended in single project mode. Requested project ID pipewriter-app, but the emulator is configured for pipewriter. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
+Multiple projectIds are not recommended in single project mode. Requested project ID pipewriter-app, but the emulator is configured for pipewriter. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
