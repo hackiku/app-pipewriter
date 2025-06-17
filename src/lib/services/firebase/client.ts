@@ -10,13 +10,13 @@ import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-	apiKey: "AIzaSyAk6KQXu1lJ0LUNFiJQYVqt_licw99KWeE",
-	authDomain: "pipewriter.firebaseapp.com",
-	projectId: "pipewriter",
-	storageBucket: "pipewriter.firebasestorage.app",
-	messagingSenderId: "367706147083",
-	appId: "1:367706147083:web:e628e01f31cac4f355fa0e",
-	measurementId: "G-JBCLW4SLJQ"
+	apiKey: "AIzaSyAtLmu0o_oMg4TUXO7xUERPdIx-be_ZCxA",
+	authDomain: "pipewriter-app.firebaseapp.com",
+	projectId: "pipewriter-app",
+	storageBucket: "pipewriter-app.firebasestorage.app",
+	messagingSenderId: "947838557985",
+	appId: "1:947838557985:web:b2cb45f15b9792b27aa860",
+	measurementId: "G-3P7NB95Z19"
 };
 
 // Singleton pattern similar to your GoogleAppsService
