@@ -1,106 +1,86 @@
-// src/lib/server/firebase-admin.ts - FIXED CLOUD CONNECTION
+// src/lib/server/firebase-admin.ts - CLEAN & SIMPLE
 
 import { getApps, initializeApp, cert, type App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
-let isDev = false;
-let isScript = false;
+// SIMPLE: Just check the actual environment
+let isProduction = false;
 let isBuildTime = false;
 
-// FIXED: Proper build-time vs runtime detection
+// Build time detection
 isBuildTime = process.env.BUILDING === 'true' ||
 	process.argv.some(arg => arg.includes('build')) ||
 	process.env.VITE_BUILDING === 'true';
 
 if (isBuildTime) {
-	console.log(`🔥 Firebase Admin: BUILD TIME (analysis only)`);
+	console.log('🔥 Firebase Admin: BUILD TIME');
 } else {
-	// RUNTIME: Detect dev vs production properly
-	try {
-		if (typeof process !== 'undefined' && process.env.USE_FIREBASE_EMULATOR) {
-			// Script mode with explicit emulator flag
-			isScript = true;
-			isDev = process.env.USE_FIREBASE_EMULATOR === 'true';
-		} else {
-			// SvelteKit runtime - use proper import
-			const { dev } = await import('$app/environment');
-			isDev = dev;
-		}
-	} catch {
-		// Fallback for standalone scripts
-		isScript = true;
-		isDev = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
-	}
-
-	console.log(`🔥 Firebase Admin: ${isDev ? 'EMULATOR' : 'PRODUCTION'} (${isScript ? 'script' : 'sveltekit'})`);
+	// SIMPLE LOGIC: Production if service account exists, dev if not
+	isProduction = !!process.env.FIREBASE_SERVICE_ACCOUNT;
+	console.log(`🔥 Firebase Admin: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
 }
 
 function getAdminApp(): App {
 	const apps = getApps();
 	if (apps.length > 0) return apps[0];
 
-	// BUILD TIME: Use minimal config for static analysis only
+	// Build time: minimal config
 	if (isBuildTime) {
-		return initializeApp({ projectId: 'pipewriter-app' }); // FIXED: Use correct project ID
+		return initializeApp({ projectId: 'pipewriter-app' });
 	}
 
-	// RUNTIME DEV: Use emulator
-	if (isDev) {
-		console.log('🔧 Using Firebase emulator in development');
-		return initializeApp({ projectId: 'pipewriter-app' }); // FIXED: Use correct project ID
+	// Production: use service account
+	if (isProduction) {
+		console.log('🌐 Initializing for PRODUCTION with service account');
+
+		const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+		if (!serviceAccount) {
+			throw new Error('FIREBASE_SERVICE_ACCOUNT required for production');
+		}
+
+		try {
+			const parsedAccount = JSON.parse(serviceAccount);
+			console.log(`✅ Service account loaded for project: ${parsedAccount.project_id}`);
+
+			return initializeApp({
+				credential: cert(parsedAccount),
+				projectId: 'pipewriter-app'
+			});
+		} catch (error) {
+			console.error('❌ Invalid service account JSON:', error.message);
+			throw new Error('Invalid FIREBASE_SERVICE_ACCOUNT format');
+		}
 	}
 
-	// RUNTIME PRODUCTION: Require service account
-	console.log('🔥 Initializing Firebase Admin for PRODUCTION');
-	const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
-	if (!serviceAccount) {
-		console.error('❌ FIREBASE_SERVICE_ACCOUNT environment variable not found');
-		console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('FIREBASE')));
-		throw new Error('FIREBASE_SERVICE_ACCOUNT required for production runtime');
-	}
-
-	try {
-		const parsedAccount = JSON.parse(serviceAccount);
-		console.log('✅ Service account parsed successfully for project:', parsedAccount.project_id);
-
-		return initializeApp({
-			credential: cert(parsedAccount),
-			projectId: 'pipewriter-app' // FIXED: Use correct project ID
-		});
-	} catch (parseError) {
-		console.error('❌ Failed to parse FIREBASE_SERVICE_ACCOUNT JSON:', parseError);
-		throw new Error('Invalid FIREBASE_SERVICE_ACCOUNT JSON format');
-	}
+	// Development: use emulator
+	console.log('🔧 Initializing for DEVELOPMENT with emulator');
+	return initializeApp({ projectId: 'pipewriter-app' });
 }
 
+// Initialize
 const app = getAdminApp();
 export const adminAuth = getAuth(app);
 export const adminFirestore = getFirestore(app);
 
-// FIXED: Only configure emulators in dev AND not during build
-if (isDev && !isBuildTime) {
+// Configure emulators ONLY in development
+if (!isBuildTime && !isProduction) {
 	console.log('🔧 Configuring Firebase emulators');
+
+	// Set emulator environment variables
 	process.env.FIREBASE_AUTH_EMULATOR_HOST = "localhost:9099";
 	process.env.FIRESTORE_EMULATOR_HOST = "localhost:8080";
 
-	try {
-		adminFirestore.settings({ host: 'localhost:8080', ssl: false });
-	} catch (error) {
-		console.warn('⚠️ Could not configure Firestore emulator settings:', error.message);
-	}
-} else if (!isDev && !isBuildTime) {
-	// PRODUCTION: Explicitly clear emulator settings
-	console.log('🌐 Configuring Firebase for PRODUCTION');
-	delete process.env.FIREBASE_AUTH_EMULATOR_HOST;
-	delete process.env.FIRESTORE_EMULATOR_HOST;
-
-	// Ensure Firestore uses production settings
+	// Configure Firestore to use emulator
 	try {
 		adminFirestore.settings({
-			ignoreUndefinedProperties: true
+			host: 'localhost:8080',
+			ssl: false
 		});
+		console.log('✅ Firestore configured for emulator');
 	} catch (error) {
-		console.warn('⚠️ Could not configure Firestore production settings:', error.message);
+		console.warn('⚠️ Could not configure Firestore emulator:', error.message);
 	}
+} else if (isProduction) {
+	console.log('🌐 Configured for production Firebase');
 }

@@ -1,4 +1,4 @@
-// src/lib/services/firebase/client.ts
+// src/lib/services/firebase/client.ts - CLEAN & SIMPLE
 
 import { browser } from '$app/environment';
 import { dev } from '$app/environment';
@@ -8,7 +8,7 @@ import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getDatabase, connectDatabaseEmulator } from 'firebase/database';
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 
-// Your web app's Firebase configuration
+// Your web app's Firebase configuration - FIXED for new project
 const firebaseConfig = {
 	apiKey: "AIzaSyAtLmu0o_oMg4TUXO7xUERPdIx-be_ZCxA",
 	authDomain: "pipewriter-app.firebaseapp.com",
@@ -19,7 +19,6 @@ const firebaseConfig = {
 	measurementId: "G-3P7NB95Z19"
 };
 
-// Singleton pattern similar to your GoogleAppsService
 class FirebaseService {
 	private static instance: FirebaseService;
 	public app: any;
@@ -27,6 +26,7 @@ class FirebaseService {
 	public db: any;
 	public rtdb: any;
 	public functions: any;
+	private emulatorsConnected = false;
 
 	private constructor() {
 		if (!browser) return;
@@ -37,12 +37,25 @@ class FirebaseService {
 		this.rtdb = getDatabase(this.app);
 		this.functions = getFunctions(this.app);
 
-		// Connect to emulators in development mode
-		if (dev) {
-			connectAuthEmulator(this.auth, 'http://localhost:9099');
+		// FIXED: Only connect to emulators in dev mode and only once
+		if (dev && !this.emulatorsConnected) {
+			this.connectToEmulators();
+		}
+	}
+
+	private connectToEmulators() {
+		try {
+			console.log('🔧 Connecting to Firebase emulators...');
+
+			connectAuthEmulator(this.auth, 'http://localhost:9099', { disableWarnings: true });
 			connectFirestoreEmulator(this.db, 'localhost', 8080);
 			connectDatabaseEmulator(this.rtdb, 'localhost', 9000);
 			connectFunctionsEmulator(this.functions, 'localhost', 5001);
+
+			this.emulatorsConnected = true;
+			console.log('✅ Connected to Firebase emulators');
+		} catch (error) {
+			console.warn('⚠️ Could not connect to emulators:', error.message);
 		}
 	}
 
@@ -54,7 +67,6 @@ class FirebaseService {
 	}
 }
 
-// Export a helper function for convenience
 export function getFirebaseService(): FirebaseService {
 	return FirebaseService.getInstance();
 }
