@@ -1,9 +1,9 @@
-<!-- src/lib/features/addon/features/ai/PromptDropdown.svelte - WITH DROP FUNCTIONALITY -->
+<!-- src/lib/features/addon/features/ai/PromptDropdown.svelte - FINAL WITH DELETED PROMPTS -->
 <script lang="ts">
 	import { slide, fade } from 'svelte/transition';
 	import { Button } from '$lib/components/ui/button';
 	import { cn } from '$lib/utils';
-	import { ChevronDown, Plus, Trash2, Edit } from '@lucide/svelte';
+	import { ChevronDown, Plus, Trash2, Edit, RotateCcw } from '@lucide/svelte';
 	import PromptEditor from './PromptEditor.svelte';
 	import PromptControls from './PromptControls.svelte';
 	import PromptTabs from './PromptTabs.svelte';
@@ -28,33 +28,16 @@
 	let selectedCategory = $state('all');
 	let isOperating = $state(false);
 	let deletePromptId = $state<string | null>(null);
+	let deletedPrompts = $state<any[]>([]);
 
-	// Debug prompts - SIMPLIFIED
-	$effect(() => {
-		console.log('🔍 PromptDropdown SIMPLE DEBUG:', {
-			prompts: props.prompts,
-			promptsType: typeof props.prompts,
-			promptsKeys: Object.keys(props.prompts || {}),
-			promptsEmpty: Object.keys(props.prompts || {}).length === 0,
-			selectedCategory,
-			isOpen: props.isOpen
-		});
-	});
-
-	// Convert to plain object - SIMPLE VERSION
+	// Convert to plain object
 	let plainPrompts = $derived.by(() => {
 		if (!props.prompts || typeof props.prompts !== 'object') {
-			console.log('❌ No prompts or wrong type:', typeof props.prompts);
 			return {};
 		}
-
 		try {
-			// Simple spread to break proxy
-			const plain = { ...props.prompts };
-			console.log('✅ Plain prompts created:', Object.keys(plain));
-			return plain;
+			return { ...props.prompts };
 		} catch (error) {
-			console.error('❌ Error creating plain prompts:', error);
 			return {};
 		}
 	});
@@ -62,7 +45,6 @@
 	// Get all prompts as flat array
 	let allPrompts = $derived.by(() => {
 		const result = Object.values(plainPrompts).flat();
-		console.log('📊 All prompts:', result.length);
 		return result;
 	});
 
@@ -92,6 +74,26 @@
 			return Array.isArray(categoryData) ? categoryData : [];
 		}
 	});
+
+	// Load deleted prompts when dropdown opens
+	$effect(() => {
+		if (props.isOpen && !editMode && !createMode) {
+			loadDeletedPrompts();
+		}
+	});
+
+	async function loadDeletedPrompts() {
+		try {
+			const response = await fetch('/api/prompts?includeDeleted=true');
+			const result = await response.json();
+			
+			if (result.success && result.deletedPrompts) {
+				deletedPrompts = result.deletedPrompts;
+			}
+		} catch (error) {
+			console.error('Failed to load deleted prompts:', error);
+		}
+	}
 
 	// Actions
 	function selectPrompt(prompt) {
@@ -123,27 +125,24 @@
 		createMode = false;
 	}
 
-	// NEW: Drop prompt functionality
+	// Drop prompt functionality
 	async function dropPromptToDoc() {
 		if (!props.activePrompt || isOperating) return;
 		
 		isOperating = true;
 		try {
-			console.log('🎯 Dropping prompt to doc:', props.activePrompt.title);
-			
 			const response = await dropPrompt({
 				promptContent: props.activePrompt.content,
 				promptTitle: props.activePrompt.title
 			});
 
 			if (response.success) {
-				console.log('✅ Prompt dropped successfully');
-				props.onToggleOpen(); // Close the dropdown
+				props.onToggleOpen();
 			} else {
 				throw new Error(response.error || 'Failed to drop prompt');
 			}
 		} catch (error) {
-			console.error('❌ Failed to drop prompt:', error);
+			console.error('Failed to drop prompt:', error);
 		} finally {
 			isOperating = false;
 		}
@@ -153,7 +152,6 @@
 		if (!props.activePrompt) return;
 		try {
 			await navigator.clipboard.writeText(props.activePrompt.content);
-			console.log('📋 Copied prompt to clipboard');
 		} catch (error) {
 			console.error('Failed to copy prompt:', error);
 		}
@@ -187,11 +185,96 @@
 					clearPrompt();
 				}
 				await props.onPromptsUpdate();
+				await loadDeletedPrompts(); // Refresh deleted list
 			} else {
 				throw new Error(result.error);
 			}
 		} catch (error) {
 			console.error('Delete failed:', error);
+		} finally {
+			isOperating = false;
+		}
+	}
+
+	// Restore deleted prompt
+	async function restorePrompt(promptId: string) {
+		if (isOperating) return;
+
+		isOperating = true;
+		try {
+			const response = await fetch('/api/prompts/restore', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ 
+					promptId, 
+					restoreType: 'undelete' 
+				})
+			});
+
+			const result = await response.json();
+			if (result.success) {
+				await props.onPromptsUpdate();
+				await loadDeletedPrompts(); // Refresh deleted list
+			} else {
+				throw new Error(result.error);
+			}
+		} catch (error) {
+			console.error('Restore failed:', error);
+		} finally {
+			isOperating = false;
+		}
+	}
+
+	// Restore all deleted prompts
+	async function restoreAllDeleted() {
+		if (isOperating || deletedPrompts.length === 0) return;
+
+		isOperating = true;
+		try {
+			const response = await fetch('/api/prompts/restore-all', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ restoreType: 'undelete' })
+			});
+
+			const result = await response.json();
+			if (result.success) {
+				await props.onPromptsUpdate();
+				await loadDeletedPrompts();
+			} else {
+				throw new Error(result.error);
+			}
+		} catch (error) {
+			console.error('Restore all failed:', error);
+		} finally {
+			isOperating = false;
+		}
+	}
+
+	// Restore to system default
+	async function restoreToDefault(promptId: string) {
+		if (isOperating) return;
+
+		isOperating = true;
+		try {
+			const response = await fetch('/api/prompts/restore', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ 
+					promptId, 
+					restoreType: 'default' 
+				})
+			});
+
+			const result = await response.json();
+			if (result.success) {
+				await props.onPromptsUpdate();
+				backToList();
+			} else {
+				throw new Error(result.error);
+			}
+		} catch (error) {
+			console.error('Restore to default failed:', error);
 		} finally {
 			isOperating = false;
 		}
@@ -269,7 +352,7 @@
 						prompt={props.activePrompt}
 						onBack={backToList}
 						onSave={(data) => savePrompt(data, false)}
-						onDrop={dropPromptToDoc}
+						onRestore={() => restoreToDefault(props.activePrompt.id)}
 						isProcessing={isOperating || props.isProcessing}
 					/>
 				</div>
@@ -278,7 +361,6 @@
 					mode="edit"
 					onBack={backToList}
 					onSave={() => {}}
-					onDrop={dropPromptToDoc}
 					disabled={isOperating || props.isProcessing}
 				/>
 			{:else if createMode}
@@ -304,7 +386,6 @@
 								},
 								true
 							)}
-						onDrop={() => {}}
 						isProcessing={isOperating || props.isProcessing}
 						isNew={true}
 					/>
@@ -314,7 +395,6 @@
 					mode="edit"
 					onBack={backToList}
 					onSave={() => {}}
-					onDrop={() => {}}
 					disabled={isOperating || props.isProcessing}
 				/>
 			{:else if Object.keys(plainPrompts).length === 0}
@@ -324,7 +404,7 @@
 					<p class="mt-1 text-xs text-red-500">Check if user has prompts provisioned</p>
 				</div>
 			{:else}
-				<!-- Browse Mode - INLINE TABS AND LIST -->
+				<!-- Browse Mode -->
 				<div>
 					<!-- Category Tabs -->
 					<PromptTabs
@@ -334,7 +414,7 @@
 						disabled={isOperating}
 					/>
 
-					<!-- Prompts List - INLINE -->
+					<!-- Prompts List -->
 					<div class="h-52 overflow-y-auto">
 						{#if filteredPrompts.length === 0}
 							<div class="p-4 text-center">
@@ -411,7 +491,7 @@
 
 						<!-- New Prompt Button -->
 						<button
-							class="w-full border-2 border-dashed border-border/50 p-3 text-left text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted/30 hover:text-foreground"
+							class="w-full border-2 border-dashed border-border/50 p-4 text-left text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted/30 hover:text-foreground rounded-lg mx-3 my-2"
 							onclick={startCreate}
 							disabled={isOperating}
 						>
@@ -420,6 +500,68 @@
 								<span class="text-sm font-medium">New Prompt</span>
 							</div>
 						</button>
+
+						<!-- Deleted Prompts Section -->
+						{#if deletedPrompts.length > 0}
+							<div class="border-t border-border/50 mt-2">
+								<div class="p-3 bg-muted/30">
+									<div class="flex items-center justify-between mb-2">
+										<h4 class="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+											Deleted ({deletedPrompts.length})
+										</h4>
+										<Button
+											variant="ghost"
+											size="sm"
+											class="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+											onclick={restoreAllDeleted}
+											disabled={isOperating}
+										>
+											<RotateCcw class="h-3 w-3 mr-1" />
+											Restore All
+										</Button>
+									</div>
+									
+									{#each deletedPrompts as deletedPrompt (deletedPrompt.id)}
+										<!-- svelte-ignore a11y_click_events_have_key_events -->
+										<div
+											class="group relative w-full p-2 mb-1 rounded border border-border/30 bg-background/50 opacity-60 hover:opacity-90 transition-all last:mb-0"
+											role="button"
+											tabindex="0"
+										>
+											<div class="flex items-start justify-between gap-2 pr-8">
+												<div class="min-w-0 flex-1">
+													<div class="mb-1 flex items-center gap-2">
+														<h5 class="truncate text-xs font-medium text-muted-foreground">
+															{deletedPrompt.title}
+														</h5>
+														<span class="rounded px-1 py-0.5 text-[0.55rem] font-medium bg-muted text-muted-foreground">
+															{deletedPrompt.category}
+														</span>
+													</div>
+													<p class="text-[0.65rem] text-muted-foreground leading-relaxed line-clamp-1">
+														{truncateContent(deletedPrompt.content, 80)}
+													</p>
+												</div>
+											</div>
+
+											<!-- Restore Actions -->
+											<div class="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+												<Button
+													variant="ghost"
+													size="sm"
+													class="h-5 w-5 p-0 hover:bg-green-100 dark:hover:bg-green-900 text-green-600"
+													onclick={() => restorePrompt(deletedPrompt.id)}
+													disabled={isOperating}
+													title="Restore prompt"
+												>
+													<RotateCcw class="h-3 w-3" />
+												</Button>
+											</div>
+										</div>
+									{/each}
+								</div>
+							</div>
+						{/if}
 					</div>
 
 					<!-- Browse Mode Controls (only show if prompt selected) -->
@@ -464,17 +606,24 @@
 		<AlertDialog.Header>
 			<AlertDialog.Title>Delete Prompt?</AlertDialog.Title>
 			<AlertDialog.Description>
-				This prompt will be permanently deleted. You can always create a new one.
+				This prompt will be moved to trash. You can restore it later.
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>
 			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-			<AlertDialog.Action onclick={confirmDelete}>Delete</AlertDialog.Action>
+			<AlertDialog.Action onclick={confirmDelete}>Move to Trash</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
 </AlertDialog.Root>
 
 <style>
+	.line-clamp-1 {
+		display: -webkit-box;
+		-webkit-line-clamp: 1;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
 	.line-clamp-2 {
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
