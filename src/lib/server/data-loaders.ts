@@ -1,4 +1,4 @@
-// src/lib/server/data-loaders.ts - USER PROMPTS ONLY VERSION
+// src/lib/server/data-loaders.ts - FIXED SERIALIZATION
 import { adminFirestore } from './firebase-admin';
 
 export interface ElementData {
@@ -29,23 +29,47 @@ export interface PromptData {
 		tier?: 'free' | 'trial' | 'pro';
 		tags?: string[];
 		usage?: number;
-		isDefault?: boolean; // Was copied from system defaults
-		originalSystemId?: string; // Track original system ID
+		isDefault?: boolean;
+		originalSystemId?: string;
 	};
 	createdAt?: string;
 	updatedAt?: string;
+	deletedAt?: string | null;
+	restoredAt?: string | null;
 }
 
 /**
- * Convert Firestore document to serializable format
+ * Convert Firestore document to serializable format - FIXED
  */
 function serializeFirestoreDoc(doc: any): any {
 	const data = doc.data();
+	
+	// Helper to serialize any date field
+	const serializeDate = (date: any) => {
+		if (!date) return null;
+		if (date.toDate && typeof date.toDate === 'function') {
+			return date.toDate().toISOString();
+		}
+		if (date instanceof Date) {
+			return date.toISOString();
+		}
+		if (typeof date === 'string') {
+			return date; // Already serialized
+		}
+		return null;
+	};
+
 	return {
 		id: doc.id,
 		...data,
-		createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt || null,
-		updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt || null,
+		// Serialize all possible date fields
+		createdAt: serializeDate(data.createdAt),
+		updatedAt: serializeDate(data.updatedAt),
+		deletedAt: serializeDate(data.deletedAt),
+		restoredAt: serializeDate(data.restoredAt),
+		// Add any other date fields that might exist
+		trialStartDate: serializeDate(data.trialStartDate),
+		lastLoginDate: serializeDate(data.lastLoginDate),
 	};
 }
 
@@ -96,8 +120,7 @@ export async function getFilteredElements(userTier: 'free' | 'trial' | 'pro'): P
 }
 
 /**
- * SIMPLIFIED: Load ONLY user prompts (no merging, no system prompts)
- * All prompts are now in user's personal collection
+ * SIMPLIFIED: Load ONLY user prompts (no merging, no system prompts) - FIXED SERIALIZATION
  */
 export async function getFilteredPrompts(userTier: 'free' | 'trial' | 'pro', userId: string): Promise<Record<string, PromptData[]>> {
 	try {
@@ -118,7 +141,7 @@ export async function getFilteredPrompts(userTier: 'free' | 'trial' | 'pro', use
 
 		console.log(`📦 Found ${userSnapshot.size} user prompts`);
 
-		// Convert to PromptData format
+		// Convert to PromptData format with FIXED serialization
 		const allPrompts = userSnapshot.docs.map(doc => serializeFirestoreDoc(doc));
 
 		// Group by category
@@ -146,10 +169,3 @@ export async function getFilteredPrompts(userTier: 'free' | 'trial' | 'pro', use
 		return {};
 	}
 }
-
-/**
- * REMOVED: No longer need debugPromptsCollection since we only query user prompts
- * REMOVED: All the complex merging logic
- * REMOVED: isSystem/isUserCustom flags
- * REMOVED: Access control for prompts (all user prompts are editable)
- */

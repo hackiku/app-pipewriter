@@ -1,6 +1,6 @@
 <!-- src/lib/features/addon/features/ai/PromptControls.svelte -->
 <script lang="ts">
-	import { Copy, Edit, ArrowLeft, Play, Save } from "@lucide/svelte";
+	import { Copy, Edit, ArrowLeft, Play, Save, Trash2, Check } from "@lucide/svelte";
 	import { Button } from "$lib/components/ui/button";
 
 	const props = $props<{
@@ -9,9 +9,25 @@
 		onDrop?: () => void;
 		onSave?: () => void;
 		onEdit?: () => void;
+		onDelete?: () => void;
 		disabled?: boolean;
-		mode?: 'view' | 'edit'; // view = edit/copy/drop, edit = save (drop handled elsewhere)
+		mode?: 'view' | 'edit';
 	}>();
+
+	// Copy confirmation state
+	let copyConfirmed = $state(false);
+
+	async function handleCopy() {
+		if (props.onCopy) {
+			await props.onCopy();
+			
+			// Show confirmation
+			copyConfirmed = true;
+			setTimeout(() => {
+				copyConfirmed = false;
+			}, 2000);
+		}
+	}
 </script>
 
 <div class="flex items-center gap-2 p-2 border-t bg-muted/20">
@@ -29,7 +45,22 @@
 	{/if}
 
 	{#if props.mode === 'edit'}
-		<!-- Edit Mode: Just Save (Drop handled by editor itself) -->
+		<!-- Edit Mode: Delete (left) + Save (right) -->
+		<div class="flex items-center gap-1">
+			{#if props.onDelete}
+				<Button 
+					variant="outline" 
+					size="sm" 
+					class="h-7 w-7 p-0 text-destructive/60 hover:text-destructive hover:bg-destructive/10"
+					onclick={props.onDelete}
+					disabled={props.disabled}
+					title="Delete prompt"
+				>
+					<Trash2 class="h-3 w-3" />
+				</Button>
+			{/if}
+		</div>
+
 		<div class="ml-auto flex items-center gap-1">
 			{#if props.onSave}
 				<Button 
@@ -65,11 +96,15 @@
 				<Button 
 					variant="secondary" 
 					size="sm" 
-					class="h-7 w-7 p-0"
-					onclick={props.onCopy}
+					class="h-7 w-7 p-0 transition-all duration-200"
+					onclick={handleCopy}
 					disabled={props.disabled}
 				>
-					<Copy class="h-3 w-3" />
+					{#if copyConfirmed}
+						<Check class="h-3 w-3 text-green-600" />
+					{:else}
+						<Copy class="h-3 w-3" />
+					{/if}
 				</Button>
 			{/if}
 			

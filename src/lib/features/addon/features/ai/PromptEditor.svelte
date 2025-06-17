@@ -1,11 +1,9 @@
-<!-- src/lib/features/addon/features/ai/PromptEditor.svelte -->
+<!-- src/lib/features/addon/features/ai/PromptEditor.svelte - CLEANED & SCROLLABLE -->
 <script lang="ts">
-  import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Textarea } from "$lib/components/ui/textarea";
   import * as Select from "$lib/components/ui/select";
-  import * as AlertDialog from "$lib/components/ui/alert-dialog";
-  import { ArrowLeft, RotateCcw, Loader2, Plus } from "@lucide/svelte";
+  import { Plus } from "@lucide/svelte";
 
   const props = $props<{
     prompt: {
@@ -16,6 +14,7 @@
     };
     onBack: () => void;
     onSave: (updatedPrompt: any) => void;
+    onDelete?: (promptId: string) => void;
     onRestore?: (promptId: string) => void;
     isProcessing?: boolean;
     isNew?: boolean;
@@ -27,7 +26,6 @@
   let editCategory = $state(props.prompt.category || 'writing');
   let customCategory = $state('');
   let showCustomCategory = $state(false);
-  let showRestoreDialog = $state(false);
 
   // Update local state when prompt changes
   $effect(() => {
@@ -65,23 +63,6 @@
     { value: 'structure', label: 'Structure' },
   ];
 
-  function handleSave() {
-    if (!isValid) return;
-    
-    const finalCategory = showCustomCategory && customCategory.trim() 
-      ? customCategory.trim().toLowerCase()
-      : editCategory;
-    
-    const updatedPrompt = {
-      ...(props.isNew ? {} : { id: props.prompt.id }),
-      title: editTitle.trim(),
-      content: editContent.trim(),
-      category: finalCategory
-    };
-    
-    props.onSave(updatedPrompt);
-  }
-
   function handleCategoryChange(value: string) {
     if (value === 'custom') {
       showCustomCategory = true;
@@ -91,18 +72,6 @@
       editCategory = value;
       customCategory = '';
     }
-  }
-
-  function handleRestoreClick() {
-    if (props.isNew || !props.onRestore) return;
-    showRestoreDialog = true;
-  }
-
-  function confirmRestore() {
-    if (props.onRestore && props.prompt.id) {
-      props.onRestore(props.prompt.id);
-    }
-    showRestoreDialog = false;
   }
 
   function getCategoryColor(category: string) {
@@ -119,27 +88,70 @@
   }
 
   let displayCategory = $derived(showCustomCategory ? customCategory || 'custom' : editCategory);
+  let selectedValue = $derived(showCustomCategory ? 'custom' : editCategory);
+
+  // Expose save function for parent to call
+  export function save() {
+    if (!isValid) return;
+    
+    const finalCategory = showCustomCategory && customCategory.trim() 
+      ? customCategory.trim().toLowerCase()
+      : editCategory;
+    
+    const updatedPrompt = {
+      ...(props.isNew ? {} : { id: props.prompt.id }),
+      title: editTitle.trim(),
+      content: editContent.trim(),
+      category: finalCategory
+    };
+    
+    props.onSave(updatedPrompt);
+  }
+
+  // Expose delete function for parent to call  
+  export function deletePrompt() {
+    if (props.onDelete && props.prompt.id) {
+      props.onDelete(props.prompt.id);
+    }
+  }
+
+  // Expose restore function for parent to call
+  export function restore() {
+    if (props.onRestore && props.prompt.id) {
+      props.onRestore(props.prompt.id);
+    }
+  }
+
+  // Expose validation state
+  export function getValidation() {
+    return {
+      isValid,
+      hasChanges,
+      errors: {
+        title: !editTitle.trim() ? 'Title required' : null,
+        content: !editContent.trim() ? 'Content required' : null,
+        category: showCustomCategory && !customCategory.trim() ? 'Category required' : null
+      }
+    };
+  }
 </script>
 
-<div class="space-y-3">
-  <!-- Header -->
-  <div class="flex items-center justify-between gap-2">
-    <div class="flex items-center gap-2 flex-1 min-w-0">
-      <Button
-        variant="ghost"
-        size="sm"
-        class="h-7 w-7 p-0 flex-shrink-0"
-        onclick={props.onBack}
-        disabled={props.isProcessing}
-      >
-        <ArrowLeft class="h-3 w-3" />
-      </Button>
-      
+<!-- SCROLLABLE CONTAINER with minimal scrollbar -->
+<div class="prompt-editor-scroll overflow-y-auto max-h-[300px] pr-2">
+  <div class="space-y-3">
+    <!-- Header with Category -->
+    <div class="flex items-center gap-2">
       <!-- Category Dropdown -->
-      <div class="flex-1 min-w-0">
-        <Select.Root value={showCustomCategory ? 'custom' : editCategory} onSelectedChange={handleCategoryChange}>
+      <div class="flex-1">
+        <Select.Root value={selectedValue} onSelectedChange={handleCategoryChange}>
           <Select.Trigger class="h-7 px-2 text-xs border-0 gap-1 {getCategoryColor(displayCategory)}">
-            <Select.Value />
+            <Select.Value placeholder="Select category">
+              {#if showCustomCategory}
+                Custom
+              {:else}
+                {categories.find(c => c.value === editCategory)?.label || editCategory}
+              {/if}
+            </Select.Value>
           </Select.Trigger>
           <Select.Content>
             {#each categories as category}
@@ -159,76 +171,59 @@
           </Select.Content>
         </Select.Root>
       </div>
+      
+      <!-- Status indicator -->
+      <span class="text-xs text-muted-foreground flex-shrink-0">
+        {props.isNew ? 'creating' : 'editing'}
+      </span>
     </div>
-    
-    <!-- Status indicator -->
-    <span class="text-xs text-muted-foreground flex-shrink-0">
-      {props.isNew ? 'creating' : 'editing'}
-    </span>
-  </div>
 
-  <!-- Custom Category Input -->
-  {#if showCustomCategory}
+    <!-- Custom Category Input -->
+    {#if showCustomCategory}
+      <div>
+        <label for="custom-category" class="text-xs font-medium text-muted-foreground">Custom Category *</label>
+        <Input
+          id="custom-category"
+          bind:value={customCategory}
+          class="mt-1 h-8 text-sm"
+          placeholder="Enter category name..."
+          disabled={props.isProcessing}
+        />
+      </div>
+    {/if}
+
+    <!-- Title -->
     <div>
-      <label for="custom-category" class="text-xs font-medium text-muted-foreground">Custom Category *</label>
+      <label for="prompt-title" class="text-xs font-medium text-muted-foreground">Title *</label>
       <Input
-        id="custom-category"
-        bind:value={customCategory}
+        id="prompt-title"
+        bind:value={editTitle}
         class="mt-1 h-8 text-sm"
-        placeholder="Enter category name..."
+        placeholder="Prompt title..."
         disabled={props.isProcessing}
       />
     </div>
-  {/if}
 
-  <!-- Title -->
-  <div>
-    <label for="prompt-title" class="text-xs font-medium text-muted-foreground">Title *</label>
-    <Input
-      id="prompt-title"
-      bind:value={editTitle}
-      class="mt-1 h-8 text-sm"
-      placeholder="Prompt title..."
-      disabled={props.isProcessing}
-    />
-  </div>
-
-  <!-- Content -->
-  <div>
-    <label for="prompt-content" class="text-xs font-medium text-muted-foreground">Content *</label>
-    <Textarea
-      id="prompt-content"
-      bind:value={editContent}
-      class="mt-1 min-h-[80px] text-sm resize-none"
-      placeholder="Enter the full prompt content..."
-      disabled={props.isProcessing}
-    />
-    <div class="flex justify-between mt-1">
-      <span class="text-[0.65rem] text-muted-foreground">Be specific for better results</span>
-      <span class="text-[0.65rem] text-muted-foreground">{editContent.length} chars</span>
+    <!-- Content -->
+    <div>
+      <label for="prompt-content" class="text-xs font-medium text-muted-foreground">Content *</label>
+      <Textarea
+        id="prompt-content"
+        bind:value={editContent}
+        class="mt-1 min-h-[120px] text-sm resize-none"
+        placeholder="Enter the full prompt content..."
+        disabled={props.isProcessing}
+      />
+      <div class="flex justify-between mt-1">
+        <span class="text-[0.65rem] text-muted-foreground">Be specific for better results</span>
+        <span class="text-[0.65rem] text-muted-foreground">{editContent.length} chars</span>
+      </div>
     </div>
-  </div>
 
-  <!-- Actions -->
-  <div class="flex items-center justify-between pt-2 border-t">
-    <div class="flex items-center gap-2">
-      <!-- Restore Button (replaces Save) -->
-      {#if !props.isNew && props.onRestore}
-        <Button
-          variant="outline"
-          size="sm" 
-          class="h-7 px-3 gap-1"
-          onclick={handleRestoreClick}
-          disabled={props.isProcessing}
-        >
-          <RotateCcw class="h-3 w-3" />
-          <span class="text-xs">Restore</span>
-        </Button>
-      {/if}
-      
-      <!-- Status indicators -->
+    <!-- Status Indicators -->
+    <div class="flex items-center gap-2 pt-2">
       {#if !props.isNew && hasChanges}
-        <span class="text-[0.65rem] text-amber-600 dark:text-amber-400">unsaved</span>
+        <span class="text-[0.65rem] text-amber-600 dark:text-amber-400">unsaved changes</span>
       {/if}
       
       {#if !isValid}
@@ -239,24 +234,36 @@
         </span>
       {/if}
     </div>
-
-    <!-- Right side is now handled by PromptControls -->
   </div>
 </div>
 
-<!-- Restore Confirmation Dialog -->
-<AlertDialog.Root open={showRestoreDialog} onOpenChange={(open) => !open && (showRestoreDialog = false)}>
-  <AlertDialog.Content>
-    <AlertDialog.Header>
-      <AlertDialog.Title>Restore to Default?</AlertDialog.Title>
-      <AlertDialog.Description>
-        This will replace your custom prompt with the original system default. 
-        Your changes will be lost.
-      </AlertDialog.Description>
-    </AlertDialog.Header>
-    <AlertDialog.Footer>
-      <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-      <AlertDialog.Action onclick={confirmRestore}>Restore Default</AlertDialog.Action>
-    </AlertDialog.Footer>
-  </AlertDialog.Content>
-</AlertDialog.Root>
+<style>
+  /* Minimal scrollbar styling */
+  .prompt-editor-scroll {
+    /* Hide scrollbar for WebKit browsers */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+  }
+  
+  .prompt-editor-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .prompt-editor-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .prompt-editor-scroll::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.3);
+    border-radius: 2px;
+  }
+  
+  .prompt-editor-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.5);
+  }
+  
+  /* Smooth scrolling */
+  .prompt-editor-scroll {
+    scroll-behavior: smooth;
+  }
+</style>
