@@ -13,26 +13,12 @@ async function seedDev() {
 	console.log('==========================================');
 	console.log('');
 	console.log('🎯 Target: Firebase Emulators');
-	console.log('   Firestore: http://localhost:8080');
-	console.log('   Auth: http://localhost:9099');
-	console.log('   UI: http://localhost:4000');
+	console.log('   Firestore: http://127.0.0.1:8080');
+	console.log('   Auth: http://127.0.0.1:9099');
+	console.log('   UI: http://127.0.0.1:5000');
 	console.log('');
 
-	// Verify emulators are running
-	try {
-		const response = await fetch('http://localhost:4000');
-		if (!response.ok) {
-			throw new Error('Emulator UI not accessible');
-		}
-		console.log('✅ Emulators detected and running');
-	} catch (error) {
-		console.error('❌ Firebase emulators not running!');
-		console.error('   Run: firebase emulators:start');
-		console.error('   Or: npm run emulators');
-		process.exit(1);
-	}
-
-	console.log('');
+	console.log('🔧 Connecting to emulators...');
 
 	try {
 		// Import seeding functions (they'll use emulator automatically)
@@ -80,9 +66,9 @@ async function seedDev() {
 			console.log('🎉 Development seeding completed successfully!');
 			console.log('');
 			console.log('👀 View your data:');
-			console.log('   Firestore UI: http://localhost:4000/firestore');
-			console.log('   Elements: http://localhost:4000/firestore/data/elements');
-			console.log('   Prompts: http://localhost:4000/firestore/data/prompts');
+			console.log('   Firestore UI: http://127.0.0.1:5000/firestore');
+			console.log('   Elements: http://127.0.0.1:5000/firestore/data/elements');
+			console.log('   Prompts: http://127.0.0.1:5000/firestore/data/prompts');
 			console.log('');
 			console.log('🚀 Ready to develop!');
 			console.log('   Run: npm run dev');
@@ -96,7 +82,7 @@ async function seedDev() {
 		console.error('');
 		console.error('🔧 Troubleshooting:');
 		console.error('   1. Make sure emulators are running: firebase emulators:start');
-		console.error('   2. Check emulator ports (4000, 8080, 9099)');
+		console.error('   2. Check emulator ports (5000, 8080, 9099)');
 		console.error('   3. Clear emulator data if needed: npm run emulators:clear');
 		process.exit(1);
 	}

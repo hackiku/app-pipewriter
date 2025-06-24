@@ -6,7 +6,7 @@ import { adminFirestore } from '../../../src/lib/server/firebase-admin.ts';
 // Import existing elements as fallback reference
 let existingElements = {};
 try {
-	const { elementsDb } = await import('../../../src/lib/data/addon/elements.js');
+	const { elementsDb } = await import('../../../src/lib/data/addon/elements.ts');
 	existingElements = elementsDb;
 	console.log(`📦 Found ${Object.keys(existingElements).length} existing elements to migrate`);
 } catch (e) {
@@ -203,42 +203,42 @@ const elementsData = [
 		},
 		displayOrder: 15
 	},
-	{
-		id: 'button-primary-center',
-		category: 'buttons',
-		description: 'Center-aligned primary action button',
-		text: { cta: 'Sign Up Now' },
-		metadata: {
-			variant: 'primary',
-			supports: { darkMode: true, customText: true, customColors: true },
-			tier: 'trial'
-		},
-		displayOrder: 16
-	},
-	{
-		id: 'button-secondary-center',
-		category: 'buttons',
-		description: 'Center-aligned secondary outline button',
-		text: { cta: 'Learn More' },
-		metadata: {
-			variant: 'secondary',
-			supports: { darkMode: true, customText: true, customColors: true },
-			tier: 'trial'
-		},
-		displayOrder: 17
-	},
-	{
-		id: 'buttons-2-center',
-		category: 'buttons',
-		description: 'Two center-aligned buttons for balanced CTAs',
-		text: { cta: 'Start Free Trial' },
-		metadata: {
-			cols: 2,
-			supports: { darkMode: true, customText: true, customColors: true },
-			tier: 'pro'
-		},
-		displayOrder: 18
-	},
+	// {
+	// 	id: 'button-primary-center',
+	// 	category: 'buttons',
+	// 	description: 'Center-aligned primary action button',
+	// 	text: { cta: 'Sign Up Now' },
+	// 	metadata: {
+	// 		variant: 'primary',
+	// 		supports: { darkMode: true, customText: true, customColors: true },
+	// 		tier: 'trial'
+	// 	},
+	// 	displayOrder: 16
+	// },
+	// {
+	// 	id: 'button-secondary-center',
+	// 	category: 'buttons',
+	// 	description: 'Center-aligned secondary outline button',
+	// 	text: { cta: 'Learn More' },
+	// 	metadata: {
+	// 		variant: 'secondary',
+	// 		supports: { darkMode: true, customText: true, customColors: true },
+	// 		tier: 'trial'
+	// 	},
+	// 	displayOrder: 17
+	// },
+	// {
+	// 	id: 'buttons-2-center',
+	// 	category: 'buttons',
+	// 	description: 'Two center-aligned buttons for balanced CTAs',
+	// 	text: { cta: 'Start Free Trial' },
+	// 	metadata: {
+	// 		cols: 2,
+	// 		supports: { darkMode: true, customText: true, customColors: true },
+	// 		tier: 'pro'
+	// 	},
+	// 	displayOrder: 18
+	// },
 
 	// ===== CARDS =====
 	{
