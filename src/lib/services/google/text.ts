@@ -1,7 +1,7 @@
 // src/lib/services/google/text.ts
 import { getGoogleService } from './client';
 import type { StatusCallback } from './client';
-import type { ApiResponse } from '$lib/types/elements';
+import type { ApiResponse } from '$lib/types/appsScript';
 
 /**
  * Available heading types for text styling
