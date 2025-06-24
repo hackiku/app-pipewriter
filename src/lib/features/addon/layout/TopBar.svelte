@@ -39,7 +39,7 @@
 		>
 	</button>
 
-	<div class="justify-middle flex items-center gap-2">
+	<div class="justify-middle flex items-center gap-1">
 		<!-- Zen Mode Button -->
 		<Button
 			variant="ghost"
