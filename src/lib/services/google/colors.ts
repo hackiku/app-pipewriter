@@ -1,7 +1,7 @@
-// src/lib/services/google/colors.ts
+// src/lib/services/google/colors.ts - CLEANED UP
 import { getGoogleService } from './client';
 import type { StatusCallback } from './client';
-import type { ApiResponse } from '$lib/data/addon/types';
+import type { ApiResponse } from '$lib/types/appsScript';
 
 /**
  * Change document background color
@@ -13,7 +13,6 @@ export async function changeBackground(
 	try {
 		const client = getGoogleService();
 
-		// We no longer need to check isReady - just verify client exists
 		if (!client) {
 			throw new Error('Google Apps Service is not available');
 		}
@@ -34,7 +33,6 @@ export async function getCurrentColor(
 	try {
 		const client = getGoogleService();
 
-		// We no longer need to check isReady - just verify client exists
 		if (!client) {
 			throw new Error('Google Apps Service is not available');
 		}

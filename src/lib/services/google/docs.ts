@@ -1,7 +1,7 @@
 // src/lib/services/google/docs.ts
 import { GoogleAppsService } from './client';
 import type { StatusCallback } from './client';
-import type { ElementTheme, ApiResponse } from '$lib/data/addon/types';
+import type { ElementTheme, ApiResponse } from '$lib/types/elements';
 
 /**
  * Insert an element at the cursor position

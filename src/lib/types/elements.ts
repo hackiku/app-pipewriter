@@ -1,4 +1,4 @@
-// src/lib/types/elements.ts
+// src/lib/types/elements.ts - CLEANED UP
 
 // Core element types - explicitly export these first
 export type ElementTheme = 'light' | 'dark';
@@ -72,25 +72,27 @@ export interface Element {
 	metadata?: ElementMetadata;
 }
 
-// UI Status types
-export type StatusType = 'processing' | 'success' | 'error';
-
-export interface StatusUpdate {
-	type: 'processing' | 'success' | 'error';
-	message: string;
-	details?: string;
-	executionTime?: number;
-	error?: any;
-	elementId?: string;
+// Element creation parameters (for designer service)
+export interface ElementCreateParams {
+	elementId: string;
+	theme?: ElementTheme;
+	customText?: Record<string, string>;
+	customColors?: Record<string, string>;
+	// Allow any additional custom parameters
+	[key: string]: any;
 }
 
-// API response interface
-export interface ApiResponse {
+// Element creation response (extends generic ApiResponse)
+export interface ElementCreateResponse {
 	success: boolean;
 	action?: string;
 	error?: string;
 	executionTime?: number;
 	data?: any;
+	// Element-specific response fields
+	tableIndex?: number;
+	elementId?: string;
+	message?: string;
 }
 
 // Theme definitions

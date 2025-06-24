@@ -1,6 +1,5 @@
-// src/lib/services/google/client.ts
-import type { StatusUpdate, ApiResponse } from '$lib/types/elements';
-import type { GasFunction } from '$lib/data/addon/functions';
+// src/lib/services/google/client.ts - CLEANED UP
+import type { StatusUpdate, ApiResponse, GasFunction } from '$lib/types/appsScript';
 
 export type StatusCallback = (status: StatusUpdate) => void;
 
@@ -92,7 +91,10 @@ export class GoogleAppsService {
 			request.resolve({
 				success: true,
 				data: response.data,
-				executionTime
+				executionTime,
+				// Pass through element-specific fields
+				tableIndex: response.tableIndex,
+				message: response.message
 			});
 		}
 

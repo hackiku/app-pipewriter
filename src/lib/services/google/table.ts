@@ -1,8 +1,7 @@
-// src/lib/services/google/table.ts
+// src/lib/services/google/table.ts - CLEANED UP
 import { getGoogleService } from './client';
 import type { StatusCallback } from './client';
-// TODO separate response types
-import type { ApiResponse } from '$lib/types/elements';
+import type { ApiResponse } from '$lib/types/appsScript';
 
 /**
  * Apply cell vertical alignment (content position within cells)
