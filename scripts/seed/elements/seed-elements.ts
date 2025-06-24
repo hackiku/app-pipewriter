@@ -182,9 +182,9 @@ const elementsData = [
 		displayOrder: 14
 	},
 	{
-		id: 'buttons2Center',
+		id: 'buttons2Left',
 		category: 'buttons',
-		description: 'Two buttons side by side, centered',
+		description: 'Two buttons side by side, left',
 		text: { cta: 'Primary Action' },
 		metadata: {
 			cols: 2,
