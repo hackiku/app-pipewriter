@@ -183,7 +183,6 @@
 	<!-- BottomBar -->
 	<div class="px-2 border-t border-gray-200 dark:border-gray-700">
 		<BottomBar 
-			onToggleAboutModal={() => {}}
 			user={data.user}
 			isPro={data.userFeatures.isPro}
 			trialActive={data.userFeatures.trialActive}

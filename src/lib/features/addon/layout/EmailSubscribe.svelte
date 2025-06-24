@@ -11,18 +11,16 @@
   
   // Famous writer emails for placeholder rotation
   const writerEmails = [
+    "hank@moody.ny",
+		"jk@rollin.co.uk",
     "ernie@hemingway.gg",
-    "franz@kafka.dev", 
-    "fyodor@dostoevsky.ru",
-    "margaret@atwood.ca",
-    "jane@austen.io",
-    "james@joyce.ie",
-    "italo@calvino.it",
-    "albert@camus.dz",
-    "isabel@allende.cl",
-    "edgar@poe.xyz",
-    "ursula@leguin.net",
-    "toni@morrison.lit"
+		"david@ogilvy.piano",
+		"greta@gerwig.bb",
+    "grrm@martin.blog",
+		"dan@harmon.pickle",
+		"chiara@ferrænti.it",
+		"dino@campana.it",
+		// "quentin@tarantino.ft",
   ];
   
   // Local state
