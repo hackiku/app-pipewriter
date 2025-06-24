@@ -8,7 +8,40 @@ process.env.NODE_ENV = 'development';
 // Clear any production env vars to prevent conflicts
 delete process.env.FIREBASE_SERVICE_ACCOUNT;
 
+/**
+ * Clear emulator data without restarting emulators
+ */
+async function clearEmulatorData() {
+	try {
+		// Import after env vars are set
+		const { adminFirestore } = await import('../../src/lib/server/firebase-admin.ts');
+
+		// Delete elements collection
+		const elementsSnapshot = await adminFirestore.collection('elements').get();
+		if (!elementsSnapshot.empty) {
+			const batch1 = adminFirestore.batch();
+			elementsSnapshot.docs.forEach((doc) => batch1.delete(doc.ref));
+			await batch1.commit();
+			console.log(`   🗑️ Deleted ${elementsSnapshot.size} elements`);
+		}
+
+		// Delete prompts collection
+		const promptsSnapshot = await adminFirestore.collection('prompts').get();
+		if (!promptsSnapshot.empty) {
+			const batch2 = adminFirestore.batch();
+			promptsSnapshot.docs.forEach((doc) => batch2.delete(doc.ref));
+			await batch2.commit();
+			console.log(`   🗑️ Deleted ${promptsSnapshot.size} prompts`);
+		}
+	} catch (error) {
+		console.warn('⚠️ Could not clear data:', error.message);
+		console.warn('   Data will be overwritten during seeding');
+	}
+}
+
 async function seedDev() {
+	const shouldClear = process.argv.includes('--clear');
+
 	console.log('🔧 DEVELOPMENT SEEDING (Emulators Only)');
 	console.log('==========================================');
 	console.log('');
@@ -16,11 +49,22 @@ async function seedDev() {
 	console.log('   Firestore: http://127.0.0.1:8080');
 	console.log('   Auth: http://127.0.0.1:9099');
 	console.log('   UI: http://127.0.0.1:5000');
+	if (shouldClear) {
+		console.log('   🗑️ Clear mode: Will delete existing data first');
+	}
 	console.log('');
 
 	console.log('🔧 Connecting to emulators...');
 
 	try {
+		// Clear existing data if requested
+		if (shouldClear) {
+			console.log('🗑️ Clearing existing emulator data...');
+			await clearEmulatorData();
+			console.log('✅ Emulator data cleared');
+			console.log('');
+		}
+
 		// Import seeding functions (they'll use emulator automatically)
 		const { seedElements } = await import('./elements/seed-elements.ts');
 		const { seedPrompts } = await import('./prompts/seed-prompts.ts');

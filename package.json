@@ -51,10 +51,11 @@
 		"emulators:clear": "firebase emulators:exec --only firestore 'echo Clearing data...'",
 		"// === CLEAN SEEDING (NO FLAGS) ===": "",
 		"seed:dev": "bun run scripts/seed/seed-dev.ts",
+		"seed:dev:clear": "bun run scripts/seed/seed-dev.ts --clear",
 		"seed:prod": "bun run scripts/seed/seed-prod.ts --force",
 		"// === DEVELOPMENT WORKFLOWS ===": "",
-		"dev:fresh": "npm run emulators:clear && npm run seed:dev && npm run dev",
-		"dev:setup": "concurrently \"firebase emulators:start\" \"wait-on http://localhost:4000 && npm run seed:dev\"",
+		"dev:fresh": "npm run seed:dev:clear && npm run dev",
+		"dev:setup": "concurrently \"firebase emulators:start\" \"wait-on http://127.0.0.1:5000 && npm run seed:dev\"",
 		"// === PRODUCTION DEPLOYMENT ===": "",
 		"deploy:seed": "npm run seed:prod",
 		"deploy:full": "npm run build && npm run seed:prod"

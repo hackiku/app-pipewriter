@@ -4,14 +4,14 @@
 import { adminFirestore } from '../../../src/lib/server/firebase-admin.ts';
 
 // Import existing elements as fallback reference
-let existingElements = {};
-try {
-	const { elementsDb } = await import('../../../src/lib/data/addon/elements.ts');
-	existingElements = elementsDb;
-	console.log(`📦 Found ${Object.keys(existingElements).length} existing elements to migrate`);
-} catch (e) {
-	console.log('📦 No existing elements found, using comprehensive seed data');
-}
+// let existingElements = {};
+// try {
+// 	const { elementsDb } = await import('../../../src/lib/data/addon/elements.ts');
+// 	existingElements = elementsDb;
+// 	console.log(`📦 Found ${Object.keys(existingElements).length} existing elements to migrate`);
+// } catch (e) {
+// 	console.log('📦 No existing elements found, using comprehensive seed data');
+// }
 
 // Comprehensive elements data - based on your existing successful seed
 const elementsData = [
@@ -313,22 +313,22 @@ const elementsData = [
 ];
 
 // Merge with existing elements if they exist
-if (Object.keys(existingElements).length > 0) {
-	console.log('🔄 Merging with existing elements...');
+// if (Object.keys(existingElements).length > 0) {
+// 	console.log('🔄 Merging with existing elements...');
 
-	// Add any existing elements that aren't in our seed data
-	Object.entries(existingElements).forEach(([id, element]) => {
-		if (!elementsData.find((e) => e.id === id)) {
-			// Add displayOrder for existing elements that don't have one
-			const elementWithOrder = {
-				...element,
-				displayOrder: element.displayOrder || elementsData.length + 1
-			};
-			elementsData.push(elementWithOrder);
-			console.log(`   + Added existing element: ${id}`);
-		}
-	});
-}
+// 	// Add any existing elements that aren't in our seed data
+// 	Object.entries(existingElements).forEach(([id, element]) => {
+// 		if (!elementsData.find((e) => e.id === id)) {
+// 			// Add displayOrder for existing elements that don't have one
+// 			const elementWithOrder = {
+// 				...element,
+// 				displayOrder: element.displayOrder || elementsData.length + 1
+// 			};
+// 			elementsData.push(elementWithOrder);
+// 			console.log(`   + Added existing element: ${id}`);
+// 		}
+// 	});
+// }
 
 /**
  * Seed elements to Firestore (environment agnostic)

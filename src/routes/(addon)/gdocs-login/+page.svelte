@@ -67,6 +67,10 @@
     <div class="w-full max-w-[280px] space-y-6">
       
       <div class="text-center space-y-3">
+
+				<img src="/logos/pipewriter/pipewriter-square-logo.svg" alt=""
+				class="w-10 h-10 mx-auto mb-10">
+
         <h1 class="text-xl font-bold tracking-tight">
           Welcome to Pipewriter
         </h1>
