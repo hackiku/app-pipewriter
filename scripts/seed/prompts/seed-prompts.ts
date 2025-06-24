@@ -1,7 +1,10 @@
-// scripts/seed/simple-prompts.ts
-import { adminFirestore } from '../../src/lib/server/firebase-admin.ts';
+// scripts/seed/prompts/seed-prompts.ts - Prompt seeding logic (environment agnostic)
+// Uses whatever firebase-admin.ts is configured for (dev/prod)
 
-const simplePrompts = [
+import { adminFirestore } from '../../../src/lib/server/firebase-admin.js';
+
+// System prompts data - extracted from your existing working code
+const systemPrompts = [
 	// WRITING
 	{
 		id: 'continue-writing',
@@ -16,7 +19,7 @@ I'm sharing a special wireframe format that uses simplified HTML-like syntax to 
 
 You write copy that converts because you understand:
 - Users scan, they don't read - every word must earn its place
-- Benefits trump features - focus on transformation, not functionality  
+- Benefits trump features - focus on transformation, not functionality
 - Clarity beats cleverness - never sacrifice understanding for wit
 - Social proof drives action - weave in credibility at every turn
 - Objections kill conversions - address fears before they form
@@ -32,7 +35,7 @@ You write copy that converts because you understand:
 # Tone Guidelines
 
 - Confident but not arrogant
-- Helpful but not pushy  
+- Helpful but not pushy
 - Clear but not boring
 - Professional but not corporate
 - Urgent but not panicked
@@ -70,7 +73,7 @@ I'm sharing a special wireframe format that uses simplified HTML-like syntax to 
 
 You approach every landing page with the AIDA-PAS methodology:
 - **Attention**: Hook with pain point or desired outcome
-- **Interest**: Intrigue with unique mechanism or approach  
+- **Interest**: Intrigue with unique mechanism or approach
 - **Desire**: Build want with benefits and social proof
 - **Action**: Clear, friction-free conversion path
 - **Problem**: Agitate the current painful situation
@@ -89,7 +92,7 @@ You approach every landing page with the AIDA-PAS methodology:
 # Psychology Triggers You Deploy
 
 - **Loss Aversion**: What they lose by not acting
-- **Social Proof**: Others like them already benefiting  
+- **Social Proof**: Others like them already benefiting
 - **Authority**: Expert endorsements and credentials
 - **Reciprocity**: Give value before asking for conversion
 - **Commitment**: Get small yeses before big asks
@@ -189,7 +192,7 @@ Your designs always fit the tone of voice of the copy, and you are able to think
 `,
 		metadata: { tier: 'free', tags: ['html'] }
 	},
-	// DESIGN
+
 	// DESIGN
 	{
 		id: 'ux-layout-strategist',
@@ -221,7 +224,7 @@ I'm sharing a special wireframe format that uses simplified HTML-like syntax to 
 
 **Information Hierarchy**:
 - Most important info gets most visual weight
-- Progressive disclosure prevents cognitive overload  
+- Progressive disclosure prevents cognitive overload
 - Group related concepts visually
 - Use whitespace to guide attention flow
 
@@ -238,7 +241,7 @@ I'm sharing a special wireframe format that uses simplified HTML-like syntax to 
 - Social proof prominently displayed
 - Multiple low-commitment CTAs
 
-**Consideration Stage**: Focus on comparison and differentiation  
+**Consideration Stage**: Focus on comparison and differentiation
 - Card layouts for feature/plan comparison
 - Detailed specifications and benefits
 - Risk reversal elements (guarantees, trials)
@@ -287,7 +290,7 @@ I'm sharing a special wireframe format that uses simplified HTML-like syntax to 
 
 Users don't convert linearly - they spiral through stages:
 - **Awareness**: Problem recognition, solution discovery
-- **Interest**: Feature exploration, benefit evaluation  
+- **Interest**: Feature exploration, benefit evaluation
 - **Consideration**: Comparison shopping, risk assessment
 - **Intent**: Purchase decision, final objections
 - **Action**: Conversion, onboarding, retention
@@ -318,7 +321,7 @@ Each stage requires different content, layout, and interaction patterns.
 
 Optimize for Google's micro-moments:
 - **I-want-to-know**: Provide immediate answers, clear navigation
-- **I-want-to-go**: Location, contact, store finder prominence  
+- **I-want-to-go**: Location, contact, store finder prominence
 - **I-want-to-do**: Step-by-step guidance, interactive elements
 - **I-want-to-buy**: Streamlined checkout, security signals
 
@@ -380,7 +383,7 @@ Mobile users have different behaviors:
 
 Measure what matters for user journey:
 - Page scroll depth and time on page
-- Click-through rates on internal CTAs  
+- Click-through rates on internal CTAs
 - Form abandonment points
 - Exit pages and bounce rates
 - Conversion assist attribution
@@ -393,59 +396,111 @@ Always suggest specific tests:
 
 # The user journey wireframe to optimize:`,
 		metadata: { tier: 'pro', tags: ['user-journey', 'conversion', 'ux-optimization'] }
-	},
-	{
-		id: 'error-message',
-		category: 'design',
-		title: 'Error Message',
-		content: 'Create a helpful error message that explains the problem and how to fix it.',
-		metadata: { tier: 'trial', tags: ['error'] }
 	}
 ];
 
-async function seedSimplePrompts() {
-	console.log('🌱 Seeding simple prompts...');
+/**
+ * Seed system prompts to Firestore (environment agnostic)
+ * Uses whatever firebase-admin.ts is configured for
+ */
+export async function seedPrompts(): Promise<boolean> {
+	console.log('🌱 Seeding system prompts to Firestore...');
 
-	// Clear existing prompts first
-	const existingSnapshot = await adminFirestore.collection('prompts').get();
-	const batch = adminFirestore.batch();
+	try {
+		// Clear existing system prompts first
+		const existingSnapshot = await adminFirestore
+			.collection('prompts')
+			.where('isSystem', '==', true)
+			.get();
 
-	existingSnapshot.docs.forEach((doc) => {
-		batch.delete(doc.ref);
-	});
+		if (!existingSnapshot.empty) {
+			console.log(`🗑️ Clearing ${existingSnapshot.size} existing system prompts...`);
+			const batch = adminFirestore.batch();
+			existingSnapshot.docs.forEach((doc) => {
+				batch.delete(doc.ref);
+			});
+			await batch.commit();
+		}
 
-	await batch.commit();
-	console.log('🗑️ Cleared existing prompts');
+		// Add new system prompts
+		const newBatch = adminFirestore.batch();
+		let totalSeeded = 0;
+		const categoryCount: Record<string, number> = {};
 
-	// Add new simple prompts
-	const newBatch = adminFirestore.batch();
+		systemPrompts.forEach((prompt) => {
+			const promptRef = adminFirestore.collection('prompts').doc(prompt.id);
+			const promptData = {
+				...prompt,
+				active: true,
+				isSystem: true,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				searchTerms: [
+					prompt.id.toLowerCase(),
+					prompt.title.toLowerCase(),
+					prompt.content.toLowerCase(),
+					prompt.category.toLowerCase(),
+					...(prompt.metadata?.tags || [])
+				].filter(Boolean)
+			};
 
-	simplePrompts.forEach((prompt) => {
-		const promptRef = adminFirestore.collection('prompts').doc(prompt.id);
-		newBatch.set(promptRef, {
-			...prompt,
-			active: true,
-			isSystem: true,
-			createdAt: new Date(),
-			updatedAt: new Date()
+			newBatch.set(promptRef, promptData);
+			totalSeeded++;
+			categoryCount[prompt.category] = (categoryCount[prompt.category] || 0) + 1;
 		});
-	});
 
-	await newBatch.commit();
-	console.log(`✅ Seeded ${simplePrompts.length} simple prompts`);
+		await newBatch.commit();
+
+		console.log(`✅ Successfully seeded ${totalSeeded} system prompts`);
+		console.log(`   📂 Categories:`, categoryCount);
+
+		// Create analytics document
+		await createPromptsAnalytics();
+
+		return true;
+	} catch (error) {
+		console.error('❌ Error seeding prompts:', error);
+		return false;
+	}
 }
 
-export { seedSimplePrompts };
+/**
+ * Create prompts analytics document
+ */
+async function createPromptsAnalytics(): Promise<boolean> {
+	try {
+		const totalPrompts = systemPrompts.length;
+		const categoryBreakdown = systemPrompts.reduce(
+			(acc, prompt) => {
+				acc[prompt.category] = (acc[prompt.category] || 0) + 1;
+				return acc;
+			},
+			{} as Record<string, number>
+		);
 
-// Run if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-	seedSimplePrompts()
-		.then(() => {
-			console.log('🎉 Simple prompts ready!');
-			process.exit(0);
-		})
-		.catch((error) => {
-			console.error('💥 Error:', error);
-			process.exit(1);
-		});
+		const tierBreakdown = systemPrompts.reduce(
+			(acc, prompt) => {
+				const tier = prompt.metadata?.tier || 'free';
+				acc[tier] = (acc[tier] || 0) + 1;
+				return acc;
+			},
+			{} as Record<string, number>
+		);
+
+		const analyticsData = {
+			totalPrompts,
+			categoryBreakdown,
+			tierBreakdown,
+			lastUpdated: new Date(),
+			version: '2.0'
+		};
+
+		await adminFirestore.collection('prompts').doc('_analytics').set(analyticsData);
+		console.log('✅ System prompts analytics created');
+
+		return true;
+	} catch (error) {
+		console.error('❌ Error creating prompts analytics:', error);
+		return false;
+	}
 }

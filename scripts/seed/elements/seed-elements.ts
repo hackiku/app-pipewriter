@@ -1,17 +1,19 @@
-// scripts/seed-elements.ts - FIXED VERSION
-import { adminFirestore } from '../../src/lib/server/firebase-admin.js';
+// scripts/seed/elements/seed-elements.ts - Element seeding logic (environment agnostic)
+// Uses whatever firebase-admin.ts is configured for (dev/prod)
+
+import { adminFirestore } from '../../../src/lib/server/firebase-admin.ts';
 
 // Import existing elements as fallback reference
 let existingElements = {};
 try {
-	const { elementsDb } = await import('../../src/lib/data/addon/elements.js');
+	const { elementsDb } = await import('../../../src/lib/data/addon/elements.js');
 	existingElements = elementsDb;
 	console.log(`📦 Found ${Object.keys(existingElements).length} existing elements to migrate`);
 } catch (e) {
 	console.log('📦 No existing elements found, using comprehensive seed data');
 }
 
-// Comprehensive elements data - includes your existing ones plus more
+// Comprehensive elements data - based on your existing successful seed
 const elementsData = [
 	// ===== CONTAINERS =====
 	{
@@ -92,6 +94,7 @@ const elementsData = [
 		},
 		displayOrder: 6
 	},
+
 	// ===== BLURBS =====
 	{
 		id: 'blurbs-3',
@@ -111,7 +114,7 @@ const elementsData = [
 		metadata: {
 			cols: 4,
 			supports: { darkMode: true, customText: true },
-			tier: 'free'
+			tier: 'trial'
 		},
 		displayOrder: 8
 	},
@@ -146,7 +149,7 @@ const elementsData = [
 		metadata: {
 			cols: 2,
 			supports: { darkMode: true, customText: true },
-			tier: 'pro'
+			tier: 'trial'
 		},
 		displayOrder: 11
 	},
@@ -208,7 +211,7 @@ const elementsData = [
 		metadata: {
 			variant: 'primary',
 			supports: { darkMode: true, customText: true, customColors: true },
-			tier: 'pro'
+			tier: 'trial'
 		},
 		displayOrder: 16
 	},
@@ -220,7 +223,7 @@ const elementsData = [
 		metadata: {
 			variant: 'secondary',
 			supports: { darkMode: true, customText: true, customColors: true },
-			tier: 'pro'
+			tier: 'trial'
 		},
 		displayOrder: 17
 	},
@@ -267,7 +270,7 @@ const elementsData = [
 		metadata: {
 			cols: 4,
 			supports: { darkMode: true, customText: true },
-			tier: 'pro'
+			tier: 'trial'
 		},
 		displayOrder: 21
 	},
@@ -307,18 +310,6 @@ const elementsData = [
 		},
 		displayOrder: 24
 	}
-
-	// ===== SPECIAL =====
-	// {
-	// 	id: 'styleguide',
-	// 	category: 'special',
-	// 	description: 'Typography and style guide reference',
-	// 	metadata: {
-	// 		supports: { darkMode: false },
-	// 		tier: 'free'
-	// 	},
-	// 	displayOrder: 25
-	// }
 ];
 
 // Merge with existing elements if they exist
@@ -339,49 +330,53 @@ if (Object.keys(existingElements).length > 0) {
 	});
 }
 
-async function seedElements() {
+/**
+ * Seed elements to Firestore (environment agnostic)
+ * Uses whatever firebase-admin.ts is configured for
+ */
+export async function seedElements(): Promise<boolean> {
 	console.log('🌱 Seeding elements to Firestore...');
 
-	const batch = adminFirestore.batch();
-	let totalSeeded = 0;
-	const tierCounts = { free: 0, trial: 0, pro: 0 };
-	const categoryCounts: Record<string, number> = {};
-
-	// FIXED: Add index parameter to forEach
-	elementsData.forEach((element, index) => {
-		const elementRef = adminFirestore.collection('elements').doc(element.id);
-
-		const firestoreElement = {
-			...element,
-			active: true,
-			createdAt: new Date(),
-			updatedAt: new Date(),
-			// FIXED: Now index is available, but also provide better fallback
-			displayOrder: element.displayOrder ?? index + 1,
-
-			// Add computed search-friendly fields
-			searchTerms: [
-				element.id,
-				element.description.toLowerCase(),
-				element.category.toLowerCase(),
-				...(element.text ? Object.values(element.text).map((t) => String(t).toLowerCase()) : [])
-			].filter(Boolean),
-
-			// Add SVG paths for easy access
-			svgPath: `/elements/${element.id}.svg`,
-			svgPathDark: element.metadata?.supports?.darkMode ? `/elements/${element.id}-dark.svg` : null
-		};
-
-		batch.set(elementRef, firestoreElement);
-
-		// Count stats
-		totalSeeded++;
-		const tier = element.metadata?.tier || 'free';
-		tierCounts[tier]++;
-		categoryCounts[element.category] = (categoryCounts[element.category] || 0) + 1;
-	});
-
 	try {
+		const batch = adminFirestore.batch();
+		let totalSeeded = 0;
+		const tierCounts = { free: 0, trial: 0, pro: 0 };
+		const categoryCounts: Record<string, number> = {};
+
+		elementsData.forEach((element, index) => {
+			const elementRef = adminFirestore.collection('elements').doc(element.id);
+
+			const firestoreElement = {
+				...element,
+				active: true,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				displayOrder: element.displayOrder ?? index + 1,
+
+				// Add computed search-friendly fields
+				searchTerms: [
+					element.id,
+					element.description.toLowerCase(),
+					element.category.toLowerCase(),
+					...(element.text ? Object.values(element.text).map((t) => String(t).toLowerCase()) : [])
+				].filter(Boolean),
+
+				// Add SVG paths for easy access
+				svgPath: `/elements/${element.id}.svg`,
+				svgPathDark: element.metadata?.supports?.darkMode
+					? `/elements/${element.id}-dark.svg`
+					: null
+			};
+
+			batch.set(elementRef, firestoreElement);
+
+			// Count stats
+			totalSeeded++;
+			const tier = element.metadata?.tier || 'free';
+			tierCounts[tier]++;
+			categoryCounts[element.category] = (categoryCounts[element.category] || 0) + 1;
+		});
+
 		await batch.commit();
 
 		console.log(`✅ Successfully seeded ${totalSeeded} elements`);
@@ -391,6 +386,9 @@ async function seedElements() {
 			`   🎨 Elements with dark mode: ${elementsData.filter((e) => e.metadata?.supports?.darkMode).length}`
 		);
 
+		// Create analytics document
+		await createElementsAnalytics();
+
 		return true;
 	} catch (error) {
 		console.error('❌ Error seeding elements:', error);
@@ -398,85 +396,47 @@ async function seedElements() {
 	}
 }
 
-async function createElementsAnalytics() {
-	console.log('📊 Creating elements analytics...');
-
-	const totalElements = elementsData.length;
-	const tierBreakdown = elementsData.reduce(
-		(acc, el) => {
-			const tier = el.metadata?.tier || 'free';
-			acc[tier] = (acc[tier] || 0) + 1;
-			return acc;
-		},
-		{} as Record<string, number>
-	);
-
-	const categoryBreakdown = elementsData.reduce(
-		(acc, el) => {
-			acc[el.category] = (acc[el.category] || 0) + 1;
-			return acc;
-		},
-		{} as Record<string, number>
-	);
-
-	const analyticsData = {
-		totalElements,
-		tierBreakdown,
-		categoryBreakdown,
-		elementsWithDarkMode: elementsData.filter((e) => e.metadata?.supports?.darkMode).length,
-		elementsWithCustomText: elementsData.filter((e) => e.metadata?.supports?.customText).length,
-		elementsWithCustomColors: elementsData.filter((e) => e.metadata?.supports?.customColors).length,
-		lastUpdated: new Date(),
-		version: '2.0'
-	};
-
+/**
+ * Create elements analytics document
+ */
+async function createElementsAnalytics(): Promise<boolean> {
 	try {
+		const totalElements = elementsData.length;
+		const tierBreakdown = elementsData.reduce(
+			(acc, el) => {
+				const tier = el.metadata?.tier || 'free';
+				acc[tier] = (acc[tier] || 0) + 1;
+				return acc;
+			},
+			{} as Record<string, number>
+		);
+
+		const categoryBreakdown = elementsData.reduce(
+			(acc, el) => {
+				acc[el.category] = (acc[el.category] || 0) + 1;
+				return acc;
+			},
+			{} as Record<string, number>
+		);
+
+		const analyticsData = {
+			totalElements,
+			tierBreakdown,
+			categoryBreakdown,
+			elementsWithDarkMode: elementsData.filter((e) => e.metadata?.supports?.darkMode).length,
+			elementsWithCustomText: elementsData.filter((e) => e.metadata?.supports?.customText).length,
+			elementsWithCustomColors: elementsData.filter((e) => e.metadata?.supports?.customColors)
+				.length,
+			lastUpdated: new Date(),
+			version: '2.0'
+		};
+
 		await adminFirestore.collection('elements').doc('_analytics').set(analyticsData);
 		console.log('✅ Elements analytics created');
-		console.log(
-			`   📈 Total: ${totalElements} elements across ${Object.keys(categoryBreakdown).length} categories`
-		);
+
 		return true;
 	} catch (error) {
 		console.error('❌ Error creating analytics:', error);
 		return false;
 	}
 }
-
-async function main() {
-	console.log('🚀 Starting elements seeding...');
-	console.log('');
-
-	const success1 = await seedElements();
-	console.log('');
-
-	const success2 = await createElementsAnalytics();
-	console.log('');
-
-	if (success1 && success2) {
-		console.log('🎉 Elements seeding completed successfully!');
-		console.log('');
-		console.log('👀 View elements in Firestore console:');
-		console.log('   http://localhost:4000/firestore/data/elements');
-		console.log('');
-		console.log('🧪 Test the new system in your app at:');
-		console.log('   http://localhost:5173/addon');
-		console.log('');
-		console.log("🔥 Don't forget to set up firestore.rules for security!");
-	} else {
-		console.log('💥 Seeding failed - check errors above');
-		process.exit(1);
-	}
-
-	process.exit(0);
-}
-
-// Run if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-	main().catch((error) => {
-		console.error('💥 Fatal error:', error);
-		process.exit(1);
-	});
-}
-
-export { seedElements, createElementsAnalytics };
