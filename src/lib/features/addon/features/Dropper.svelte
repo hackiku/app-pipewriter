@@ -4,7 +4,9 @@
 	import type { ElementTheme } from '$lib/types/elements';
 	import type { StatusUpdate } from '$lib/types/appsScript';
 
-  import { insertElement } from "$lib/services/google/docs";
+  // import { insertElement } from "$lib/services/google/docs"; 
+	import { createElement } from "$lib/services/google/designer";
+
   
   import CompactStatus from "../components/CompactStatus.svelte";
   import DropperGrid from "./dropper/DropperGrid.svelte";
@@ -106,7 +108,8 @@
     });
 
     try {
-      const response = await insertElement(
+      // const response = await insertElement(
+      const response = await createElement(
         elementId, 
         currentTheme,
         (update) => setStatusWithTimeout(update)
@@ -115,8 +118,9 @@
       if (response.success) {
         setStatusWithTimeout({
           type: "success",
-          message: "Element inserted",
-          details: `Successfully inserted ${elementId} (${currentTheme})`,
+          // message: "Element inserted",
+          message: "Element created",
+          details: `Successfully created ${elementId} (${currentTheme})`,
           executionTime: response.executionTime,
           elementId
         });
@@ -205,7 +209,8 @@
           elementId: item.id
         });
         
-        const response = await insertElement(item.id, item.theme);
+        // const response = await insertElement(item.id, item.theme);
+        const response = await createElement(item.id, item.theme);
         
         if (response.executionTime) {
           totalExecutionTime += response.executionTime;

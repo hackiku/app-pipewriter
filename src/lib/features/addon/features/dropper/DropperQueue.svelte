@@ -4,6 +4,7 @@
 	import QueueCard from './QueueCard.svelte';
 	import type { ElementWithAccess, ElementTheme } from '$lib/types/elements';
 	import { elementsService } from '$lib/services/data/elements';
+	// import { createElement } from "$lib/services/google/designer";
 
 	// Enhanced interface for queue items with themes
 	interface QueueItem {
@@ -76,6 +77,7 @@
 		try {
 			const elementPromises = elementIds.map(async (id, index) => {
 				const element = await elementsService.getElementById(id, 'trial');
+				  // = await createElement.getElementById(id, 'trial');
 				if (element) {
 					return {
 						...element,

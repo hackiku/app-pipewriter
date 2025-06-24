@@ -1,13 +1,23 @@
-// scripts/seed/elements/seed-elements.ts - CAMELCASE VERSION
+// scripts/seed/elements/seed-elements.ts - Element seeding logic (environment agnostic)
+// Uses whatever firebase-admin.ts is configured for (dev/prod)
 
 import { adminFirestore } from '../../../src/lib/server/firebase-admin.ts';
 
+// Import existing elements as fallback reference
+// let existingElements = {};
+// try {
+// 	const { elementsDb } = await import('../../../src/lib/data/addon/elements.ts');
+// 	existingElements = elementsDb;
+// 	console.log(`📦 Found ${Object.keys(existingElements).length} existing elements to migrate`);
+// } catch (e) {
+// 	console.log('📦 No existing elements found, using comprehensive seed data');
+// }
 
-
+// Comprehensive elements data - based on your existing successful seed
 const elementsData = [
 	// ===== CONTAINERS =====
 	{
-		id: 'containerCenter',
+		id: 'container-center',
 		category: 'containers',
 		description: 'Centered container for content sections',
 		metadata: {
@@ -17,7 +27,7 @@ const elementsData = [
 		displayOrder: 1
 	},
 	{
-		id: 'backgroundEmpty',
+		id: 'background-empty',
 		category: 'containers',
 		description: 'Full width empty container for layouts',
 		metadata: {
@@ -27,7 +37,7 @@ const elementsData = [
 		displayOrder: 2
 	},
 	{
-		id: 'backgroundColor',
+		id: 'background-color',
 		category: 'containers',
 		description: 'Full width colored background section',
 		metadata: {
@@ -53,7 +63,7 @@ const elementsData = [
 		displayOrder: 4
 	},
 	{
-		id: 'zigzagLeft',
+		id: 'zz-left',
 		category: 'content',
 		description: 'Content layout with left-aligned zigzag pattern',
 		text: {
@@ -69,7 +79,7 @@ const elementsData = [
 		displayOrder: 5
 	},
 	{
-		id: 'zigzagRight',
+		id: 'zz-right',
 		category: 'content',
 		description: 'Content layout with right-aligned zigzag pattern',
 		text: {
@@ -87,7 +97,7 @@ const elementsData = [
 
 	// ===== BLURBS =====
 	{
-		id: 'blurbs3',
+		id: 'blurbs-3',
 		category: 'blurbs',
 		description: 'Three horizontal feature blurbs',
 		metadata: {
@@ -98,7 +108,7 @@ const elementsData = [
 		displayOrder: 7
 	},
 	{
-		id: 'blurbs4',
+		id: 'blurbs-4',
 		category: 'blurbs',
 		description: 'Four horizontal benefit blurbs',
 		metadata: {
@@ -109,7 +119,7 @@ const elementsData = [
 		displayOrder: 8
 	},
 	{
-		id: 'blurbsVertical3',
+		id: 'blurbs-vertical-3',
 		category: 'blurbs',
 		description: 'Three vertical stacked blurbs for storytelling',
 		metadata: {
@@ -122,7 +132,7 @@ const elementsData = [
 
 	// ===== LISTS =====
 	{
-		id: 'list1',
+		id: 'list-1',
 		category: 'lists',
 		description: 'Single column list for features or benefits',
 		metadata: {
@@ -133,7 +143,7 @@ const elementsData = [
 		displayOrder: 10
 	},
 	{
-		id: 'list2',
+		id: 'list-2',
 		category: 'lists',
 		description: 'Two column list for comparison or features',
 		metadata: {
@@ -144,7 +154,7 @@ const elementsData = [
 		displayOrder: 11
 	},
 	{
-		id: 'list3',
+		id: 'list-3',
 		category: 'lists',
 		description: '2x2 grid list layout for organized content',
 		metadata: {
@@ -158,9 +168,9 @@ const elementsData = [
 
 	// ===== BUTTONS =====
 	{
-		id: 'buttonPrimaryLeft',
+		id: 'button-primary-left',
 		category: 'buttons',
-		description: 'Primary call-to-action button',
+		description: 'Left-aligned primary call-to-action button',
 		text: { cta: 'Get Started' },
 		metadata: {
 			variant: 'primary',
@@ -170,9 +180,9 @@ const elementsData = [
 		displayOrder: 13
 	},
 	{
-		id: 'buttonSecondaryLeft',
+		id: 'button-secondary-left',
 		category: 'buttons',
-		description: 'Secondary outline button',
+		description: 'Left-aligned secondary outline button',
 		text: { cta: 'Learn More' },
 		metadata: {
 			variant: 'secondary',
@@ -182,9 +192,9 @@ const elementsData = [
 		displayOrder: 14
 	},
 	{
-		id: 'buttons2Center',
+		id: 'buttons-2-left',
 		category: 'buttons',
-		description: 'Two buttons side by side, centered',
+		description: 'Two buttons side by side, left-aligned',
 		text: { cta: 'Primary Action' },
 		metadata: {
 			cols: 2,
@@ -193,10 +203,46 @@ const elementsData = [
 		},
 		displayOrder: 15
 	},
+	// {
+	// 	id: 'button-primary-center',
+	// 	category: 'buttons',
+	// 	description: 'Center-aligned primary action button',
+	// 	text: { cta: 'Sign Up Now' },
+	// 	metadata: {
+	// 		variant: 'primary',
+	// 		supports: { darkMode: true, customText: true, customColors: true },
+	// 		tier: 'trial'
+	// 	},
+	// 	displayOrder: 16
+	// },
+	// {
+	// 	id: 'button-secondary-center',
+	// 	category: 'buttons',
+	// 	description: 'Center-aligned secondary outline button',
+	// 	text: { cta: 'Learn More' },
+	// 	metadata: {
+	// 		variant: 'secondary',
+	// 		supports: { darkMode: true, customText: true, customColors: true },
+	// 		tier: 'trial'
+	// 	},
+	// 	displayOrder: 17
+	// },
+	// {
+	// 	id: 'buttons-2-center',
+	// 	category: 'buttons',
+	// 	description: 'Two center-aligned buttons for balanced CTAs',
+	// 	text: { cta: 'Start Free Trial' },
+	// 	metadata: {
+	// 		cols: 2,
+	// 		supports: { darkMode: true, customText: true, customColors: true },
+	// 		tier: 'pro'
+	// 	},
+	// 	displayOrder: 18
+	// },
 
 	// ===== CARDS =====
 	{
-		id: 'cards2',
+		id: 'cards-2',
 		category: 'cards',
 		description: 'Two feature cards side by side',
 		metadata: {
@@ -204,10 +250,10 @@ const elementsData = [
 			supports: { darkMode: true, customText: true },
 			tier: 'free'
 		},
-		displayOrder: 16
+		displayOrder: 19
 	},
 	{
-		id: 'cards3',
+		id: 'cards-3',
 		category: 'cards',
 		description: 'Three feature cards in a row',
 		metadata: {
@@ -215,10 +261,10 @@ const elementsData = [
 			supports: { darkMode: true, customText: true },
 			tier: 'free'
 		},
-		displayOrder: 17
+		displayOrder: 20
 	},
 	{
-		id: 'cards4',
+		id: 'cards-4',
 		category: 'cards',
 		description: 'Four feature cards for comprehensive layouts',
 		metadata: {
@@ -226,10 +272,10 @@ const elementsData = [
 			supports: { darkMode: true, customText: true },
 			tier: 'trial'
 		},
-		displayOrder: 18
+		displayOrder: 21
 	},
 	{
-		id: 'cards2x2',
+		id: 'cards-2x2',
 		category: 'cards',
 		description: '2x2 grid of cards for service offerings',
 		metadata: {
@@ -238,10 +284,10 @@ const elementsData = [
 			supports: { darkMode: true, customText: true },
 			tier: 'free'
 		},
-		displayOrder: 19
+		displayOrder: 22
 	},
 	{
-		id: 'cards6',
+		id: 'cards-6',
 		category: 'cards',
 		description: 'Six cards in a 3x2 grid layout',
 		metadata: {
@@ -250,10 +296,10 @@ const elementsData = [
 			supports: { darkMode: true, customText: true },
 			tier: 'pro'
 		},
-		displayOrder: 20
+		displayOrder: 23
 	},
 	{
-		id: 'pricing2',
+		id: 'pricing-2',
 		category: 'cards',
 		description: 'Two pricing comparison cards',
 		metadata: {
@@ -262,11 +308,9 @@ const elementsData = [
 			supports: { darkMode: true, customText: true, customColors: true },
 			tier: 'pro'
 		},
-		displayOrder: 21
+		displayOrder: 24
 	}
 ];
-
-
 
 // Merge with existing elements if they exist
 // if (Object.keys(existingElements).length > 0) {
