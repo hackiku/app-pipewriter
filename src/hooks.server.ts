@@ -11,7 +11,10 @@ const auth: Handle = async ({ event, resolve }) => {
 	event.locals.user = null;
 	event.locals.authenticated = false;
 
-	if (sessionCookie) {
+	if (sessionCookie) {if (event.url.pathname.startsWith('/api/email/')) {
+		return resolve(event);
+	}
+	
 		try {
 			// SECURITY: Always verify with checkRevoked: true
 			const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie, true);
@@ -52,6 +55,13 @@ const apiGuard: Handle = async ({ event, resolve }) => {
 		if (event.url.pathname.startsWith('/api/auth/')) {
 			return resolve(event);
 		}
+
+		// email expose to website
+		if (event.url.pathname.startsWith('/api/email/')) {
+			return resolve(event);
+		}		
+
+		// -------------- DEV --------------
 
 		// Allow debug routes in development
 		if (dev && event.url.pathname.startsWith('/api/debug')) {
