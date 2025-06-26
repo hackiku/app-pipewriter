@@ -1,10 +1,12 @@
-<!-- Updated src/lib/features/addon/features/text/TextTab.svelte -->
+<!-- src/lib/features/addon/features/text/TextTab.svelte -->
 <script lang="ts">
   import TextDropdown from "./TextDropdown.svelte";
   import TextActions from "./TextActions.svelte";
   import { Button } from "$lib/components/ui/button";
   import { RefreshCcw, Heading } from "@lucide/svelte";
-  import { insertElement } from "$lib/services/google/docs";
+  
+  // CHANGED: Import createElement from designer instead of insertElement from docs
+  import { createElement } from "$lib/services/google/designer";
   import { applyTextStyle, updateAllMatchingHeadings, getStyleInfo } from "$lib/services/google/text";
   import type { ElementTheme } from '$lib/types/elements';
   import type { HeadingType } from '$lib/services/google/text';
@@ -177,7 +179,7 @@
     }
   }
 
-  // Handle styleguide insertion
+  // UPDATED: Handle styleguide insertion using designer.ts createElement method
   async function handleStyleGuideInsert() {
     if (isProcessing) return;
     
@@ -186,13 +188,16 @@
     
     props.onStatusUpdate({
       type: 'processing',
-      message: 'Inserting style guide...'
+      message: 'Creating style guide...',
+      details: `Inserting styleguide (${elementsTheme})`
     });
 
     try {
-      const response = await insertElement(
+      // CHANGED: Use createElement from designer.ts instead of insertElement from docs.ts
+      const response = await createElement(
         "styleguide", 
         elementsTheme,
+        {}, // No custom params needed
         (status) => {
           props.onStatusUpdate(status);
         }
@@ -201,17 +206,18 @@
       if (response.success) {
         props.onStatusUpdate({
           type: 'success',
-          message: 'Style guide inserted',
+          message: 'Style guide created',
+          details: `Successfully created styleguide (${elementsTheme})`,
           executionTime: response.executionTime
         });
       } else {
-        throw new Error(response.error || "Failed to insert style guide");
+        throw new Error(response.error || "Failed to create style guide");
       }
     } catch (error) {
-      console.error("Failed to insert style guide:", error);
+      console.error("Failed to create style guide:", error);
       props.onStatusUpdate({
         type: 'error',
-        message: error instanceof Error ? error.message : "Failed to insert style guide"
+        message: error instanceof Error ? error.message : "Failed to create style guide"
       });
     } finally {
       isProcessing = false;
