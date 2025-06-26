@@ -16,6 +16,24 @@
 	// Template documents with REAL links
 	const templateDocs = [
 		{
+			id: 'light-elements',
+			title: 'App Light',
+			description:
+				'App element tables, light mode',
+			url: 'https://docs.google.com/document/d/17SKmBz9nfolDvvUTwi-toAWsVWFhdcbATSOEa6nyR5E',
+			tier: 'free',
+			type: 'doc'
+		},
+		{
+			id: 'dark-elements',
+			title: 'App Dark',
+			description:
+				'App element tables, dark mode',
+			url: 'https://docs.google.com/document/d/1Pmf6GSA9XTw7odk9zE7-vlX83BdPBLpTWHBuXxgchDA',
+			tier: 'free',
+			type: 'doc'
+		},
+		{
 			id: 'starter-template',
 			title: 'Starter',
 			description:
@@ -26,7 +44,7 @@
 		},
 		{
 			id: 'heading',
-			title: 'heading',
+			title: 'Accordion',
 			description:
 				'Acordion heading direct link',
 			url: 'https://docs.google.com/document/d/1hjIdUjCRPGLFJhK6NNmV24zxZxGivWOQX959aUPfXR0/edit?tab=t.0#heading=h.i5onxk7r9spi',
@@ -55,6 +73,14 @@
 	// Drive folders with REAL links
 	const driveFolders = [
 		{
+			id: 'app-elements',
+			title: 'App Elements',
+			description: 'Complete collection of 100+ premium wireframe elements organized by category',
+			url: 'https://drive.google.com/drive/folders/1HiJFBq6lDWlds1clpnRiTxgJOVekjtea',
+			tier: 'free',
+			type: 'drive'
+		},
+		{
 			id: 'pro-folder',
 			title: 'Pro Templates',
 			description: 'Complete collection of 100+ premium wireframe elements organized by category',
@@ -62,14 +88,14 @@
 			tier: 'pro',
 			type: 'drive'
 		},
-		{
-			id: 'prompts-folder',
-			title: 'AI Prompts',
-			description: 'Curated library of copywriting and UX writing prompts for content generation',
-			url: 'https://drive.google.com/drive/folders/1WYJObf1OWdxrFFWYyxc6aAAP2TZShm-L',
-			tier: 'pro',
-			type: 'drive'
-		},
+		// {
+		// 	id: 'prompts-folder',
+		// 	title: 'AI Prompts',
+		// 	description: 'Curated library of copywriting and UX writing prompts for content generation',
+		// 	url: 'https://drive.google.com/drive/folders/1WYJObf1OWdxrFFWYyxc6aAAP2TZShm-L',
+		// 	tier: 'pro',
+		// 	type: 'drive'
+		// },
 		{
 			id: 'samples-folder',
 			title: 'Sample Docs',
