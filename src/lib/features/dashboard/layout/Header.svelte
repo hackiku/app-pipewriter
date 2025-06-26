@@ -96,7 +96,11 @@
   <div class="h-16 px-6 flex items-center justify-between">
     <!-- Logo -->
     <div class="flex items-center gap-2">
-      <PenTool class="h-6 w-6 text-primary" />
+      <img src="/logos/pipewriter/pipewriter-square-logo.svg"
+				alt="pipewriter logo"
+				class="h-6 w-6"
+				>
+			<!-- <PenTool class="h-6 w-6 text-primary" /> -->
       <span class="font-bold text-xl hidden md:inline">Pipewriter</span>
     </div>
     
