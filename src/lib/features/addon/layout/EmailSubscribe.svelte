@@ -5,7 +5,7 @@
   import { onMount } from 'svelte';
   
   // Props
-  const props = $props<{
+  const { source = 'addon-about' } = $props<{
     source?: string;
   }>();
   
@@ -20,25 +20,78 @@
 		"dan@harmon.pickle",
 		"chiara@ferrænti.it",
 		"dino@campana.it",
-		// "quentin@tarantino.ft",
   ];
   
-  // Local state
+  // Form state
   let email = $state("");
   let isSubmitting = $state(false);
   let isSubmitted = $state(false);
   let errorMessage = $state("");
-  let currentPlaceholder = $state(writerEmails[0]);
   
-  // Rotate placeholder every 3 seconds (slower than before)
+  // Typing animation state
+  let currentEmailIndex = $state(0);
+  let displayText = $state('');
+  let showCursor = $state(true);
+  
+  // Typing animation settings
+  const typingSpeed = 100;
+  const deleteSpeed = 50;
+  const pauseDuration = 1500;
+  
+  // Create placeholder with typing animation and cursor using $derived
+  const placeholder = $derived(displayText + (showCursor ? '|' : ' '));
+  
   onMount(() => {
-    let index = 0;
-    const interval = setInterval(() => {
-      index = (index + 1) % writerEmails.length;
-      currentPlaceholder = writerEmails[index];
-    }, 3000); // 3 seconds to linger more
+    let timeoutId: number;
     
-    return () => clearInterval(interval);
+    async function typeEmail() {
+      const targetEmail = writerEmails[currentEmailIndex];
+      
+      // Typing phase
+      for (let i = 0; i <= targetEmail.length; i++) {
+        displayText = targetEmail.slice(0, i);
+        await new Promise(resolve => {
+          timeoutId = setTimeout(resolve, typingSpeed);
+        });
+      }
+      
+      // Pause at end
+      await new Promise(resolve => {
+        timeoutId = setTimeout(resolve, pauseDuration);
+      });
+      
+      // Deleting phase
+      for (let i = targetEmail.length; i >= 0; i--) {
+        displayText = targetEmail.slice(0, i);
+        await new Promise(resolve => {
+          timeoutId = setTimeout(resolve, deleteSpeed);
+        });
+      }
+      
+      // Move to next email
+      currentEmailIndex = (currentEmailIndex + 1) % writerEmails.length;
+      
+      // Small pause before typing next
+      await new Promise(resolve => {
+        timeoutId = setTimeout(resolve, 200);
+      });
+      
+      // Continue the cycle
+      typeEmail();
+    }
+    
+    // Cursor blink animation
+    const cursorInterval = setInterval(() => {
+      showCursor = !showCursor;
+    }, 530);
+    
+    // Start typing
+    typeEmail();
+    
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(cursorInterval);
+    };
   });
   
   async function handleSubmit(event: Event) {
@@ -54,7 +107,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           email: email.trim(), 
-          source: props.source || 'addon-about' 
+          source 
         }),
       });
       
@@ -87,10 +140,11 @@
       <input
         type="email"
         bind:value={email}
-        placeholder={currentPlaceholder}
+        placeholder={placeholder}
         class="w-full h-10 pl-10 pr-4 text-sm bg-background border border-input rounded-md 
                focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
-               disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+               disabled:opacity-50 disabled:cursor-not-allowed transition-all
+               placeholder:text-muted-foreground/50"
         disabled={isSubmitting}
         required
       />
