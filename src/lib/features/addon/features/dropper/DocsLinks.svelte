@@ -25,6 +25,15 @@
 			type: 'doc'
 		},
 		{
+			id: 'heading',
+			title: 'heading',
+			description:
+				'Acordion heading direct link',
+			url: 'https://docs.google.com/document/d/1hjIdUjCRPGLFJhK6NNmV24zxZxGivWOQX959aUPfXR0/edit?tab=t.0#heading=h.i5onxk7r9spi',
+			tier: 'free',
+			type: 'doc'
+		},
+		{
 			id: 'pro-template',
 			title: 'Pro',
 			description:

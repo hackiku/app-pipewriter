@@ -1,4 +1,5 @@
-// src/lib/services/google/client.ts - CLEANED UP
+// src/lib/services/google/client.ts - FIXED TIMEOUT ISSUES
+
 import type { StatusUpdate, ApiResponse, GasFunction } from '$lib/types/appsScript';
 
 export type StatusCallback = (status: StatusUpdate) => void;
@@ -12,12 +13,16 @@ export class GoogleAppsService {
 		startTime: number;
 		onStatus?: StatusCallback;
 	}>();
-	private timeout: number;
+	private defaultTimeout: number;
+	private isInitialized = false;
+	private requestCount = 0;
+	private pendingMessages: any[] = [];
 
-	private constructor(timeout = 5000) {
-		this.timeout = timeout;
+	private constructor(timeout = 10000) { // INCREASED: Default 10s instead of 5s
+		this.defaultTimeout = timeout;
 		if (typeof window !== 'undefined') {
 			this.setupMessageListener();
+			this.initializeConnection();
 		}
 	}
 
@@ -26,6 +31,32 @@ export class GoogleAppsService {
 			GoogleAppsService.instance = new GoogleAppsService(timeout);
 		}
 		return GoogleAppsService.instance;
+	}
+
+	/**
+	 * NEW: Initialize connection and handle any pending messages
+	 */
+	private initializeConnection() {
+		// Send a ready signal to parent
+		if (typeof window !== 'undefined') {
+			window.parent.postMessage(JSON.stringify({
+				action: 'clientReady',
+				timestamp: Date.now()
+			}), '*');
+
+			// Mark as initialized after short delay to allow setup
+			setTimeout(() => {
+				this.isInitialized = true;
+				console.log('🔗 Google Apps Service initialized');
+
+				// Process any pending messages
+				if (this.pendingMessages.length > 0) {
+					console.log(`📥 Processing ${this.pendingMessages.length} pending messages`);
+					this.pendingMessages.forEach(msg => this.handleResponse(msg));
+					this.pendingMessages = [];
+				}
+			}, 500);
+		}
 	}
 
 	private setupMessageListener() {
@@ -56,6 +87,13 @@ export class GoogleAppsService {
 					JSON.parse(event.data) : event.data;
 
 				if (response?.action) {
+					// NEW: If not initialized yet, queue the message
+					if (!this.isInitialized && response.action !== 'clientReady') {
+						console.log('📦 Queueing message until initialized:', response.action);
+						this.pendingMessages.push(response);
+						return;
+					}
+
 					this.handleResponse(response);
 				}
 			} catch (error) {
@@ -67,7 +105,10 @@ export class GoogleAppsService {
 	private handleResponse(response: any) {
 		const action = response.action.replace(/Response$/, '');
 		const request = this.activeRequests.get(action);
-		if (!request) return;
+		if (!request) {
+			console.log(`⚠️ No active request found for action: ${action}`);
+			return;
+		}
 
 		const executionTime = this.calculateExecutionTime(request.startTime);
 
@@ -113,6 +154,24 @@ export class GoogleAppsService {
 		}
 	}
 
+	/**
+	 * NEW: Get smart timeout based on request history and action type
+	 */
+	private getSmartTimeout(action: GasFunction): number {
+		// First few requests get longer timeout (initialization delays)
+		if (this.requestCount < 3) {
+			return Math.max(this.defaultTimeout * 1.5, 15000); // 15s for first 3 requests
+		}
+
+		// Element creation can be slower than other operations
+		if (action === 'createElement' || action === 'getElement') {
+			return Math.max(this.defaultTimeout, 8000); // 8s minimum for elements
+		}
+
+		// Other operations use default timeout
+		return this.defaultTimeout;
+	}
+
 	public isAvailable(): boolean {
 		return typeof window !== 'undefined';
 	}
@@ -124,6 +183,7 @@ export class GoogleAppsService {
 	): Promise<ApiResponse> {
 		// Clean up any existing request
 		this.cleanupRequest(action);
+		this.requestCount++;
 
 		return new Promise((resolve, reject) => {
 			if (typeof window === 'undefined') {
@@ -132,18 +192,42 @@ export class GoogleAppsService {
 			}
 
 			const startTime = new Date().getTime();
+			const timeout = this.getSmartTimeout(action);
 
-			// Set up timeout handler
+			// Enhanced status update for first requests
+			if (this.requestCount <= 3) {
+				onStatus?.({
+					type: 'processing',
+					message: 'Initializing connection...',
+					details: `Request ${this.requestCount} (${action})`
+				});
+			} else {
+				onStatus?.({
+					type: 'processing',
+					message: 'Processing request...'
+				});
+			}
+
+			// Set up timeout handler with smart timeout
 			const timer = window.setTimeout(() => {
 				const executionTime = this.calculateExecutionTime(startTime);
+
+				// MORE INFORMATIVE timeout message
+				const timeoutMessage = this.requestCount <= 3
+					? `Request timed out after ${timeout / 1000}s (initialization may be slow)`
+					: `Request timed out after ${timeout / 1000}s`;
+
+				console.warn(`⏰ Timeout for ${action} after ${executionTime}ms (limit: ${timeout}ms)`);
+
 				onStatus?.({
 					type: 'error',
-					message: 'Request timed out',
+					message: timeoutMessage,
 					executionTime
 				});
-				reject(new Error('Request timed out'));
+
+				reject(new Error(timeoutMessage));
 				this.cleanupRequest(action);
-			}, this.timeout);
+			}, timeout);
 
 			// Store request info
 			this.activeRequests.set(action, {
@@ -154,18 +238,30 @@ export class GoogleAppsService {
 				onStatus
 			});
 
-			// Initial status update
-			onStatus?.({
-				type: 'processing',
-				message: 'Processing request...'
-			});
-
 			// Send message to Google Apps Script
+			console.log(`📤 Sending ${action} (timeout: ${timeout / 1000}s, request #${this.requestCount})`);
 			window.parent.postMessage(JSON.stringify({
 				action,
 				payload
 			}), '*');
 		});
+	}
+
+	/**
+	 * NEW: Warm up the connection with a simple request
+	 */
+	async warmUp(): Promise<void> {
+		if (!this.isAvailable()) return;
+
+		try {
+			console.log('🔥 Warming up Google Apps Service connection...');
+			await this.sendMessage('getCurrentColor', {}, (status) => {
+				console.log('🔥 Warmup status:', status.type, status.message);
+			});
+			console.log('✅ Connection warmed up successfully');
+		} catch (error) {
+			console.warn('⚠️ Warmup failed (this is okay):', error);
+		}
 	}
 
 	destroy() {
